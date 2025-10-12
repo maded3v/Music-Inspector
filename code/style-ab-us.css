@@ -73,3 +73,20 @@ html, body {
   color: #969696;
   border: #969696 1px solid ;
 }
+
+.worker{
+  margin-top: 20px;
+  display: flex;
+  width: 10rem;
+  height: 20rem;
+  
+ 
+  
+  padding: 5px;
+  background-color: #141414;
+  border-radius: 12px;
+  cursor: pointer;
+  flex: 0 0 auto;
+
+  
+}
