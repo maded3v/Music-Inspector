@@ -86,13 +86,92 @@
             <div class="rewiews-badge-MI">90</div>
           </div>
         </div>
-
-      </div>
-      
+      </div> 
     </div>
     </div>
    
+<div class="reviews-wrapper">
+  <div class="reviews-header">
+    <div class="reviews-title">Рецензии MI</div>
+    <button class="reviews-open-all">Открыть все</button>
+  </div>
+
+  <div class="reviews-grid">
+    <!-- Карточка 1 -->
+    <div class="review-card">
+      <div class="review-top">
+        <div class="review-author">
+          <img src="/people/авай 3.png" alt="avatar" class="review-avatar">
+          <div class="review-author-name">
+            quwewe <span class="mi-badge">MI</span>
+          </div>
+        </div>
+
+       <div class="review-right">
+  <div class="review-scores">
+    <div class="review-score">80</div>
+    <div class="review-subscores">7 8 7 7 8</div>
+  </div>
+  <img src="/traks/madkid_drki.jpg" class="review-cover" alt="cover">
+</div>
+</div>
+
+
+      <div class="review-body">
+        <div class="review-title">Держит планку</div>
+        <div class="review-text">
+          Лёгкий трек, бит делает его почти хитом. Текст нормальный, без «вау»,
+          но в целом достойный. Структура радует — всё запоминается и качает.
+          Звук качественный, хоть и перегруженный, но вокал madk1d’a звучит слабее, чем раньше.
+          Харизма при этом на месте.
+        </div>
+      </div>
+
+      <div class="review-footer">
+        <button class="review-btn expand">⤢</button>
+        <button class="review-btn open">🗖</button>
+      </div>
+    </div>
+
+    <!-- Карточка 2 -->
+    <div class="review-card">
+      <div class="review-top">
+        <div class="review-author">
+          <img src="/people/madedev1.png" alt="avatar" class="review-avatar">
+          <div class="review-author-name">made.dev</div>
+        </div>
+
+         <div class="review-right">
+  <div class="review-scores">
+    <div class="review-score">90</div>
+    <div class="review-subscores">9 8 9 7 8</div>
+  </div>
+  <img src="/traks/sexyswag2010.jpeg" class="review-cover" alt="cover">
+</div>
+      </div>
+
+      <div class="review-body">
+        <div class="review-title">плавятсямозги swag</div>
+        <div class="review-text">
+          Марк — одно из открытий года. Sexyswag выстрелил колкими строчками,
+          фирменным звучанием и целостностью. Впереди большой тур, ждём новый альбом.
+        </div>
+      </div>
+
+      <div class="review-footer">
+        <button class="review-btn expand">⤢</button>
+        <button class="review-btn open">🗖</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
     
+
+
   </div>
 </div>
 
@@ -163,7 +242,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-
+document.querySelectorAll('.review-score').forEach(el=>{
+  const nums = el.dataset.values.split(',').map(Number);
+  const avg = Math.round(nums.reduce((a,b)=>a+b)/nums.length*10);
+  el.textContent = avg;
+});
 
 </script>
 
