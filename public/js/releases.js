@@ -63,14 +63,19 @@ export function renderMonthlyReleases(releases, container) {
       return 0;
     });
 
-  console.log('Total albums to render:', sortedReleases.length);
-  console.log('Albums:', sortedReleases.map(r => `${r.title} (${r.tier})`));
+  // Limit releases on mobile for optimization
+  const isMobile = window.innerWidth < 768;
+  const maxReleases = isMobile ? 6 : sortedReleases.length;
+  const releasesToRender = sortedReleases.slice(0, maxReleases);
+
+  console.log('Total albums to render:', releasesToRender.length);
+  console.log('Albums:', releasesToRender.map(r => `${r.title} (${r.tier})`));
 
   const html = `
     <div class="monthly-releases">
       <div class="monthly-releases-title">Альбомы месяца</div>
       <div class="monthly-releases-grid">
-        ${sortedReleases.map(renderReleaseCard).join('')}
+        ${releasesToRender.map(renderReleaseCard).join('')}
       </div>
     </div>
   `;

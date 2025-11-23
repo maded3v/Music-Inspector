@@ -86,6 +86,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         trackWrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
       }
     });
+
+    // Update buttons on window resize to handle mobile/desktop changes
+    window.addEventListener('resize', () => {
+      currentIndex = 0; // Reset to start
+      trackWrapper.style.transform = `translateX(0px)`;
+    });
   }
 
   // Preserve badge logic and add data-id
