@@ -1,11 +1,32 @@
 // Function to render a single release card for monthly releases
 export function renderReleaseCard(release) {
+  // Calculate average score from subscores if available, otherwise from peopleScore/miScore
+  let averageScore = null;
+  if (release.subscores && release.subscores.length > 0) {
+    const sum = release.subscores.reduce((a, b) => a + b, 0);
+    averageScore = Math.round((sum / release.subscores.length) * 10);
+  } else if (release.peopleScore && release.miScore) {
+    averageScore = Math.round((release.peopleScore + release.miScore) / 2);
+  } else if (release.peopleScore) {
+    averageScore = release.peopleScore;
+  } else if (release.miScore) {
+    averageScore = release.miScore;
+  }
+
+  const tier = release.tier || 'other';
+
   return `
-    <div class="release-card ${release.tier}">
-      <div class="release-info">
-        <div class="release-title">${release.title}</div>
-        <div class="release-artist">${release.artist}</div>
+    <div class="release-card" data-tier="${tier}" data-id="${release.id}">
+      <div class="release-cover-wrapper">
+        <img src="${release.cover}" alt="Обложка" class="release-cover">
       </div>
+      <div class="release-info">
+        <div class="release-title album-title">${release.title}</div>
+        <div class="release-artist album-artist">${release.artist}</div>
+      </div>
+      ${averageScore ? `
+        <div class="monthly-release-score album-score">${averageScore}</div>
+      ` : ''}
     </div>
   `;
 }
@@ -29,15 +50,25 @@ export function renderReleaseCardAll(release) {
 
 // Function to render the monthly releases section
 export function renderMonthlyReleases(releases, container) {
-  // Filter and sort by tier: gold, silver, bronze
-  const tierOrder = { gold: 1, silver: 2, bronze: 3 };
+  // Sort by tier: gold, silver, bronze first, then others
+  const tierOrder = { gold: 1, silver: 2, bronze: 3, other: 4 };
   const sortedReleases = releases
-    .filter(r => ['gold', 'silver', 'bronze'].includes(r.tier))
-    .sort((a, b) => tierOrder[a.tier] - tierOrder[b.tier]);
+    .filter(r => r.type === 'album') // Only albums
+    .sort((a, b) => {
+      const aTier = a.tier || 'other';
+      const bTier = b.tier || 'other';
+      const aOrder = tierOrder[aTier] || 4;
+      const bOrder = tierOrder[bTier] || 4;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return 0;
+    });
+
+  console.log('Total albums to render:', sortedReleases.length);
+  console.log('Albums:', sortedReleases.map(r => `${r.title} (${r.tier})`));
 
   const html = `
     <div class="monthly-releases">
-      <h2 class="monthly-releases-title">Релизы месяца</h2>
+      <div class="monthly-releases-title">Альбомы месяца</div>
       <div class="monthly-releases-grid">
         ${sortedReleases.map(renderReleaseCard).join('')}
       </div>
@@ -45,3 +76,4 @@ export function renderMonthlyReleases(releases, container) {
   `;
   container.innerHTML = html;
 }
+

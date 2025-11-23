@@ -1,4 +1,4 @@
-// Function to trim text to 300 characters, considering spaces and punctuation
+ // Function to trim text to 300 characters, considering spaces and punctuation
 function trimText(text, maxLength = 300) {
   if (text.length <= maxLength) return text;
   let trimmed = text.substring(0, maxLength);

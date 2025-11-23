@@ -56,7 +56,12 @@ let currentOrder = 'desc';
 
 function renderReleases(releases) {
   const grid = document.querySelector('.releases-grid');
-  const filtered = releases.filter(r => r.title.toLowerCase().includes(document.getElementById('search-input').value.toLowerCase()));
+  const searchValue = document.getElementById('search-input').value.toLowerCase();
+  const filtered = releases.filter(r => {
+    const title = (r.title || '').toLowerCase();
+    const artist = (r.artist || '').toLowerCase();
+    return title.includes(searchValue) || artist.includes(searchValue);
+  });
   const sorted = sortReleases(filtered, currentSort, currentOrder);
   grid.innerHTML = sorted.map(renderReleaseCardAll).join('');
 }
@@ -90,6 +95,14 @@ function sortReleases(releases, sortBy, order) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   allReleases = await getReleases();
+  
+  // Check for search parameter in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const searchQuery = urlParams.get('search');
+  if (searchQuery) {
+    document.getElementById('search-input').value = searchQuery;
+  }
+  
   renderReleases(allReleases);
 
   document.getElementById('search-input').addEventListener('input', () => renderReleases(allReleases));

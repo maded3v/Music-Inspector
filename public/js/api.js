@@ -35,7 +35,11 @@ const sampleReleases = [
     "artist": "madk1d",
     "cover": "/traks/sexyswag2010.jpeg",
     "releaseDate": "2025-11-01",
+    "type": "album",
     "tier": "gold",
+    "peopleScore": 85,
+    "miScore": 90,
+    "subscores": [9, 8, 9, 8, 9],
     "shortDescription": "Краткий анонс для золотого релиза."
   },
   {
@@ -44,7 +48,11 @@ const sampleReleases = [
     "artist": "madk1d",
     "cover": "/traks/madkid_drki.jpg",
     "releaseDate": "2025-11-02",
+    "type": "album",
     "tier": "silver",
+    "peopleScore": 75,
+    "miScore": 80,
+    "subscores": [7, 8, 7, 8, 8],
     "shortDescription": "Краткий анонс для серебряного релиза."
   },
   {
@@ -53,8 +61,51 @@ const sampleReleases = [
     "artist": "artist",
     "cover": "/traks/madkid_drki.jpg",
     "releaseDate": "2025-11-03",
+    "type": "album",
     "tier": "bronze",
+    "peopleScore": 65,
+    "miScore": 70,
+    "subscores": [6, 7, 6, 7, 7],
     "shortDescription": "Краткий анонс для бронзового релиза."
+  },
+  {
+    "id": "t459",
+    "title": "test album",
+    "artist": "test artist",
+    "cover": "/traks/madkid_drki.jpg",
+    "releaseDate": "2025-11-04",
+    "type": "album",
+    "tier": "other",
+    "peopleScore": 60,
+    "miScore": 65,
+    "subscores": [6, 6, 6, 6, 6],
+    "shortDescription": "Тестовый альбом без награды."
+  },
+  {
+    "id": "t460",
+    "title": "Новый альбом",
+    "artist": "Новый артист",
+    "cover": "/traks/sexyswag2010.jpeg",
+    "releaseDate": "2025-11-05",
+    "type": "album",
+    "tier": "other",
+    "peopleScore": 70,
+    "miScore": 75,
+    "subscores": [7, 7, 7, 7, 7],
+    "shortDescription": "Еще один тестовый альбом."
+  },
+  {
+    "id": "t461",
+    "title": "Последний альбом",
+    "artist": "Последний артист",
+    "cover": "/traks/madkid_drki.jpg",
+    "releaseDate": "2025-11-06",
+    "type": "album",
+    "tier": "other",
+    "peopleScore": 55,
+    "miScore": 60,
+    "subscores": [5, 6, 5, 6, 6],
+    "shortDescription": "Последний тестовый альбом."
   }
 ];
 

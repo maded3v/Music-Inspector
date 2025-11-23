@@ -31,7 +31,7 @@ color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #E6E6E6;
+  
 }
 
 
@@ -43,6 +43,7 @@ color: white;
   justify-content: center;
 }
 .name-logo {
+  color: #E6E6E6;
   font-size: 2.25rem;
   font-weight: bold;
   color: E6E6E6;
@@ -53,6 +54,7 @@ color: white;
 }
 
 .about-us-but {
+  color: #E6E6E6;
   display: flex;
   width: 40px;
   height: 36px;
@@ -116,6 +118,7 @@ color: white;
 }
 
 .sing-in-but {
+  color: #E6E6E6;
   font-size: 1.25rem;
   display: flex;
   width: 85px;
@@ -140,7 +143,7 @@ color: white;
 
 .sing-up-but {
   font-size: 1.25rem;
-  color: #1E1E1E;
+  
   display: flex;
   width: 156px;
   height: 38px;
@@ -153,7 +156,7 @@ color: white;
   align-items: center;
   justify-content: center;
   transition: color 0.3s,background-color 0.3s, border-color 0.3s;
-
+  color: #1E1E1E;
 }
 
 .sing-up-but:hover {
@@ -200,11 +203,12 @@ color: white;
   font-weight: light;
 }
 
-.single-class, .album-class {
+.singl-class, .album-class {
   display: flex;
   align-items: center;
+  gap: 8px;
   cursor: pointer;
-  
+  line-height: 1.5;
 }
 
 
@@ -277,13 +281,16 @@ color: white;
   transition: color 0.3s,background-color 0.3s, border-color 0.3s;
 
 }
-
+.but-last-added-all{
+text-decoration: none;
+}
 .but-prev-last-added-tracks:hover,
 .but-next-last-added-tracks:hover,
 .but-last-added-all:hover {
   background-color: #E1E1E1;
   color: #969696;
   border: #969696 1px solid ;
+
 }
 
 
@@ -337,22 +344,26 @@ color: white;
 
   box-sizing: border-box;
 }
-.track-card:hover {
- 
+.track-card:hover:not(.track-card-placeholder) {
   transform: translateY(-8px);
   transition: transform 0.3s, box-shadow 0.3s;
 }
 .track-cover {
-  width: 150px;
-  height: 150px;
+  width: 150px !important;
+  height: 150px !important;
+  max-width: 150px;
+  max-height: 150px;
   border-radius: 8px;
   object-fit: cover;
   margin: 0 auto;
+  display: block;
 }
 
 .track-cover-wrapper {
   position: relative;
   display: inline-block;
+  width: 150px;
+  height: 150px;
 }
 
 .track-badge {
@@ -438,20 +449,28 @@ color: white;
 }
 
 .reviews-title {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: medium;
+  color: #fff;
 }
 
 .reviews-open-all {
-  background: #2a2a2a;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  color: #ccc;
+  border: 1px solid #1e1e1e;
   cursor: pointer;
-  transition: background 0.3s;
+  padding: 8px 10px;
+  background-color: #282828;
+  border-radius: 10px;
+  color: white;
+  user-select: none;
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s;
+  font-size: 1rem;
 }
-.reviews-open-all:hover { background: #3a3a3a; }
+
+.reviews-open-all:hover {
+  background-color: #E1E1E1;
+  color: #969696;
+  border: #969696 1px solid;
+}
 
 .reviews-grid {
   display: grid;
@@ -609,7 +628,7 @@ color: white;
   gap: 20px;
 }
 
-.release-card {
+.ап {
   background: #1b1b1b;
   border-radius: 10px;
   padding: 14px;
@@ -829,10 +848,19 @@ color: white;
 }
 
 /* Monthly releases styles - match last-added-tracks-main */
+.monthly-releases-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+}
+
 .monthly-releases {
   display: flex;
   flex-direction: column;
   margin: 20px auto;
+  padding: 0;
+  background: transparent;
   width: 1082px;
 }
 
@@ -840,49 +868,98 @@ color: white;
   font-size: 1.25rem;
   font-weight: medium;
   color: #fff;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .monthly-releases-grid {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
-  overflow: hidden;
 }
 
 .release-card {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
-  width: 161px;
+  width: 166px;
   height: 255px;
-  padding: 5px;
-  background-color: #141414;
+  padding: 5.5px;
+  background: transparent;
   border-radius: 12px;
   cursor: pointer;
   flex: 0 0 auto;
   box-sizing: border-box;
-  transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;
+  will-change: transform;
+  transform-style: preserve-3d;
+  transition: box-shadow 0.3s ease;
+}
+
+.release-card[data-tier="gold"] {
+  --tier-color: #E3D323;
+  background: linear-gradient(to bottom, #E3D323, #0F0F0F);
+  border: 2px solid var(--tier-color);
+}
+
+.release-card[data-tier="silver"] {
+  --tier-color: #C0C0C0;
+  background: linear-gradient(to bottom, #C0C0C0, #0F0F0F);
+  border: 2px solid var(--tier-color);
+}
+
+.release-card[data-tier="bronze"] {
+  --tier-color: #CD7F32;
+  background: linear-gradient(to bottom, #CD7F32, #0F0F0F);
+  border: 2px solid var(--tier-color);
+}
+
+.release-card:not([data-tier="gold"]):not([data-tier="silver"]):not([data-tier="bronze"]) {
+  border: 1px solid #444;
+}
+
+/* Placeholder cards - look like real cards but dimmed */
+.release-card-placeholder,
+.track-card-placeholder {
+  opacity: 0.85;
+  filter: brightness(0.88);
+  pointer-events: none;
+  cursor: default;
   position: relative;
 }
 
-.release-card:hover {
-  transform: translateY(-8px);
+.release-card-placeholder::after,
+.track-card-placeholder::after {
+  content: "placeholder";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.6rem;
+  color: #666;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.7;
 }
 
-.release-card.gold {
-  background-color: #1a1a00; /* golden tint */
-  border: 1px solid #ffd700;
-}
-
-.release-card.silver {
-  background-color: #1a1a1a; /* silvery tint */
-  border: 1px solid #c0c0c0;
-}
-
-.release-card.bronze {
-  background-color: #2a1a00; /* bronze tint */
-  border: 1px solid #cd7f32;
+.release-card-placeholder .placeholder-cover,
+.track-card-placeholder .placeholder-cover {
+  width: 150px !important;
+  height: 150px !important;
+  min-width: 150px;
+  min-height: 150px;
+  max-width: 150px;
+  max-height: 150px;
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-sizing: border-box;
 }
 
 .release-cover-wrapper {
@@ -903,22 +980,27 @@ color: white;
 
 .release-info {
   width: 100%;
-  text-align: left;
-  padding-left: 5px;
+  text-align: center;
+  padding: 0;
   font-weight: bold;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  align-items: center;
 }
 
-.release-title {
+.release-title,
+.album-title {
   font-size: 0.9rem;
   color: #fff;
+  text-align: center;
 }
 
-.release-artist {
+.release-artist,
+.album-artist {
   font-size: 0.9rem;
   color: #aaa;
+  text-align: center;
 }
 
 .release-date {
@@ -931,6 +1013,24 @@ color: white;
   font-size: 0.85rem;
   color: #ddd;
   line-height: 1.4;
+}
+
+.monthly-release-score,
+.album-score {
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: transparent;
+  text-align: center;
+  margin-top: auto;
+  border: 2px solid var(--tier-color, #666);
+  color: var(--tier-color, #fff);
+}
+
+.release-card:not([data-tier="gold"]):not([data-tier="silver"]):not([data-tier="bronze"]) .monthly-release-score {
+  border-color: #666;
+  color: #fff;
 }
 
 /* Auth form styles */

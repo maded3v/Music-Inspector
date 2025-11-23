@@ -1,13 +1,19 @@
 import { getReviews, getReleases } from './api.js';
 import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js';
 import { renderMonthlyReleases } from './releases.js';
+import { initSearch } from './search.js';
+import { initTiltEffect } from './tilt-effect.js';
+import { initMonthlyReleasesPlaceholders, initLastAddedTracksPlaceholders } from './placeholders.js';
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', async () => {
+  // Load data
+  const reviews = await getReviews();
+  const releases = await getReleases();
+
   // Load and render reviews
   const reviewsContainer = document.querySelector('.reviews-grid');
   if (reviewsContainer) {
-    const reviews = await getReviews();
     renderReviews(reviews, reviewsContainer);
     initReviewExpand(reviewsContainer);
     initReviewOpen(reviewsContainer);
@@ -16,12 +22,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load and render monthly releases
   const releasesContainer = document.querySelector('.main-content');
   if (releasesContainer) {
-    const releases = await getReleases();
     const releasesSection = document.createElement('div');
     releasesSection.classList.add('monthly-releases-container');
     releasesContainer.appendChild(releasesSection);
     renderMonthlyReleases(releases, releasesSection);
+    
+    // Initialize tilt effect and placeholders after cards are rendered
+    setTimeout(() => {
+      initTiltEffect();
+      initMonthlyReleasesPlaceholders();
+    }, 100);
   }
+  
+  // Initialize placeholders for last added tracks
+  setTimeout(() => {
+    initLastAddedTracksPlaceholders();
+  }, 200);
+
+  // Initialize search with tracks and releases data
+  // Wait a bit for DOM to be ready (including dynamically loaded releases)
+  setTimeout(() => {
+    const tracks = Array.from(document.querySelectorAll('.track-card:not(.track-card-placeholder)')).map(card => ({
+      title: card.querySelector('.track-title')?.textContent || '',
+      artist: card.querySelector('.track-artist')?.textContent || '',
+      id: card.dataset.id || ''
+    }));
+    
+    initSearch(tracks, releases);
+  }, 200);
 
   // Preserve existing carousel logic
   const trackWrapper = document.querySelector(".last-added-tracks");
@@ -33,31 +61,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cardWidth = 161 + 16; // width + gap
     let currentIndex = 0;
 
-    function updateButtons() {
+    // Remove existing event listeners by cloning buttons
+    const newNextBtn = nextBtn.cloneNode(true);
+    const newPrevBtn = prevBtn.cloneNode(true);
+    nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+    prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
+
+    // Add event listeners once
+    newNextBtn.addEventListener("click", () => {
       const visibleCards = Math.floor(wrapper.offsetWidth / cardWidth);
-      const totalCards = trackWrapper.children.length;
+      const totalCards = Array.from(trackWrapper.children).filter(
+        card => !card.classList.contains('track-card-placeholder')
+      ).length;
+      
+      if (currentIndex < totalCards - visibleCards) {
+        currentIndex++;
+        trackWrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+      }
+    });
 
-      nextBtn.addEventListener("click", () => {
-        if (currentIndex < totalCards - visibleCards) {
-          currentIndex++;
-          trackWrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-        }
-      });
-
-      prevBtn.addEventListener("click", () => {
-        if (currentIndex > 0) {
-          currentIndex--;
-          trackWrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-        }
-      });
-    }
-
-    updateButtons();
+    newPrevBtn.addEventListener("click", () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        trackWrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+      }
+    });
   }
 
-  // Preserve badge logic
-  document.querySelectorAll('.track-card').forEach(card => {
+  // Preserve badge logic and add data-id
+  document.querySelectorAll('.track-card:not(.track-card-placeholder)').forEach((card, index) => {
+    // Add data-id if not present
+    if (!card.dataset.id) {
+      card.dataset.id = `track-${index + 1}`;
+    }
+
     const wrapper = card.querySelector('.track-cover-wrapper');
+    if (!wrapper) return;
+    
+    // Skip if badge already exists
+    if (wrapper.querySelector('.track-badge')) return;
 
     const badge = document.createElement("div");
     badge.classList.add("track-badge");
