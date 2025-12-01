@@ -804,7 +804,7 @@ text-decoration: none;
 
 /* Auth forms */
 .auth-form {
-  max-width: 400px;
+  max-width: 500px;
   margin: 50px auto;
   background: #1b1b1b;
   padding: 20px;

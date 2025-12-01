@@ -1,0 +1,24 @@
+{
+  "name": "music-inspector",
+  "version": "1.0.0",
+  "description": "Music platform for reviews and track management",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "vercel build",
+    "start": "vercel start"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "vercel": "^32.4.1"
+  },
+  "keywords": ["music", "reviews", "platform"],
+  "author": "Music Inspector Team",
+  "license": "MIT"
+}

@@ -29,20 +29,30 @@ export function validateRegister(email, password, confirmPassword) {
 export function updateButtonText(form, button) {
   const email = form.querySelector('input[name="email"]').value;
   const password = form.querySelector('input[name="password"]').value;
-  const confirmPassword = form.querySelector('input[name="confirmPassword"]')?.value;
+  const confirmPassword = form.querySelector('input[name="confirm-password"]')?.value;
+  const username = form.querySelector('input[name="username"]')?.value;
 
   let progress = 0;
-  if (email) progress += 45;
-  if (password) progress += 45;
-  if (confirmPassword && password === confirmPassword) progress += 10;
+  let total = 90;
 
-  button.textContent = `Войти (${progress}/90)`;
-  if (progress === 90) {
+  if (email) progress += 30;
+  if (password) progress += 30;
+  if (confirmPassword && password === confirmPassword) progress += 15;
+  if (username) progress += 15;
+
+  const baseText = button.dataset.baseText || 'Войти';
+  button.textContent = `${baseText} (${progress}/${total})`;
+
+  // Dynamic fill animation
+  const fillPercentage = (progress / total) * 100;
+  button.style.setProperty('--fill-width', `${fillPercentage}%`);
+
+  if (progress === total) {
     button.disabled = false;
-    button.style.background = '#007bff';
+    button.classList.add('filled');
   } else {
     button.disabled = true;
-    button.style.background = '#666';
+    button.classList.remove('filled');
   }
 }
 
