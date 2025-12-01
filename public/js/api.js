@@ -112,7 +112,7 @@ const sampleReleases = [
 // API wrapper functions with fallback to sample data
 export async function getReleases() {
   try {
-    const response = await fetch('/api/releases');
+    const response = await fetch(`${API_BASE}/api/getLatestTracks`);
     if (!response.ok) throw new Error('API unavailable');
     return await response.json();
   } catch (error) {
@@ -123,7 +123,7 @@ export async function getReleases() {
 
 export async function getReviews() {
   try {
-    const response = await fetch('/api/reviews');
+    const response = await fetch(`${API_BASE}/api/getLatestReviews`);
     if (!response.ok) throw new Error('API unavailable');
     return await response.json();
   } catch (error) {
@@ -134,7 +134,7 @@ export async function getReviews() {
 
 export async function getReview(id) {
   try {
-    const response = await fetch(`/api/reviews/${id}`);
+    const response = await fetch(`${API_BASE}/api/getReviewsByTrack?id=${id}`);
     if (!response.ok) throw new Error('API unavailable');
     return await response.json();
   } catch (error) {
