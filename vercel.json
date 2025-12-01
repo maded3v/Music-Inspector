@@ -1,19 +1,15 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
+      "dev": "vc dev -A vercel.local.json --listen 8000"
     },
     {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
+    
   ]
 }
