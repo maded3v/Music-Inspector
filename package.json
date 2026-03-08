@@ -2,19 +2,29 @@
   "name": "music-inspector",
   "version": "1.0.0",
   "description": "Music platform for reviews and track management",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "npx serve public -l 3000",
+    "dev": "node server.js",
+    "dev:static": "npx serve public -l 3000",
     "build": "vercel build",
-    "start": "vercel start"
+    "start": "node server.js",
+    "setup-db": "node scripts/setup-database.js",
+    "migrate": "node scripts/run-migrations.js",
+    "promote-admin": "node scripts/promote-admin.js",
+    "set-mi-reviewers": "node scripts/set-mi-reviewers.js",
+    "vercel:start": "vercel start"
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.0",
     "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "express": "^5.2.1",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.3"
+    "multer": "^2.0.2",
+    "pg": "^8.11.3",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "serve": "^14.2.1",

@@ -1,79 +1,55 @@
 # Music Inspector
 
-A modern music platform where users can register, add tracks/albums, and leave reviews.
+Music platform with user auth, releases, reviews, artist pages and admin moderation.
 
-## Features
+## Stack
+- Node.js + Express
+- PostgreSQL
+- Static frontend (HTML/CSS/JS)
+- API in `api/`
 
-- User registration and authentication
-- Track and album management
-- Review system with 5 criteria scoring
-- AI-generated reviews
-- Search and filtering
-- Responsive design
+## Run after cloning from GitHub
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create `.env` from `.env.example` and set real values.
+3. Run SQL schema/migrations in your PostgreSQL.
+4. Start app:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000).
 
-## Tech Stack
+## Required environment variables
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - secret for auth tokens
+- `FRONTEND_URL` - frontend origin for CORS (for local: `http://localhost:3000`)
 
-- **Frontend:** HTML, CSS, JavaScript (ES6 Modules)
-- **Backend:** Node.js, Express (Vercel Serverless)
-- **Database:** PostgreSQL (Neon)
-- **Authentication:** JWT with httpOnly cookies
-- **Deployment:** Vercel
-
-## Project Structure
-
-```
-music-inspector/
-├── api/                    # Serverless functions
-│   ├── auth.js            # Authentication endpoints
-│   ├── tracks.js          # Track management
-│   ├── reviews.js         # Review system
-│   ├── db.js              # Database connection
-│   └── index.js           # Main API router
-├── public/                # Static files
-│   ├── css/               # Stylesheets
-│   ├── js/                # Client-side JavaScript
-│   ├── *.html             # HTML pages
-│   └── assets/            # Images, etc.
-├── schema.sql             # Database schema
-├── package.json           # Dependencies
-├── vercel.json            # Vercel configuration
-└── README.md
+Example:
+```env
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+JWT_SECRET=change-me
+FRONTEND_URL=http://localhost:3000
 ```
 
-## Setup
+## Deploy (Vercel + GitHub)
+1. Push repository to GitHub.
+2. Import repository in Vercel.
+3. Add environment variables in Vercel project settings:
+   - `DATABASE_URL`
+   - `JWT_SECRET`
+   - `FRONTEND_URL` (set to your production domain)
+4. Deploy.
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables:
-   - `DATABASE_URL`: PostgreSQL connection string
-   - `JWT_SECRET`: Secret key for JWT
-   - `FRONTEND_URL`: Frontend URL for CORS
-4. Run database migrations: `psql -f schema.sql`
-5. Deploy to Vercel: `vercel`
+Notes:
+- API requests are routed through `api/index.js`.
+- Static files are served from `public/`.
 
-## API Endpoints
-
-### Authentication
-- `POST /api/register` - User registration
-- `POST /api/login` - User login
-- `GET /api/user` - Get current user
-
-### Tracks
-- `POST /api/tracks/create` - Create new track
-- `GET /api/tracks/latest` - Get latest tracks
-- `GET /api/tracks/catalog` - Get track catalog with search/filter
-- `GET /api/tracks/:id` - Get specific track
-
-### Reviews
-- `POST /api/reviews/add` - Add review to track
-- `GET /api/reviews/by-track/:id` - Get reviews for track
-- `GET /api/reviews/latest` - Get latest reviews
-- `POST /api/mi-review` - Generate AI review
-
-## Development
-
-Run locally with: `npm run dev`
-
-## License
-
-MIT
+## Scripts
+- `npm run dev` - run local server
+- `npm start` - production server start
+- `npm run setup-db` - setup database
+- `npm run migrate` - run migrations
+- `npm run promote-admin` - grant admin role
+- `npm run set-mi-reviewers` - set MI reviewers
