@@ -214,6 +214,77 @@ color: white;
   justify-content: center;
 }
 
+.home-page .container {
+  min-height: calc(100vh - 65px);
+  height: auto;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 180px),
+    #1e1e1e;
+}
+
+.home-page .main-content {
+  width: 1122px;
+  max-width: 100%;
+  padding: 18px 20px 42px;
+  box-sizing: border-box;
+}
+
+.home-page .text-h1 {
+  font-size: 2.35rem;
+  margin-bottom: 12px;
+  color: #f1f1f1;
+}
+
+.home-page .text-p {
+  margin: 0 auto;
+  max-width: 780px;
+  color: #b7b7b7;
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+.home-page .song-class {
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+.home-page .singl-class,
+.home-page .album-class {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.home-page .last-added-tracks-main,
+.home-page .reviews-wrapper {
+  background: linear-gradient(180deg, #2b2b2b, #252525);
+  border: 1px solid #3a3a3a;
+  border-radius: 14px;
+}
+
+.home-page .last-added-tracks-main {
+  margin-top: 18px;
+}
+
+.home-page .reviews-wrapper {
+  width: 1082px;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.home-page .monthly-releases {
+  width: 1082px;
+}
+
+@media (max-width: 1120px) {
+  .home-page .last-added-tracks-main,
+  .home-page .reviews-wrapper,
+  .home-page .monthly-releases {
+    width: 100%;
+  }
+}
+
 .main-content {
   margin-top: 1.25rem;
   color: white;
@@ -839,57 +910,104 @@ text-decoration: none;
 }
 
 /* Releases page styles */
+.releases-page .container {
+  min-height: calc(100vh - 65px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 160px),
+    #1e1e1e;
+}
+
+.releases-page .main-content {
+  width: 1122px;
+  padding: 18px 20px 28px;
+  box-sizing: border-box;
+}
+
+.releases-headline {
+  font-size: 1.9rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 14px;
+  color: #ececec;
+}
+
 .search-section {
   margin-bottom: 20px;
 }
 
 .search-section input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #444;
-  border-radius: 6px;
-  background: #2a2a2a;
-  color: #fff;
+  padding: 12px 14px;
+  border: 1px solid #3d3d3d;
+  border-radius: 12px;
+  background: #242424;
+  color: #f0f0f0;
   font-size: 1rem;
   box-sizing: border-box;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.search-section input:focus {
+  outline: none;
+  border-color: #6b86ff;
+  background: #2a2a2a;
 }
 
 .sort-section {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   flex-wrap: wrap;
 }
 
 .sort-btn {
-  padding: 8px 12px;
+  padding: 9px 13px;
   background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 6px;
-  color: #ccc;
+  border: 1px solid #414141;
+  border-radius: 999px;
+  color: #d0d0d0;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .sort-btn:hover {
-  background: #3a3a3a;
+  background: #373737;
+  color: #f0f0f0;
+}
+
+.sort-btn.is-active {
+  border-color: #5f78f6;
+  background: #30395f;
+  color: #ecf0ff;
 }
 
 .releases-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 16px;
-  align-items: stretch;
+  grid-template-columns: repeat(auto-fill, 171px);
+  gap: 18px;
+  justify-content: start;
+  align-items: start;
 }
 
-.releases-grid .track-card-link {
-  display: flex;
-  width: 100%;
+.releases-page .releases-grid .track-card {
+  border: 1px solid #2f2f2f;
+  background: linear-gradient(180deg, #181818, #121212);
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.releases-grid .track-card {
-  width: 100%;
-  min-height: 255px;
+.releases-page .releases-grid .track-card:hover {
+  transform: translateY(-4px);
+  border-color: #4f4f4f;
+}
+
+.releases-empty {
+  grid-column: 1 / -1;
+  padding: 28px;
+  border-radius: 10px;
+  text-align: center;
+  color: #b5b5b5;
+  background: #232323;
+  border: 1px solid #3a3a3a;
 }
 
 /* Tier badges for releases */
@@ -1186,26 +1304,40 @@ text-decoration: none;
 }
 
 /* Auth form styles */
+.auth-page {
+  background: #1e1e1e;
+}
+
 .auth-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100vh - 65px);
-  padding: 20px;
+  min-height: calc(100vh - 65px);
+  padding: 28px 20px;
 }
 
 .auth-form {
   max-width: 400px;
   width: 100%;
-  background: #1b1b1b;
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  background: linear-gradient(180deg, #232323, #181818);
+  border: 1px solid #353535;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: none;
 }
 
 .auth-form h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+  font-size: 1.7rem;
+}
+
+.auth-subtitle {
+  margin: 0 0 20px;
+  text-align: center;
+  color: #b7b7b7;
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .form-group {
@@ -1214,25 +1346,30 @@ text-decoration: none;
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 7px;
   font-weight: 600;
+  color: #d6d6d6;
 }
 
 .form-group input {
   width: 100%;
-  padding: 10px;
+  padding: 12px 13px;
   border: 1px solid #444;
-  border-radius: 6px;
-  background: #2a2a2a;
+  border-radius: 10px;
+  background: #222;
   color: #fff;
   font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #666;
+  border-color: #7e94ff;
+  box-shadow: none;
+  background: #242424;
 }
 
 .form-group textarea {
@@ -1375,17 +1512,20 @@ text-decoration: none;
 .auth-form button {
   width: 100%;
   padding: 12px;
-  background: #282828;
-  border: none;
-  border-radius: 6px;
-  color: #ccc;
+  background: linear-gradient(135deg, #5572f0, #4b62d0);
+  border: 1px solid #5f78f6;
+  border-radius: 10px;
+  color: #f3f6ff;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
 }
 
 .auth-form button:hover {
-  background: #3a3a3a;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: none;
 }
 
 .auth-form p {
@@ -1394,12 +1534,22 @@ text-decoration: none;
 }
 
 .auth-form a {
-  color: #ccc;
+  color: #9bb0ff;
   text-decoration: none;
 }
 
 .auth-form a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  .auth-container {
+    padding: 16px;
+  }
+
+  .auth-form {
+    padding: 22px 18px;
+  }
 }
 
 /* Expand animation */

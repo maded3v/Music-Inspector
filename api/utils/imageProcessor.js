@@ -111,8 +111,7 @@ async function saveImage(imageBuffer, filePath) {
  */
 function generateUniqueFilename(originalName) {
   const { randomUUID } = require('crypto');
-  const ext = path.extname(originalName) || '.webp';
-  return `${randomUUID()}${ext}`;
+  return `${randomUUID()}.webp`;
 }
 
 /**

@@ -92,10 +92,9 @@ export function renderReleaseCard(release, variant = 'default') {
   // Base card classes
   const cardClass = variant === 'monthly' ? 'release-card' : 'track-card';
   
-  // Build artist section
-  const artistSection = artistId 
-    ? `<a href="artist.html?id=${artistId}" class="${variant === 'monthly' ? 'release-artist-link' : 'track-artist-link'}"><div class="${variant === 'monthly' ? 'release-artist album-artist' : 'track-artist'}">${artistName}</div></a>`
-    : `<div class="${variant === 'monthly' ? 'release-artist album-artist' : 'track-artist'}">${artistName}</div>`;
+  // Avoid nested links inside the card link (invalid HTML causes layout glitches)
+  const artistClass = variant === 'monthly' ? 'release-artist album-artist' : 'track-artist';
+  const artistSection = `<div class="${artistClass}" data-artist-id="${artistId || ''}">${artistName}</div>`;
   
   // Build score section for monthly
   const scoreSection = variant === 'monthly' && averageRating !== null 
