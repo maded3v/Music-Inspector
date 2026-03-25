@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server.js",
     "dev:static": "npx serve public -l 3000",
-    "build": "vercel build",
+    "build": "node -e \"console.log('Build step not required')\"",
     "start": "node server.js",
     "setup-db": "node scripts/setup-database.js",
     "migrate": "node scripts/run-migrations.js",

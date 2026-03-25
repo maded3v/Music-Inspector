@@ -336,6 +336,13 @@ text-decoration: none;
 
 }
 
+.but-prev-last-added-tracks.is-disabled,
+.but-next-last-added-tracks.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 
 
 
@@ -869,11 +876,20 @@ text-decoration: none;
 }
 
 .releases-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 16px;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: stretch;
+}
+
+.releases-grid .track-card-link {
+  display: flex;
+  width: 100%;
+}
+
+.releases-grid .track-card {
+  width: 100%;
+  min-height: 255px;
 }
 
 /* Tier badges for releases */
@@ -1935,4 +1951,3 @@ text-decoration: none;
     justify-content: center;
   }
 }
-

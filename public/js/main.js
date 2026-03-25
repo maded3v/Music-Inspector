@@ -98,38 +98,47 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wrapper = document.querySelector(".last-added-tracks-wrapper");
 
   if (trackWrapper && prevBtn && nextBtn && wrapper) {
-    const cardWidth = 161 + 16; // width + gap
-    let currentIndex = 0;
+    let currentOffset = 0;
 
-    // Remove existing event listeners by cloning buttons
-    const newNextBtn = nextBtn.cloneNode(true);
-    const newPrevBtn = prevBtn.cloneNode(true);
-    nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
-    prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
-
-    // Add event listeners once
-    newNextBtn.addEventListener("click", () => {
-      const visibleCards = Math.floor(wrapper.offsetWidth / cardWidth);
-      const totalCards = Array.from(trackWrapper.children).length;
-      
-      if (currentIndex < totalCards - visibleCards) {
-        currentIndex++;
-        trackWrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+    const getStep = () => {
+      const firstCard = trackWrapper.querySelector('.track-card-link, .track-card');
+      if (!firstCard) {
+        return 0;
       }
+
+      const cardWidth = firstCard.getBoundingClientRect().width;
+      const gap = parseFloat(getComputedStyle(trackWrapper).gap) || 16;
+      return cardWidth + gap;
+    };
+
+    const getMaxOffset = () => Math.max(0, trackWrapper.scrollWidth - wrapper.clientWidth);
+
+    const updateCarousel = () => {
+      const maxOffset = getMaxOffset();
+      currentOffset = Math.min(Math.max(0, currentOffset), maxOffset);
+      trackWrapper.style.transform = `translateX(-${currentOffset}px)`;
+
+      const atStart = currentOffset <= 0;
+      const atEnd = currentOffset >= maxOffset - 1;
+
+      prevBtn.classList.toggle('is-disabled', atStart);
+      nextBtn.classList.toggle('is-disabled', atEnd);
+      prevBtn.disabled = atStart;
+      nextBtn.disabled = atEnd;
+    };
+
+    nextBtn.addEventListener('click', () => {
+      currentOffset += getStep();
+      updateCarousel();
     });
 
-    newPrevBtn.addEventListener("click", () => {
-      if (currentIndex > 0) {
-        currentIndex--;
-        trackWrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-      }
+    prevBtn.addEventListener('click', () => {
+      currentOffset -= getStep();
+      updateCarousel();
     });
 
-    // Update buttons on window resize to handle mobile/desktop changes
-    window.addEventListener('resize', () => {
-      currentIndex = 0; // Reset to start
-      trackWrapper.style.transform = `translateX(0px)`;
-    });
+    window.addEventListener('resize', updateCarousel);
+    updateCarousel();
   }
 
   // Badges are now rendered by the unified component, no need for manual badge creation
