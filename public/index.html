@@ -23,8 +23,17 @@
       </div>
       <input type="text" class="search-input" placeholder="Поиск...">
       </div>
-    <a href="login.html" class="sing-in-but">Войти</a>
-    <a href="register.html" class="sing-up-but">Регистрация</a>
+    <!-- Auth buttons (shown when not logged in) -->
+    <a href="login.html" class="sing-in-but auth-buttons">Войти</a>
+    <a href="register.html" class="sing-up-but auth-buttons">Регистрация</a>
+    
+    <!-- Profile button (shown when logged in) -->
+    <div class="profile-section" style="display: none;">
+      <span class="profile-nickname" id="profile-nickname"></span>
+      <a href="profile.html" class="profile-avatar-link">
+        <div class="profile-avatar" id="profile-avatar"></div>
+      </a>
+    </div>
       
   </div>
 
@@ -50,130 +59,32 @@
     <div class="last-added-tracks-wrapper">
     <div class="last-added-tracks-main">
       <div class="nav-last-added-text">
-        <div class="nav-last-added-text-text">Последние добавленные треки</div>
+        <div class="nav-last-added-text-text">Последние добавленные релизы</div>
           <div class="nav-controls">
             <a href="releases.html" class="but-last-added-all">Открыть все</a>
+            <a href="submit-release.html" id="add-release-btn" class="add-release-btn" style="display: none;">+ Добавить релиз</a>
             <div class="but-prev-last-added-tracks">&lt;</div>
           <div class="but-next-last-added-tracks">&gt;</div>
           </div>
       </div>
 
       <div class="last-added-tracks">
-        
-        <div class="track-card" data-type="single">
-          <div class="track-cover-wrapper">
-            <img src="traks/madkid_drki.jpg" alt="Обложка" class="track-cover">
-          </div>
-          <div class="track-info" >
-            <div class="track-title">дырки в штанах</div>
-            <div class="track-artist">madk1d</div>
-          </div>
-          <div class="rewiews-badges">
-            <div class="rewiews-badge-people">65</div>
-            <div class="rewiews-badge-MI">70</div>
-          </div>
-        </div>
-
-        <div class="track-card" data-type="album">
-          <div class="track-cover-wrapper">
-          <img src="traks/sexyswag2010.jpeg" alt="Обложка" class="track-cover">
-          </div>
-          <div class="track-info">
-            <div class="track-title">sexyswag2010</div>
-            <div class="track-artist">madk1d</div>
-          </div>
-          <div class="rewiews-badges">
-            <div class="rewiews-badge-people">80</div>
-            <div class="rewiews-badge-MI">90</div>
-          </div>
-        </div>
-
-        <div class="track-card" data-type="single" data-id="track-joke-1">
-          <div class="track-cover-wrapper">
-            <div style="width: 150px; height: 150px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; text-align: center; ">404</div>
-          </div>
-          <div class="track-info">
-            <div class="track-title">404 Not Found (Club Remix)</div>
-            <div class="track-artist">DJ MissingFile</div>
-          </div>
-          <div class="rewiews-badges">
-            <div class="rewiews-badge-people">42</div>
-            <div class="rewiews-badge-MI">0</div>
-          </div>
-        </div>
-
-        <div class="track-card" data-type="single" data-id="track-joke-2">
-          <div class="track-cover-wrapper">
-            <div style="width: 150px; height: 150px; background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; text-align: center;">😴</div>
-          </div>
-          <div class="track-info">
-            <div class="track-title">Да поставлю потом</div>
-            <div class="track-artist">Ленивый Саунд</div>
-          </div>
-          <div class="rewiews-badges">
-            <div class="rewiews-badge-people">25</div>
-            <div class="rewiews-badge-MI">30</div>
-          </div>
-        </div>
-
-        <div class="track-card" data-type="single" data-id="track-joke-3">
-          <div class="track-cover-wrapper">
-            <div style="width: 150px; height: 150px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; text-align: center; ">🎤</div>
-          </div>
-          <div class="track-info">
-            <div class="track-title">Проверка Микрофона 1-2-3</div>
-            <div class="track-artist">MC Системный</div>
-          </div>
-          <div class="rewiews-badges">
-            <div class="rewiews-badge-people">10</div>
-            <div class="rewiews-badge-MI">5</div>
-          </div>
-        </div>
-
-        <div class="track-card" data-type="single" data-id="track-joke-4">
-          <div class="track-cover-wrapper">
-            <div style="width: 150px; height: 150px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; text-align: center; ">👻</div>
-          </div>
-          <div class="track-info">
-            <div class="track-title">Этот трек никто не услышит</div>
-            <div class="track-artist">Анонимный </div>
-          </div>
-          <div class="rewiews-badges">
-            <div class="rewiews-badge-people">1</div>
-            <div class="rewiews-badge-MI">0</div>
-          </div>
-        </div>
+        <!-- Tracks will be loaded dynamically -->
       </div> 
     </div>
     </div>
    
-<div class="reviews-wrapper">
+    <div class="reviews-wrapper">
   <div class="reviews-header">
-    <div class="reviews-title">Рецензии</div>
-    <button class="reviews-open-all">Открыть все</button>
+    <div class="reviews-title">Последние добавленные рецензии</div>
   </div>
   <div class="reviews-grid">    <!-- Reviews will be loaded dynamically -->  </div>
 </div>
 
-<div class="monthly-releases-container">
-  <!-- Monthly releases will be loaded dynamically -->
-</div>
-
   </div>
 </div>
-
-
-
-
-    
-
-
-  </div>
-</div>
-
   
 <script type="module" src="js/main.js"></script>
-
 
 </body>
 </html>

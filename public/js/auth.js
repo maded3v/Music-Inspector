@@ -27,54 +27,53 @@ export function validateRegister(email, password, confirmPassword) {
 
 // Function to update button text based on input length
 export function updateButtonText(form, button) {
-  const email = form.querySelector('input[name="email"]').value;
-  const password = form.querySelector('input[name="password"]').value;
-  const confirmPassword = form.querySelector('input[name="confirm-password"]')?.value;
-  const username = form.querySelector('input[name="username"]')?.value;
-
-  let progress = 0;
-  let total = 90;
-
-  if (email) progress += 30;
-  if (password) progress += 30;
-  if (confirmPassword && password === confirmPassword) progress += 15;
-  if (username) progress += 15;
-
+  // Always enable button - no validation blocking
+  button.disabled = false;
+  button.classList.add('filled');
+  
   const baseText = button.dataset.baseText || 'Войти';
-  button.textContent = `${baseText} (${progress}/${total})`;
-
-  // Dynamic fill animation
-  const fillPercentage = (progress / total) * 100;
-  button.style.setProperty('--fill-width', `${fillPercentage}%`);
-
-  if (progress === total) {
-    button.disabled = false;
-    button.classList.add('filled');
-  } else {
-    button.disabled = true;
-    button.classList.remove('filled');
-  }
+  button.textContent = baseText;
 }
 
 // Function to handle login submission
 export async function handleLogin(formData) {
   const email = formData.get('email');
   const password = formData.get('password');
-  const errors = validateLogin(email, password);
-  if (errors.length > 0) {
-    alert(errors.join('\n'));
-    return;
+  
+  // Show loading state
+  const submitButton = document.querySelector('#login-form button[type="submit"]');
+  const originalText = submitButton ? submitButton.textContent : '';
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Вход...';
   }
+  
   try {
     const result = await import('./api.js').then(m => m.login({ email, password }));
     if (result.success) {
-      alert('Вход выполнен успешно!');
-      window.location.href = 'index.html';
+      // Show success message briefly
+      if (submitButton) {
+        submitButton.textContent = '✓ Успешно!';
+        submitButton.style.backgroundColor = '#4caf50';
+      }
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 500);
     } else {
-      alert('Ошибка входа.');
+      throw new Error('Ошибка входа');
     }
   } catch (error) {
-    alert('Ошибка сети.');
+    console.error('Login error:', error);
+    alert(error.message || 'Ошибка входа. Проверьте email и пароль.');
+    
+    // Reset button state
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText || 'Войти';
+      submitButton.style.backgroundColor = '';
+    }
   }
 }
 
@@ -82,21 +81,41 @@ export async function handleLogin(formData) {
 export async function handleRegister(formData) {
   const email = formData.get('email');
   const password = formData.get('password');
-  const confirmPassword = formData.get('confirmPassword');
-  const errors = validateRegister(email, password, confirmPassword);
-  if (errors.length > 0) {
-    alert(errors.join('\n'));
-    return;
+  const name = formData.get('name') || email.split('@')[0]; // Use email prefix as name if not provided
+  
+  // Show loading state
+  const submitButton = document.querySelector('#register-form button[type="submit"]');
+  const originalText = submitButton ? submitButton.textContent : '';
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Регистрация...';
   }
+  
   try {
-    const result = await import('./api.js').then(m => m.register({ email, password }));
+    const result = await import('./api.js').then(m => m.register({ name, email, password }));
     if (result.success) {
-      alert('Регистрация выполнена успешно!');
-      window.location.href = 'login.html';
+      // Show success message briefly
+      if (submitButton) {
+        submitButton.textContent = '✓ Успешно!';
+        submitButton.style.backgroundColor = '#4caf50';
+      }
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 500);
     } else {
-      alert('Ошибка регистрации.');
+      throw new Error('Ошибка регистрации');
     }
   } catch (error) {
-    alert('Ошибка сети.');
+    console.error('Registration error:', error);
+    alert(error.message || 'Ошибка регистрации. Попробуйте другой email.');
+    
+    // Reset button state
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText || 'Зарегистрироваться';
+      submitButton.style.backgroundColor = '';
+    }
   }
 }

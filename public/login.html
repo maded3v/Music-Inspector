@@ -23,8 +23,17 @@
       </div>
       <input type="text" class="search-input" placeholder="Поиск...">
       </div>
-    <a href="login.html" class="sing-in-but">Войти</a>
-    <a href="register.html" class="sing-up-but">Регистрация</a>
+    <!-- Auth buttons (shown when not logged in) -->
+    <a href="login.html" class="sing-in-but auth-buttons">Войти</a>
+    <a href="register.html" class="sing-up-but auth-buttons">Регистрация</a>
+    
+    <!-- Profile button (shown when logged in) -->
+    <div class="profile-section" style="display: none;">
+      <span class="profile-nickname" id="profile-nickname"></span>
+      <a href="profile.html" class="profile-avatar-link">
+        <div class="profile-avatar" id="profile-avatar"></div>
+      </a>
+    </div>
       
   </div>
 
@@ -35,13 +44,13 @@
     <form id="login-form">
       <div class="form-group">
         <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
+        <input type="email" id="email" name="email">
       </div>
       <div class="form-group">
         <label for="password">Пароль:</label>
-        <input type="password" id="password" name="password" required>
+        <input type="password" id="password" name="password">
       </div>
-      <button type="submit">Войти (0/90)</button>
+      <button type="submit">Войти</button>
     </form>
     <p>Нет аккаунта? <a href="register.html">Зарегистрироваться</a></p>
   </div>
@@ -49,13 +58,18 @@
 
   
 <script type="module">
-import { handleLogin, updateButtonText } from './js/auth.js';
+import { handleLogin, initAuth } from './js/auth-refactored.js';
+
+// Initialize auth status
+const currentUser = await initAuth();
+
+// If already logged in, redirect to homepage
+if (currentUser) {
+  window.location.href = 'index.html';
+}
 
 const form = document.getElementById('login-form');
-const button = form.querySelector('button');
-button.dataset.baseText = 'Войти';
 
-form.addEventListener('input', () => updateButtonText(form, button));
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);

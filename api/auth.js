@@ -8,33 +8,117 @@ exports.register = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        details: { 
+          name: !name ? 'Name is required' : null,
+          email: !email ? 'Email is required' : null,
+          password: !password ? 'Password is required' : null
+        }
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
     // Check if user exists
     const existingUser = await query('SELECT * FROM users WHERE email = $1', [email]);
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ error: 'User with this email already exists' });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const result = await query(
-      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
-      [name, email, hashedPassword]
-    );
+    // Create user with default role 'user' and is_mi_reviewer = false
+    // Handle case where role column might not exist (fallback for older schemas)
+    let result;
+    try {
+      result = await query(
+        'INSERT INTO users (name, email, password, role, is_mi_reviewer) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, is_mi_reviewer',
+        [name, email, hashedPassword, 'user', false]
+      );
+    } catch (dbError) {
+      // If role column doesn't exist, try without it (for older schema)
+      if (dbError.message && dbError.message.includes('column "role"')) {
+        console.warn('Role column not found, using fallback INSERT');
+        result = await query(
+          'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
+          [name, email, hashedPassword]
+        );
+        // Add default role and is_mi_reviewer to result
+        result.rows[0].role = 'user';
+        result.rows[0].is_mi_reviewer = false;
+      } else {
+        throw dbError;
+      }
+    }
 
     const user = result.rows[0];
 
-    // Generate token
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    // Ensure role and is_mi_reviewer exist (fallback for older schemas)
+    const userRole = user.role || 'user';
+    const isMiReviewer = user.is_mi_reviewer !== undefined ? user.is_mi_reviewer : false;
 
-    // Set httpOnly cookie
-    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict`);
+    // Generate token with role and is_mi_reviewer
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email, 
+        role: userRole,
+        is_mi_reviewer: isMiReviewer
+      }, 
+      JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
 
-    res.json({ success: true, user });
+    // Set httpOnly cookie with proper settings for local development
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Use res.cookie for proper cookie handling
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      path: '/'
+    });
+
+    res.json({ 
+      success: true, 
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: userRole,
+        is_mi_reviewer: isMiReviewer
+      }
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Registration error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Request body:', req.body);
+    
+    // Use standardized error handling
+    const { handleDatabaseError, handleServerError } = require('./utils/errors');
+    
+    // Check if it's a database error
+    if (error.code || error.isConnectionError) {
+      return handleDatabaseError(res, error);
+    }
+    
+    // Generic server error
+    return handleServerError(res, error, 'registration');
   }
 };
 
@@ -43,7 +127,10 @@ exports.login = async (req, res) => {
 
   try {
     // Find user
-    const result = await query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await query(
+      'SELECT id, name, email, password, role, is_mi_reviewer FROM users WHERE email = $1', 
+      [email]
+    );
     if (result.rows.length === 0) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
@@ -56,16 +143,51 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // Generate token
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    // Generate token with role and is_mi_reviewer
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email,
+        role: user.role,
+        is_mi_reviewer: user.is_mi_reviewer
+      }, 
+      JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
 
-    // Set httpOnly cookie
-    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict`);
+    // Set httpOnly cookie with proper settings for local development
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Use res.cookie for proper cookie handling
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax', // Lax is needed for better cross-page navigation compatibility
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      path: '/'
+    });
 
-    res.json({ success: true, user: { id: user.id, name: user.name, email: user.email } });
+    res.json({ 
+      success: true, 
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email,
+        role: user.role,
+        is_mi_reviewer: user.is_mi_reviewer
+      } 
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Login error:', error);
+    const { handleDatabaseError, handleServerError } = require('./utils/errors');
+    
+    // Check if it's a database error
+    if (error.code || error.isConnectionError) {
+      return handleDatabaseError(res, error);
+    }
+    
+    // Generic server error
+    return handleServerError(res, error, 'login');
   }
 };
 
@@ -87,7 +209,40 @@ exports.authenticate = (req, res, next) => {
 
 exports.getUser = [
   exports.authenticate,
-  (req, res) => {
-    res.json({ user: req.user });
+  async (req, res) => {
+    try {
+      // Fetch full user data including role
+      const result = await query(
+        'SELECT id, name, email, role, is_mi_reviewer, avatar FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({ user: result.rows[0] });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Server error' });
+    }
   }
 ];
+
+/**
+ * Logout user - clears the authentication cookie
+ */
+exports.logout = async (req, res) => {
+  try {
+    // Clear the httpOnly cookie properly
+    res.clearCookie('token', {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/'
+    });
+    res.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Server error during logout' });
+  }
+};

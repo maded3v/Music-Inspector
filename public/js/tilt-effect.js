@@ -2,7 +2,7 @@
 // Replaces Balatro effect with smooth parallax tilt
 
 export function initTiltEffect() {
-  const cards = document.querySelectorAll('.release-card:not(.release-card-placeholder)');
+  const cards = document.querySelectorAll('.release-card');
   
   cards.forEach(card => {
     let currentX = 0;

@@ -1,32 +1,111 @@
 const { query } = require('./db');
-const { authenticate } = require('./auth');
+const { requireAuth } = require('./middleware');
+const { columnExists } = require('./utils/dbHelpers');
 
+/**
+ * Add review to a track
+ * Automatically sets is_mi_review flag if user is MI reviewer
+ */
 exports.addReview = [
-  authenticate,
+  requireAuth,
   async (req, res) => {
     const { trackId, text, score1, score2, score3, score4, score5 } = req.body;
     const userId = req.user.id;
+    const isMIReviewer = req.user.is_mi_reviewer || false;
+    const isAdmin = req.user.role === 'admin';
+
+    // Validate required fields
+    if (!trackId) {
+      return res.status(400).json({ error: 'Track ID is required' });
+    }
+    
+    // Parse and validate trackId
+    const parsedTrackId = parseInt(trackId);
+    if (isNaN(parsedTrackId) || parsedTrackId <= 0) {
+      return res.status(400).json({ error: 'Invalid track ID' });
+    }
+    
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Review text is required' });
+    }
+    
+    // Validate text length
+    const sanitizedText = text.trim();
+    if (sanitizedText.length < 10) {
+      return res.status(400).json({ error: 'Review text must be at least 10 characters' });
+    }
+    if (sanitizedText.length > 5000) {
+      return res.status(400).json({ error: 'Review text must not exceed 5000 characters' });
+    }
+    
+    // Parse and validate scores
+    const scores = [score1, score2, score3, score4, score5].map(s => parseInt(s));
+    if (scores.some(s => isNaN(s))) {
+      return res.status(400).json({ error: 'All scores must be valid numbers' });
+    }
+    if (scores.some(s => s < 1 || s > 10)) {
+      return res.status(400).json({ error: 'Scores must be between 1 and 10' });
+    }
 
     try {
-      // Check if track exists
-      const trackCheck = await query('SELECT id FROM tracks WHERE id = $1', [trackId]);
+      // Check if track exists and is approved
+      const trackCheck = await query('SELECT id, status FROM tracks WHERE id = $1', [parsedTrackId]);
       if (trackCheck.rows.length === 0) {
         return res.status(404).json({ error: 'Track not found' });
       }
 
-      // Calculate average score
-      const avgScore = (score1 + score2 + score3 + score4 + score5) / 5;
+      if (trackCheck.rows[0].status !== 'approved') {
+        return res.status(400).json({ error: 'Can only review approved tracks' });
+      }
 
-      // Add review
-      const result = await query(
-        'INSERT INTO reviews (track_id, user_id, text, score1, score2, score3, score4, score5, avg_score) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-        [trackId, userId, text, score1, score2, score3, score4, score5, avgScore]
-      );
+      // Calculate average score (use parsed scores)
+      const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
 
-      res.json({ success: true, review: result.rows[0] });
+      // Check if status column exists
+      const statusColumnExists = await columnExists('reviews', 'status');
+      
+      // Determine review status: admins auto-approve, others go to moderation
+      const reviewStatus = isAdmin ? 'approved' : 'pending';
+      const approvedAt = isAdmin ? new Date() : null;
+      const approvedBy = isAdmin ? userId : null;
+
+      // Add review with MI flag and moderation status (if column exists)
+      let result;
+      if (statusColumnExists) {
+        result = await query(
+          `INSERT INTO reviews (track_id, user_id, text, score1, score2, score3, score4, score5, avg_score, is_mi_review, status, approved_at, approved_by) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+          [parsedTrackId, userId, sanitizedText, scores[0], scores[1], scores[2], scores[3], scores[4], avgScore, isMIReviewer, reviewStatus, approvedAt, approvedBy]
+        );
+      } else {
+        // Fallback: insert without status columns
+        result = await query(
+          `INSERT INTO reviews (track_id, user_id, text, score1, score2, score3, score4, score5, avg_score, is_mi_review) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+          [parsedTrackId, userId, sanitizedText, scores[0], scores[1], scores[2], scores[3], scores[4], avgScore, isMIReviewer]
+        );
+      }
+
+      res.json({ 
+        success: true, 
+        review: result.rows[0],
+        message: isAdmin ? 'Review published successfully' : 'Review submitted for moderation'
+      });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Server error' });
+      const { handleDatabaseError, handleServerError, handleClientError } = require('./utils/errors');
+      
+      // Check if it's a database error
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+      
+      // Validation errors
+      if (error.message && error.message.includes('required')) {
+        return handleClientError(res, error.message, 400);
+      }
+      
+      // Generic server error
+      return handleServerError(res, error, 'addReview');
     }
   }
 ];
@@ -35,33 +114,106 @@ exports.getReviewsByTrack = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await query(
-      'SELECT r.*, u.name as author_name FROM reviews r LEFT JOIN users u ON r.user_id = u.id WHERE r.track_id = $1 ORDER BY r.created_at DESC',
-      [id]
+    // Validate track ID
+    const trackId = parseInt(id);
+    if (!id || isNaN(trackId) || trackId <= 0) {
+      return res.status(400).json({ error: 'Invalid track ID' });
+    }
+
+    // First check if track exists and is approved
+    const trackCheck = await query(
+      'SELECT id, status FROM tracks WHERE id = $1',
+      [trackId]
     );
 
-    res.json({ reviews: result.rows });
+    if (trackCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Track not found' });
+    }
+
+    if (trackCheck.rows[0].status !== 'approved') {
+      // Track exists but not approved - return empty reviews
+      return res.json({ reviews: [] });
+    }
+
+    // Get reviews for approved track
+    // Handle missing status column gracefully
+    const statusColumnExists = await columnExists('reviews', 'status');
+    
+    let queryText, params;
+    if (statusColumnExists) {
+      queryText = `SELECT r.*, u.name as author_name, u.avatar as author_avatar
+                   FROM reviews r 
+                   LEFT JOIN users u ON r.user_id = u.id 
+                   WHERE r.track_id = $1 
+                     AND (r.status = 'approved' OR r.status IS NULL)
+                   ORDER BY r.created_at DESC`;
+      params = [trackId];
+    } else {
+      queryText = `SELECT r.*, u.name as author_name, u.avatar as author_avatar
+                   FROM reviews r 
+                   LEFT JOIN users u ON r.user_id = u.id 
+                   WHERE r.track_id = $1 
+                   ORDER BY r.created_at DESC`;
+      params = [trackId];
+    }
+    
+    const result = await query(queryText, params);
+
+    // Always return reviews array, even if empty
+    res.json({ reviews: result.rows || [] });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    const { handleDatabaseError, handleServerError } = require('./utils/errors');
+    
+    // Check if it's a database error
+    if (error.code || error.isConnectionError) {
+      return handleDatabaseError(res, error);
+    }
+    
+    return handleServerError(res, error, 'getReviewsByTrack');
   }
 };
 
 exports.getLatestReviews = async (req, res) => {
   try {
-    const result = await query(
-      'SELECT r.*, t.title as track_title, t.artist as track_artist, u.name as author_name FROM reviews r JOIN tracks t ON r.track_id = t.id LEFT JOIN users u ON r.user_id = u.id ORDER BY r.created_at DESC LIMIT 10'
-    );
+    // Only show reviews for approved tracks
+    // Handle missing status column gracefully
+    const statusColumnExists = await columnExists('reviews', 'status');
+    
+    let queryText;
+    if (statusColumnExists) {
+      queryText = `SELECT r.*, t.title as track_title, t.artist as track_artist, t.cover as track_cover, u.name as author_name, u.avatar as author_avatar 
+                   FROM reviews r 
+                   JOIN tracks t ON r.track_id = t.id 
+                   LEFT JOIN users u ON r.user_id = u.id 
+                   WHERE t.status = 'approved' AND (r.status = 'approved' OR r.status IS NULL)
+                   ORDER BY r.created_at DESC 
+                   LIMIT 10`;
+    } else {
+      queryText = `SELECT r.*, t.title as track_title, t.artist as track_artist, t.cover as track_cover, u.name as author_name, u.avatar as author_avatar 
+                   FROM reviews r 
+                   JOIN tracks t ON r.track_id = t.id 
+                   LEFT JOIN users u ON r.user_id = u.id 
+                   WHERE t.status = 'approved'
+                   ORDER BY r.created_at DESC 
+                   LIMIT 10`;
+    }
 
-    res.json({ reviews: result.rows });
+    const result = await query(queryText);
+    res.json({ reviews: result.rows || [] });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    const { handleDatabaseError, handleServerError } = require('./utils/errors');
+    
+    // Check if it's a database error
+    if (error.code || error.isConnectionError) {
+      return handleDatabaseError(res, error);
+    }
+    
+    return handleServerError(res, error, 'getLatestReviews');
   }
 };
 
 exports.generateMIReview = [
-  authenticate,
+  requireAuth,
   async (req, res) => {
     const { trackId } = req.body;
 
@@ -86,11 +238,23 @@ exports.generateMIReview = [
 
       const avgScore = (aiReview.score1 + aiReview.score2 + aiReview.score3 + aiReview.score4 + aiReview.score5) / 5;
 
-      // Add AI review
-      const result = await query(
-        'INSERT INTO reviews (track_id, user_id, text, score1, score2, score3, score4, score5, avg_score, is_ai) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-        [trackId, null, aiReview.text, aiReview.score1, aiReview.score2, aiReview.score3, aiReview.score4, aiReview.score5, avgScore, true]
-      );
+      // Check if status column exists
+      const statusColumnExists = await columnExists('reviews', 'status');
+      
+      // Add AI review with MI flag (since it's generated by system)
+      // Auto-approve AI reviews
+      let result;
+      if (statusColumnExists) {
+        result = await query(
+          'INSERT INTO reviews (track_id, user_id, text, score1, score2, score3, score4, score5, avg_score, is_ai, is_mi_review, status, approved_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
+          [trackId, null, aiReview.text, aiReview.score1, aiReview.score2, aiReview.score3, aiReview.score4, aiReview.score5, avgScore, true, true, 'approved', new Date()]
+        );
+      } else {
+        result = await query(
+          'INSERT INTO reviews (track_id, user_id, text, score1, score2, score3, score4, score5, avg_score, is_ai, is_mi_review) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+          [trackId, null, aiReview.text, aiReview.score1, aiReview.score2, aiReview.score3, aiReview.score4, aiReview.score5, avgScore, true, true]
+        );
+      }
 
       res.json({ success: true, review: result.rows[0] });
     } catch (error) {

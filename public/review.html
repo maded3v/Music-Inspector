@@ -23,8 +23,17 @@
       </div>
       <input type="text" class="search-input" placeholder="Поиск...">
       </div>
-    <a href="login.html"><div class="sing-in-but">Войти</div></a>
-    <a href="register.html"><div class="sing-up-but">Регистрация</div></a>
+    <!-- Auth buttons (shown when not logged in) -->
+    <a href="login.html" class="sing-in-but auth-buttons">Войти</a>
+    <a href="register.html" class="sing-up-but auth-buttons">Регистрация</a>
+    
+    <!-- Profile button (shown when logged in) -->
+    <div class="profile-section" style="display: none;">
+      <span class="profile-nickname" id="profile-nickname"></span>
+      <a href="profile.html" class="profile-avatar-link">
+        <div class="profile-avatar" id="profile-avatar"></div>
+      </a>
+    </div>
       
   </div>
 
@@ -40,6 +49,10 @@
   
 <script type="module">
 import { getReview } from './js/api.js';
+import { initAuthStatus } from './js/auth-status.js';
+
+// Initialize auth status
+initAuthStatus();
 
 // Get review ID from URL
 const urlParams = new URLSearchParams(window.location.search);

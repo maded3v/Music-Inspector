@@ -12,36 +12,81 @@ function trimText(text, maxLength = 300) {
   return trimmed + '...';
 }
 
+// Function to get avatar URL
+function getAvatarUrl(avatar) {
+  if (!avatar) return 'svg/person.png';
+  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
+    return avatar;
+  }
+  if (avatar.startsWith('uploads/')) {
+    return avatar;
+  }
+  return `uploads/avatars/${avatar}`;
+}
+
 // Function to render a single review card
 export function renderReviewCard(review) {
-  const trimmedText = trimText(review.text);
+  // Map API fields to expected format
+  const reviewText = review.text || '';
+  const trimmedText = trimText(reviewText);
   const isExpanded = false; // Initially not expanded
-  const subscoresStr = review.subscores.join(' ');
+  
+  // Get subscores from API (score1-score5) or fallback to array
+  const subscores = review.subscores || [
+    review.score1 || 0,
+    review.score2 || 0,
+    review.score3 || 0,
+    review.score4 || 0,
+    review.score5 || 0
+  ].filter(s => s > 0);
+  const subscoresStr = subscores.length > 0 ? subscores.join(' ') : '';
+  
+  // Get score (avg_score from API or calculated)
+  const score = review.avg_score || review.score || (subscores.length > 0 
+    ? Math.round((subscores.reduce((a, b) => a + b, 0) / subscores.length) * 10) / 10 
+    : 0);
+  
+  // Get author name
+  const author = review.author_name || review.author || 'Анонимный пользователь';
+  
+  // Get author avatar
+  const authorAvatar = getAvatarUrl(review.author_avatar);
+  
+  // Get cover image from track
+  const cover = review.track_cover || review.cover || 'svg/album.png';
+  
+  // Get title (use track title if no review title)
+  const title = review.title || `${review.track_title || 'Рецензия'} - ${review.track_artist || ''}`;
+  
+  // Check if MI review
+  const isMIReview = review.is_mi_review || review.miBadge || false;
+  
+  // Get track ID for clickable cover
+  const trackId = review.track_id || null;
 
   return `
-    <div class="review-card" data-id="${review.id}" data-full-text="${review.text}">
+    <div class="review-card" data-id="${review.id}" data-track-id="${trackId}" data-full-text="${reviewText}">
       <div class="review-top">
         <div class="review-author">
-          <img src="${review.authorAvatar}" alt="avatar" class="review-avatar">
+          <img src="${authorAvatar}" alt="avatar" class="review-avatar" onerror="this.src='svg/person.png'">
           <div class="review-author-name">
-            ${review.author} ${review.miBadge ? '<span class="mi-badge">MI</span>' : ''}
+            ${author} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}
           </div>
         </div>
         <div class="review-right">
           <div class="review-scores">
-            <div class="review-score">${review.score}</div>
-            <div class="review-subscores">${subscoresStr}</div>
+            <div class="review-score">${Math.round(score * 10) / 10}</div>
+            ${subscoresStr ? `<div class="review-subscores">${subscoresStr}</div>` : ''}
           </div>
-          <img src="${review.cover}" class="review-cover" alt="cover">
+          ${trackId ? `<a href="track.html?id=${trackId}" class="review-cover-link"><img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'"></a>` : `<img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'">`}
         </div>
       </div>
       <div class="review-body">
-        <div class="review-title">${review.title}</div>
+        <div class="review-title">${title}</div>
         <div class="review-text">${trimmedText}</div>
       </div>
       <div class="review-footer">
         <button class="review-btn expand">${isExpanded ? '⤡' : '⤢'}</button>
-        <button class="review-btn open">🗖</button>
       </div>
     </div>
   `;

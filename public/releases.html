@@ -23,8 +23,17 @@
       </div>
       <input type="text" class="search-input" placeholder="Поиск...">
       </div>
-    <a href="login.html"><div class="sing-in-but">Войти</div></a>
-    <a href="register.html"><div class="sing-up-but">Регистрация</div></a>
+    <!-- Auth buttons (shown when not logged in) -->
+    <a href="login.html" class="sing-in-but auth-buttons">Войти</a>
+    <a href="register.html" class="sing-up-but auth-buttons">Регистрация</a>
+    
+    <!-- Profile button (shown when logged in) -->
+    <div class="profile-section" style="display: none;">
+      <span class="profile-nickname" id="profile-nickname"></span>
+      <a href="profile.html" class="profile-avatar-link">
+        <div class="profile-avatar" id="profile-avatar"></div>
+      </a>
+    </div>
       
   </div>
 
@@ -49,6 +58,7 @@
 <script type="module">
 import { getReleases } from './js/api.js';
 import { renderReleaseCardAll } from './js/releases.js';
+import { initAuthStatus } from './js/auth-status.js';
 
 let allReleases = [];
 let currentSort = 'rating';
@@ -94,6 +104,9 @@ function sortReleases(releases, sortBy, order) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize auth status
+  await initAuthStatus();
+  
   allReleases = await getReleases();
   
   // Check for search parameter in URL

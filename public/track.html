@@ -23,73 +23,103 @@
       </div>
       <input type="text" class="search-input" placeholder="Поиск...">
       </div>
-    <a href="login.html" class="sing-in-but">Войти</a>
-    <a href="register.html" class="sing-up-but">Регистрация</a>
+    <!-- Auth buttons (shown when not logged in) -->
+    <a href="login.html" class="sing-in-but auth-buttons">Войти</a>
+    <a href="register.html" class="sing-up-but auth-buttons">Регистрация</a>
+    
+    <!-- Profile button (shown when logged in) -->
+    <div class="profile-section" style="display: none;">
+      <span class="profile-nickname" id="profile-nickname"></span>
+      <a href="profile.html" class="profile-avatar-link">
+        <div class="profile-avatar" id="profile-avatar"></div>
+      </a>
+    </div>
   </div>
 
   <div class="container">
-    <div class="track-page">
-      <div class="track-header">
-        <div class="track-cover-large">
-          <img id="track-cover" src="" alt="Обложка трека">
+    <div class="release-page">
+      <!-- Release Header Block -->
+      <div class="release-header-block">
+        <div class="release-cover-large">
+          <img id="release-cover" src="svg/album.png" alt="Обложка релиза" onerror="this.onerror=null; this.src='svg/album.png';">
         </div>
-        <div class="track-info-large">
-          <h1 id="track-title">Загрузка...</h1>
-          <h2 id="track-artist">Загрузка...</h2>
-          <div class="track-meta">
-            <span id="track-type" class="track-type-badge">Тип</span>
-            <span id="track-creator" class="track-creator">Добавил: </span>
+        <div class="release-header-info">
+          <div class="release-ratings-badge">
+            <div class="rating-badge-item" id="people-rating-badge" style="display: none;">
+              <span class="rating-label">Пользователи</span>
+              <span class="rating-value" id="people-rating-value">0</span>
+            </div>
+            <div class="rating-badge-item" id="mi-rating-badge" style="display: none;">
+              <span class="rating-label">MI</span>
+              <span class="rating-value" id="mi-rating-value">0</span>
+            </div>
           </div>
-          <div class="track-actions">
-            <a id="track-link" href="#" target="_blank" class="listen-button">Слушать</a>
-            <button id="mi-review-btn" class="mi-review-button">MI Рецензия</button>
+          <h1 id="release-title" class="release-title-large">Загрузка...</h1>
+          <div class="release-artist-section">
+            <a id="artist-link" href="#" class="artist-link">
+              <img id="artist-avatar" src="svg/person.png" alt="Аватар исполнителя" class="artist-avatar" onerror="this.onerror=null; this.src='svg/person.png';">
+              <span id="artist-name" class="artist-name">Загрузка...</span>
+            </a>
           </div>
         </div>
       </div>
 
-      <div class="track-stats">
-        <div class="stat-item">
-          <div id="review-count" class="stat-number">0</div>
-          <div class="stat-label">Рецензий</div>
+      <!-- Reviews Section -->
+      <div class="release-reviews-section">
+        <div class="reviews-header">
+          <h2>Рецензии</h2>
+          <button id="add-review-btn" class="add-review-button" style="display: none;">Добавить рецензию</button>
         </div>
-        <div class="stat-item">
-          <div id="avg-score" class="stat-number">0.0</div>
-          <div class="stat-label">Средний балл</div>
+        
+        <!-- Add Review Form (hidden by default) -->
+        <div id="add-review-form-container" class="add-review-form-container" style="display: none;">
+          <form id="review-form">
+            <div class="ratings-section">
+              <div class="rating-group">
+                <label for="score1">Рифмы / образы</label>
+                <div class="slider-container">
+                  <input type="range" id="score1" name="score1" min="1" max="10" value="5" step="1" class="rating-slider">
+                  <span class="slider-value" id="score1-value">5</span>
+                </div>
+              </div>
+              <div class="rating-group">
+                <label for="score2">Структура / ритм</label>
+                <div class="slider-container">
+                  <input type="range" id="score2" name="score2" min="1" max="10" value="5" step="1" class="rating-slider">
+                  <span class="slider-value" id="score2-value">5</span>
+                </div>
+              </div>
+              <div class="rating-group">
+                <label for="score3">Реализация стиля</label>
+                <div class="slider-container">
+                  <input type="range" id="score3" name="score3" min="1" max="10" value="5" step="1" class="rating-slider">
+                  <span class="slider-value" id="score3-value">5</span>
+                </div>
+              </div>
+              <div class="rating-group">
+                <label for="score4">Личность / харизма</label>
+                <div class="slider-container">
+                  <input type="range" id="score4" name="score4" min="1" max="10" value="5" step="1" class="rating-slider">
+                  <span class="slider-value" id="score4-value">5</span>
+                </div>
+              </div>
+              <div class="rating-group">
+                <label for="score5">Атмосфера / вайб</label>
+                <div class="slider-container">
+                  <input type="range" id="score5" name="score5" min="1" max="10" value="5" step="1" class="rating-slider">
+                  <span class="slider-value" id="score5-value">5</span>
+                </div>
+              </div>
+            </div>
+            <textarea name="text" placeholder="Ваша рецензия..." required></textarea>
+            <div class="form-actions">
+              <button type="submit">Опубликовать</button>
+              <button type="button" id="cancel-review-btn">Отмена</button>
+            </div>
+          </form>
         </div>
-      </div>
 
-      <div class="add-review-section">
-        <h3>Добавить рецензию</h3>
-        <form id="review-form">
-          <div class="review-scores">
-            <div class="score-input">
-              <label>Мелодия:</label>
-              <input type="number" name="score1" min="1" max="10" required>
-            </div>
-            <div class="score-input">
-              <label>Аранжировка:</label>
-              <input type="number" name="score2" min="1" max="10" required>
-            </div>
-            <div class="score-input">
-              <label>Вокал:</label>
-              <input type="number" name="score3" min="1" max="10" required>
-            </div>
-            <div class="score-input">
-              <label>Текст:</label>
-              <input type="number" name="score4" min="1" max="10" required>
-            </div>
-            <div class="score-input">
-              <label>Общее впечатление:</label>
-              <input type="number" name="score5" min="1" max="10" required>
-            </div>
-          </div>
-          <textarea name="text" placeholder="Ваша рецензия..." required></textarea>
-          <button type="submit">Опубликовать</button>
-        </form>
-      </div>
-
-      <div class="reviews-section">
-        <h3>Рецензии</h3>
+        <!-- Reviews List -->
         <div id="reviews-list" class="reviews-list">
           <!-- Reviews will be loaded here -->
         </div>
@@ -99,6 +129,8 @@
 
   <script type="module">
     import { getTrack, getReviewsByTrack, addReview, generateMIReview } from './js/api.js';
+    import { initAuth } from './js/auth-refactored.js';
+    import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './js/modal.js';
 
     const urlParams = new URLSearchParams(window.location.search);
     const trackId = urlParams.get('id');
@@ -107,105 +139,313 @@
       window.location.href = 'index.html';
     }
 
+    // Initialize auth status
+    const currentUser = await initAuth();
+    
+    // Show add review button if logged in
+    const addReviewBtn = document.getElementById('add-review-btn');
+    const addReviewFormContainer = document.getElementById('add-review-form-container');
+    if (currentUser && addReviewBtn) {
+      addReviewBtn.style.display = 'block';
+    }
+
+    // Toggle add review form
+    if (addReviewBtn) {
+      addReviewBtn.addEventListener('click', () => {
+        // Check if user is authenticated
+        if (!currentUser) {
+          showErrorModal(
+            'Требуется авторизация',
+            'Для написания рецензии необходимо войти в систему.',
+            'Войти',
+            () => {
+              window.location.href = 'login.html';
+            }
+          );
+          return;
+        }
+        addReviewFormContainer.style.display = addReviewFormContainer.style.display === 'none' ? 'block' : 'none';
+      });
+    }
+
+    const cancelReviewBtn = document.getElementById('cancel-review-btn');
+    if (cancelReviewBtn) {
+      cancelReviewBtn.addEventListener('click', () => {
+        addReviewFormContainer.style.display = 'none';
+        document.getElementById('review-form').reset();
+        // Reset slider values display
+        for (let i = 1; i <= 5; i++) {
+          const valueEl = document.getElementById(`score${i}-value`);
+          if (valueEl) valueEl.textContent = '5';
+        }
+      });
+    }
+
+    // Initialize slider value displays
+    for (let i = 1; i <= 5; i++) {
+      const slider = document.getElementById(`score${i}`);
+      const valueEl = document.getElementById(`score${i}-value`);
+      if (slider && valueEl) {
+        slider.addEventListener('input', () => {
+          valueEl.textContent = slider.value;
+        });
+      }
+    }
+
     // Load track data
     async function loadTrack() {
       try {
         const response = await getTrack(trackId);
         const track = response.track;
 
-        document.getElementById('track-cover').src = track.cover || '../svg/album.png';
-        document.getElementById('track-title').textContent = track.title;
-        document.getElementById('track-artist').textContent = track.artist;
-        document.getElementById('track-type').textContent = track.type === 'single' ? 'Сингл' : track.type === 'album' ? 'Альбом' : 'EP';
-        document.getElementById('track-creator').textContent = `Добавил: ${track.creator_name || 'Неизвестен'}`;
-        document.getElementById('track-link').href = track.link || '#';
+        if (!track) {
+          throw new Error('Release data is empty');
+        }
 
-        document.title = `${track.title} - ${track.artist} | Music Inspector`;
+        // Fix cover image path
+        let cover = track.cover || track.cover_path || '';
+        if (cover) {
+          if (!cover.startsWith('http://') && !cover.startsWith('https://') && !cover.startsWith('/')) {
+            if (!cover.startsWith('uploads/') && !cover.startsWith('traks/') && !cover.startsWith('svg/')) {
+              cover = `uploads/covers/${cover}`;
+            }
+          }
+        } else {
+          cover = 'svg/album.png';
+        }
+
+        document.getElementById('release-cover').src = cover;
+        document.getElementById('release-title').textContent = track.title || 'Без названия';
+        
+        // Artist information
+        const artistName = track.artist_name || track.artist || 'Неизвестный исполнитель';
+        const artistId = track.artist_id || null;
+        const artistImage = track.artist_image || null;
+        
+        const artistLink = document.getElementById('artist-link');
+        const artistNameEl = document.getElementById('artist-name');
+        const artistAvatarEl = document.getElementById('artist-avatar');
+        
+        artistNameEl.textContent = artistName;
+        
+        if (artistId) {
+          artistLink.href = `artist.html?id=${artistId}`;
+          if (artistImage) {
+            let artistImgPath = artistImage;
+            if (!artistImgPath.startsWith('http://') && !artistImgPath.startsWith('https://') && !artistImgPath.startsWith('/')) {
+              if (!artistImgPath.startsWith('uploads/')) {
+                artistImgPath = `uploads/artists/${artistImgPath}`;
+              }
+            }
+            artistAvatarEl.src = artistImgPath;
+          } else {
+            artistAvatarEl.src = 'svg/person.png';
+          }
+        } else {
+          artistLink.href = '#';
+          artistLink.style.pointerEvents = 'none';
+          artistAvatarEl.src = 'svg/person.png';
+        }
+
+        // Ratings badges
+        const peopleRating = track.peopleScore;
+        const miRating = track.miScore;
+        
+        if (peopleRating !== null && peopleRating !== undefined) {
+          document.getElementById('people-rating-value').textContent = Math.round(peopleRating);
+          document.getElementById('people-rating-badge').style.display = 'flex';
+        }
+        
+        if (miRating !== null && miRating !== undefined) {
+          document.getElementById('mi-rating-value').textContent = Math.round(miRating);
+          document.getElementById('mi-rating-badge').style.display = 'flex';
+        }
+
+        document.title = `${track.title} - ${artistName} | Music Inspector`;
       } catch (error) {
         console.error('Error loading track:', error);
-        alert('Ошибка загрузки трека');
+        
+        // Handle different error types
+        const errorMessage = error.status === 404 
+          ? 'Релиз не найден' 
+          : error.status === 500 
+          ? 'Ошибка сервера. Попробуйте позже.' 
+          : error.message || 'Ошибка загрузки релиза';
+        
+        // Show error in UI instead of alert
+        document.getElementById('release-title').textContent = 'Ошибка загрузки';
+        document.getElementById('artist-name').textContent = errorMessage;
+        document.getElementById('reviews-list').innerHTML = `<div class="no-reviews">${errorMessage}</div>`;
       }
     }
 
-    // Load reviews
+    // Load reviews (only approved)
     async function loadReviews() {
       try {
         const response = await getReviewsByTrack(trackId);
-        const reviews = response.reviews;
+        const reviews = response.reviews || [];
+        
+        console.log('Loaded reviews:', reviews); // Debug log
+        
+        // Filter only approved reviews or reviews without status (legacy)
+        // Include reviews where status is undefined, null, or 'approved'
+        const approvedReviews = reviews.filter(r => 
+          !r.status || r.status === 'approved' || r.status === null || r.status === undefined
+        );
 
-        document.getElementById('review-count').textContent = reviews.length;
-
-        if (reviews.length > 0) {
-          const avgScore = reviews.reduce((sum, review) => sum + review.avg_score, 0) / reviews.length;
-          document.getElementById('avg-score').textContent = avgScore.toFixed(1);
-        }
+        console.log('Approved reviews:', approvedReviews); // Debug log
 
         const reviewsList = document.getElementById('reviews-list');
-        reviewsList.innerHTML = reviews.map(review => `
-          <div class="review-card">
-            <div class="review-header">
-              <div class="review-author">
-                <div class="review-avatar">
-                  <img src="../people/madedev1.png" alt="avatar">
+        
+        if (approvedReviews.length === 0) {
+          reviewsList.innerHTML = '<div class="no-reviews">Пока нет рецензий</div>';
+          return;
+        }
+
+        // Sort by date (newest first)
+        approvedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        // Helper function to get avatar URL
+        function getAvatarUrl(avatar) {
+          if (!avatar) return 'svg/person.png';
+          if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
+            return avatar;
+          }
+          if (avatar.startsWith('uploads/')) {
+            return avatar;
+          }
+          return `uploads/avatars/${avatar}`;
+        }
+
+        reviewsList.innerHTML = approvedReviews.map(review => `
+          <div class="review-card-track">
+            <div class="review-header-track">
+              <div class="review-author-track">
+                <div class="review-avatar-track">
+                  <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
                 </div>
-                <div>
-                  <div class="review-author-name">${review.author_name || 'Music Inspector AI'}</div>
-                  <div class="review-date">${new Date(review.created_at).toLocaleDateString()}</div>
+                <div class="review-author-info">
+                  <div class="review-author-name-track">
+                    ${review.author_name || 'Music Inspector AI'}
+                    ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
+                  </div>
+                  <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
                 </div>
               </div>
-              <div class="review-score">${review.avg_score}</div>
+              <div class="review-score-track">${parseFloat(review.avg_score).toFixed(1)}</div>
             </div>
-            <div class="review-scores">
-              <div class="score-item">Мелодия: ${review.score1}</div>
-              <div class="score-item">Аранжировка: ${review.score2}</div>
-              <div class="score-item">Вокал: ${review.score3}</div>
-              <div class="score-item">Текст: ${review.score4}</div>
-              <div class="score-item">Общее: ${review.score5}</div>
+            <div class="review-scores-track">
+              <div class="score-item-track">Рифмы/образы: ${review.score1 || 'N/A'}</div>
+              <div class="score-item-track">Структура/ритм: ${review.score2 || 'N/A'}</div>
+              <div class="score-item-track">Реализация стиля: ${review.score3 || 'N/A'}</div>
+              <div class="score-item-track">Личность/харизма: ${review.score4 || 'N/A'}</div>
+              <div class="score-item-track">Атмосфера/вайб: ${review.score5 || 'N/A'}</div>
             </div>
-            <div class="review-text">${review.text}</div>
+            <div class="review-text-track">${review.text}</div>
           </div>
         `).join('');
       } catch (error) {
         console.error('Error loading reviews:', error);
+        
+        // Show specific error message
+        let errorMessage = 'Ошибка загрузки рецензий';
+        if (error.status === 0) {
+          errorMessage = 'Не удалось подключиться к серверу. Проверьте подключение к интернету.';
+        } else if (error.status === 404) {
+          errorMessage = 'Релиз не найден';
+        } else if (error.status === 500) {
+          errorMessage = 'Ошибка сервера. Попробуйте позже.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        document.getElementById('reviews-list').innerHTML = `<div class="no-reviews">${errorMessage}</div>`;
       }
     }
 
     // Handle review form
-    document.getElementById('review-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
+    const reviewForm = document.getElementById('review-form');
+    if (reviewForm) {
+      reviewForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Check authentication before submitting
+        if (!currentUser) {
+          showErrorModal(
+            'Требуется авторизация',
+            'Для написания рецензии необходимо войти в систему.',
+            'Войти',
+            () => {
+              window.location.href = 'login.html';
+            }
+          );
+          return;
+        }
+        
+        const formData = new FormData(e.target);
 
-      try {
-        await addReview({
-          trackId: parseInt(trackId),
-          text: formData.get('text'),
-          score1: parseInt(formData.get('score1')),
-          score2: parseInt(formData.get('score2')),
-          score3: parseInt(formData.get('score3')),
-          score4: parseInt(formData.get('score4')),
-          score5: parseInt(formData.get('score5'))
-        });
+        showLoadingModal('Отправка рецензии...');
 
-        e.target.reset();
-        loadReviews();
-        alert('Рецензия добавлена!');
-      } catch (error) {
-        console.error('Error adding review:', error);
-        alert('Ошибка добавления рецензии');
-      }
-    });
+        try {
+          await addReview({
+            trackId: parseInt(trackId),
+            text: formData.get('text'),
+            score1: parseInt(formData.get('score1')),
+            score2: parseInt(formData.get('score2')),
+            score3: parseInt(formData.get('score3')),
+            score4: parseInt(formData.get('score4')),
+            score5: parseInt(formData.get('score5'))
+          });
 
-    // Handle MI review button
-    document.getElementById('mi-review-btn').addEventListener('click', async () => {
-      try {
-        await generateMIReview({ trackId: parseInt(trackId) });
-        loadReviews();
-        alert('AI рецензия добавлена!');
-      } catch (error) {
-        console.error('Error generating MI review:', error);
-        alert('Ошибка генерации AI рецензии');
-      }
-    });
+          closeModal();
+          e.target.reset();
+          addReviewFormContainer.style.display = 'none';
+          
+          // Reset slider values
+          for (let i = 1; i <= 5; i++) {
+            const valueEl = document.getElementById(`score${i}-value`);
+            const slider = document.getElementById(`score${i}`);
+            if (valueEl) valueEl.textContent = '5';
+            if (slider) slider.value = 5;
+          }
+          
+          // Show success modal with clear message about moderation
+          showSuccessModal(
+            'Рецензия отправлена!',
+            'Спасибо! Ваша рецензия отправлена на модерацию и появится на странице после проверки.',
+            'Понятно'
+          );
+          
+          // Reload reviews to show any new approved ones
+          loadReviews();
+        } catch (error) {
+          console.error('Error adding review:', error);
+          closeModal();
+          
+          // Show specific error message
+          let errorMessage = 'Произошла ошибка при отправке рецензии.';
+          if (error.status === 400) {
+            errorMessage = error.message || 'Неверные данные. Проверьте все поля.';
+          } else if (error.status === 401) {
+            showErrorModal(
+              'Требуется авторизация',
+              'Пожалуйста, войдите в систему для написания рецензий.',
+              'Войти',
+              () => {
+                window.location.href = 'login.html';
+              }
+            );
+            return;
+          } else if (error.status === 500) {
+            errorMessage = 'Ошибка сервера. Попробуйте позже.';
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          showErrorModal('Ошибка', errorMessage);
+        }
+      });
+    }
 
     // Initialize
     loadTrack();

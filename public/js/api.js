@@ -1,174 +1,532 @@
-// Sample data for fallback when API is unavailable
-const sampleReviews = [
-  {
-    "id": "r123",
-    "trackId": "t456",
-    "author": "quwewe",
-    "authorAvatar": "people/авай 3.png",
-    "miBadge": true,
-    "score": 80,
-    "subscores": [7,8,7,7,8],
-    "title": "Держит планку",
-    "text": "Лёгкий трек, бит делает его почти хитом. Текст нормальный, без «вау», но в целом достойный. Структура радует — всё запоминается и качает. Звук качественный, хоть и перегруженный, но вокал madk1d’a звучит слабее, чем раньше. Харизма при этом на месте. Лёгкий трек, бит делает его почти хитом. Текст нормальный, без «вау», но в целом достойный. Структура радует — всё запоминается и качает. Звук качественный, хоть и перегруженный, но вокал madk1d’a звучит слабее, чем раньше. Харизма при этом на месте.",
-    "cover": "traks/madkid_drki.jpg",
-    "publishedAt": "2025-11-10T12:00:00Z"
-  },
-  {
-    "id": "r124",
-    "trackId": "t457",
-    "author": "made.dev",
-    "authorAvatar": "people/madedev1.png",
-    "miBadge": false,
-    "score": 90,
-    "subscores": [9,8,9,7,8],
-    "title": "плавятсямозги swag",
-    "text": "Марк — одно из открытий года. Sexyswag выстрелил колкими строчками, фирменным звучанием и целостностью. Впереди большой тур, ждём новый альбом.",
-    "cover": "traks/sexyswag2010.jpeg",
-    "publishedAt": "2025-11-11T12:00:00Z"
-  }
-];
+// API base URL (empty for same origin)
+const API_BASE = '';
 
-const sampleReleases = [
-  {
-    "id": "t456",
-    "title": "sexyswag2010",
-    "artist": "madk1d",
-    "cover": "traks/sexyswag2010.jpeg",
-    "releaseDate": "2025-11-01",
-    "type": "album",
-    "tier": "gold",
-    "peopleScore": 85,
-    "miScore": 90,
-    "subscores": [9, 8, 9, 8, 9],
-    "shortDescription": "Краткий анонс для золотого релиза."
-  },
-  {
-    "id": "t457",
-    "title": "дырки в штанах",
-    "artist": "madk1d",
-    "cover": "traks/madkid_drki.jpg",
-    "releaseDate": "2025-11-02",
-    "type": "album",
-    "tier": "silver",
-    "peopleScore": 75,
-    "miScore": 80,
-    "subscores": [7, 8, 7, 8, 8],
-    "shortDescription": "Краткий анонс для серебряного релиза."
-  },
-  {
-    "id": "t458",
-    "title": "another track",
-    "artist": "artist",
-    "cover": "traks/madkid_drki.jpg",
-    "releaseDate": "2025-11-03",
-    "type": "album",
-    "tier": "bronze",
-    "peopleScore": 65,
-    "miScore": 70,
-    "subscores": [6, 7, 6, 7, 7],
-    "shortDescription": "Краткий анонс для бронзового релиза."
-  },
-  {
-    "id": "t459",
-    "title": "test album",
-    "artist": "test artist",
-    "cover": "traks/madkid_drki.jpg",
-    "releaseDate": "2025-11-04",
-    "type": "album",
-    "tier": "other",
-    "peopleScore": 60,
-    "miScore": 65,
-    "subscores": [6, 6, 6, 6, 6],
-    "shortDescription": "Тестовый альбом без награды."
-  },
-  {
-    "id": "t460",
-    "title": "Новый альбом",
-    "artist": "Новый артист",
-    "cover": "traks/sexyswag2010.jpeg",
-    "releaseDate": "2025-11-05",
-    "type": "album",
-    "tier": "other",
-    "peopleScore": 70,
-    "miScore": 75,
-    "subscores": [7, 7, 7, 7, 7],
-    "shortDescription": "Еще один тестовый альбом."
-  },
-  {
-    "id": "t461",
-    "title": "Последний альбом",
-    "artist": "Последний артист",
-    "cover": "traks/madkid_drki.jpg",
-    "releaseDate": "2025-11-06",
-    "type": "album",
-    "tier": "other",
-    "peopleScore": 55,
-    "miScore": 60,
-    "subscores": [5, 6, 5, 6, 6],
-    "shortDescription": "Последний тестовый альбом."
-  }
-];
+// API wrapper functions
 
-// API wrapper functions with fallback to sample data
+/**
+ * Get monthly albums (exactly 6 highest-rated from current month)
+ */
+export async function getMonthlyAlbums() {
+  try {
+    const response = await fetch(`${API_BASE}/api/tracks/monthly-albums`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    return data.albums || [];
+  } catch (error) {
+    console.error('Error fetching monthly albums:', error);
+    return [];
+  }
+}
+
+/**
+ * Get latest releases/tracks
+ */
 export async function getReleases() {
   try {
-    const response = await fetch(`${API_BASE}/api/getLatestTracks`);
-    if (!response.ok) throw new Error('API unavailable');
-    return await response.json();
+    const response = await fetch(`${API_BASE}/api/tracks/latest`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    return data.tracks || [];
   } catch (error) {
-    console.warn('API unavailable, using sample data for releases');
-    return sampleReleases;
+    console.error('Error fetching releases:', error);
+    return [];
   }
 }
 
+/**
+ * Get latest reviews
+ */
 export async function getReviews() {
   try {
-    const response = await fetch(`${API_BASE}/api/getLatestReviews`);
-    if (!response.ok) throw new Error('API unavailable');
-    return await response.json();
+    const response = await fetch(`${API_BASE}/api/reviews/latest`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    return data.reviews || [];
   } catch (error) {
-    console.warn('API unavailable, using sample data for reviews');
-    return sampleReviews;
+    console.error('Error fetching reviews:', error);
+    return [];
   }
 }
 
+/**
+ * Get a single review by ID
+ */
 export async function getReview(id) {
   try {
-    const response = await fetch(`${API_BASE}/api/getReviewsByTrack?id=${id}`);
+    const response = await fetch(`${API_BASE}/api/reviews/by-track/${id}`);
     if (!response.ok) throw new Error('API unavailable');
-    return await response.json();
+    const data = await response.json();
+    return data.reviews?.[0] || null;
   } catch (error) {
-    console.warn('API unavailable, using sample data for review');
-    return sampleReviews.find(review => review.id === id) || null;
+    console.error('Error fetching review:', error);
+    return null;
   }
 }
 
+/**
+ * Get a single track by ID
+ */
+export async function getTrack(id) {
+  try {
+    const response = await fetch(`${API_BASE}/api/tracks/${id}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const error = new Error(errorData.error || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching track:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get reviews for a specific track
+ */
+export async function getReviewsByTrack(trackId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/reviews/by-track/${trackId}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const error = new Error(errorData.error || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    // If it's a network error, provide a more helpful message
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      const networkError = new Error('Не удалось подключиться к серверу. Проверьте подключение к интернету.');
+      networkError.status = 0;
+      throw networkError;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Add a review to a track
+ */
+export async function addReview(reviewData) {
+  try {
+    const response = await fetch(`${API_BASE}/api/reviews/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(reviewData)
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const error = new Error(errorData.error || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error adding review:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate an AI review for a track
+ */
+export async function generateMIReview(data) {
+  try {
+    const response = await fetch(`${API_BASE}/api/mi-review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to generate review');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error generating MI review:', error);
+    throw error;
+  }
+}
+
+/**
+ * Login user
+ */
 export async function login(credentials) {
   try {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(credentials)
     });
-    if (!response.ok) throw new Error('Login failed');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Login failed');
+    }
     return await response.json();
   } catch (error) {
-    console.warn('API unavailable, mocking login success');
-    return { success: true, message: 'Logged in successfully' };
+    console.error('Login error:', error);
+    throw error;
   }
 }
 
+/**
+ * Register new user
+ */
 export async function register(payload) {
   try {
-    const response = await fetch('/api/auth/register', {
+    const response = await fetch(`${API_BASE}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(payload)
     });
-    if (!response.ok) throw new Error('Registration failed');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Registration failed');
+    }
     return await response.json();
   } catch (error) {
-    console.warn('API unavailable, mocking register success');
-    return { success: true, message: 'Registered successfully' };
+    console.error('Registration error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get current user with role
+ */
+export async function getCurrentUser() {
+  try {
+    const response = await fetch(`${API_BASE}/api/user/current`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return null;
+  }
+}
+
+/**
+ * Search artists (for autocomplete)
+ */
+export async function searchArtists(query) {
+  try {
+    const response = await fetch(`${API_BASE}/api/artists/search?q=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Search failed');
+    const data = await response.json();
+    return data.artists || [];
+  } catch (error) {
+    console.error('Search artists error:', error);
+    return [];
+  }
+}
+
+/**
+ * Create artist
+ */
+export async function createArtist(artistData) {
+  try {
+    const response = await fetch(`${API_BASE}/api/artists`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(artistData)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create artist');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Create artist error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload cover image
+ */
+export async function uploadCover(file) {
+  try {
+    const formData = new FormData();
+    formData.append('cover', file);
+
+    const response = await fetch(`${API_BASE}/api/upload/cover`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Upload cover error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upload artist image
+ */
+export async function uploadArtistImage(file) {
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${API_BASE}/api/upload/artist`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Upload artist image error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create track/release
+ */
+export async function createTrack(trackData) {
+  try {
+    const response = await fetch(`${API_BASE}/api/tracks/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(trackData)
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const error = new Error(errorData.error || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Create track error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get artist with stats (overall rating, my rating, releases)
+ */
+export async function getArtistWithStats(artistId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/artists/${artistId}/stats`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const error = new Error(errorData.error || `HTTP ${response.status}`);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Get artist stats error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Logout user
+ */
+export async function logout() {
+  try {
+    // Call backend logout endpoint to clear httpOnly cookie
+    const response = await fetch(`${API_BASE}/api/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Logout failed');
+    }
+    
+    // Also clear any client-side token storage
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Even if backend call fails, clear client-side cookie
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    throw error;
+  }
+}
+
+/**
+ * Upload user avatar
+ */
+export async function uploadAvatar(file) {
+  try {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await fetch(`${API_BASE}/api/upload/avatar`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's statistics
+ */
+export async function getUserStats(userId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/users/${userId}/stats`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get user stats');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Get user stats error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's reviews
+ */
+export async function getUserReviews(userId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/users/${userId}/reviews`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get user reviews');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Get user reviews error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's releases
+ */
+export async function getUserReleases(userId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/users/${userId}/releases`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get user releases');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Get user releases error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get review moderation queue (admin only)
+ */
+export async function getReviewModerationQueue() {
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/moderation-queue`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to get review moderation queue');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Get review moderation queue error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Approve review (admin only)
+ */
+export async function approveReview(reviewId) {
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}/approve`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to approve review');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Approve review error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Reject review (admin only)
+ */
+export async function rejectReview(reviewId, reason) {
+  try {
+    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ reason })
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to reject review');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Reject review error:', error);
+    throw error;
   }
 }
