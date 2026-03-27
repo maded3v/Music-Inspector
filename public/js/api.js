@@ -3,6 +3,22 @@ const API_BASE = '';
 
 // API wrapper functions
 
+async function parseErrorResponse(response, fallbackMessage) {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    const errorData = await response.json().catch(() => ({}));
+    return errorData.error || fallbackMessage;
+  }
+
+  const bodyText = await response.text().catch(() => '');
+  if (bodyText.includes('Vercel Security Checkpoint') || response.headers.get('x-vercel-mitigated')) {
+    return 'Vercel Security Checkpoint блокирует API. Отключите защиту проекта в Vercel.';
+  }
+
+  return fallbackMessage;
+}
+
 /**
  * Get monthly albums (exactly 6 highest-rated from current month)
  */
@@ -179,8 +195,8 @@ export async function login(credentials) {
       body: JSON.stringify(credentials)
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Login failed');
+      const errorMessage = await parseErrorResponse(response, 'Login failed');
+      throw new Error(errorMessage);
     }
     return await response.json();
   } catch (error) {
@@ -201,8 +217,8 @@ export async function register(payload) {
       body: JSON.stringify(payload)
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
+      const errorMessage = await parseErrorResponse(response, 'Registration failed');
+      throw new Error(errorMessage);
     }
     return await response.json();
   } catch (error) {

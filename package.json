@@ -11,6 +11,7 @@
     "setup-db": "node scripts/setup-database.js",
     "migrate": "node scripts/run-migrations.js",
     "promote-admin": "node scripts/promote-admin.js",
+    "reset-admins": "node scripts/reset-admins.js",
     "set-mi-reviewers": "node scripts/set-mi-reviewers.js",
     "vercel:start": "vercel start"
   },
