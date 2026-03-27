@@ -250,14 +250,20 @@
         // Ratings badges
         const peopleRating = track.peopleScore;
         const miRating = track.miScore;
+
+        const formatScore = (value) => {
+          const num = parseFloat(value);
+          if (Number.isNaN(num)) return '0';
+          return Number.isInteger(num) ? String(num) : num.toFixed(1);
+        };
         
         if (peopleRating !== null && peopleRating !== undefined) {
-          document.getElementById('people-rating-value').textContent = Math.round(peopleRating);
+          document.getElementById('people-rating-value').textContent = formatScore(peopleRating);
           document.getElementById('people-rating-badge').style.display = 'flex';
         }
         
         if (miRating !== null && miRating !== undefined) {
-          document.getElementById('mi-rating-value').textContent = Math.round(miRating);
+          document.getElementById('mi-rating-value').textContent = formatScore(miRating);
           document.getElementById('mi-rating-badge').style.display = 'flex';
         }
 

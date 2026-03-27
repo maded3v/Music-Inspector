@@ -961,32 +961,58 @@ text-decoration: none;
 }
 
 .sort-btn {
-  padding: 9px 13px;
-  background: #2a2a2a;
-  border: 1px solid #414141;
-  border-radius: 999px;
-  color: #d0d0d0;
+  padding: 8px 10px;
+  background-color: #282828;
+  border: 1px solid #1e1e1e;
+  border-radius: 10px;
+  color: white;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  user-select: none;
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s;
 }
 
 .sort-btn:hover {
-  background: #373737;
-  color: #f0f0f0;
+  background-color: #E1E1E1;
+  color: #969696;
+  border: #969696 1px solid;
 }
 
 .sort-btn.is-active {
-  border-color: #5f78f6;
-  background: #30395f;
-  color: #ecf0ff;
+  background-color: #E1E1E1;
+  color: #969696;
+  border: #969696 1px solid;
 }
 
 .releases-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 171px);
-  gap: 18px;
-  justify-content: start;
+  grid-template-columns: repeat(6, 161px);
+  gap: 16px;
+  justify-content: center;
   align-items: start;
+}
+
+@media (max-width: 1120px) {
+  .releases-grid {
+    grid-template-columns: repeat(5, 161px);
+  }
+}
+
+@media (max-width: 960px) {
+  .releases-grid {
+    grid-template-columns: repeat(4, 161px);
+  }
+}
+
+@media (max-width: 780px) {
+  .releases-grid {
+    grid-template-columns: repeat(3, 161px);
+  }
+}
+
+@media (max-width: 600px) {
+  .releases-grid {
+    grid-template-columns: repeat(2, 161px);
+  }
 }
 
 .releases-page .releases-grid .track-card {
