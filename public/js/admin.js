@@ -1,4 +1,4 @@
-import { getCurrentUser } from './api.js';
+import { getCurrentUser, withApiUrl } from './api.js';
 
 let currentUser = null;
 let currentRejectTrackId = null;
@@ -70,7 +70,7 @@ async function loadModerationQueue() {
   queueDiv.innerHTML = '<p>Загрузка...</p>';
 
   try {
-    const response = await fetch('/api/admin/moderation-queue', {
+    const response = await fetch(withApiUrl('/api/admin/moderation-queue'), {
       credentials: 'include'
     });
 
@@ -116,7 +116,7 @@ async function loadAllTracks() {
   tracksDiv.innerHTML = '<p>Загрузка...</p>';
 
   try {
-    const response = await fetch('/api/admin/tracks', {
+    const response = await fetch(withApiUrl('/api/admin/tracks'), {
       credentials: 'include'
     });
 
@@ -208,7 +208,7 @@ window.approveTrack = async function(trackId) {
   }
 
   try {
-    const response = await fetch(`/api/admin/releases/${trackId}/approve`, {
+    const response = await fetch(withApiUrl(`/api/admin/releases/${trackId}/approve`), {
       method: 'POST',
       credentials: 'include'
     });
@@ -246,7 +246,7 @@ async function loadReviewsModerationQueue() {
   queueDiv.innerHTML = '<p>Загрузка...</p>';
 
   try {
-    const response = await fetch('/api/admin/reviews/moderation-queue', {
+    const response = await fetch(withApiUrl('/api/admin/reviews/moderation-queue'), {
       credentials: 'include'
     });
 
@@ -295,7 +295,7 @@ window.approveReview = async function(reviewId) {
   }
 
   try {
-    const response = await fetch(`/api/admin/reviews/${reviewId}/approve`, {
+    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}/approve`), {
       method: 'POST',
       credentials: 'include'
     });
@@ -351,10 +351,10 @@ function initRejectModal() {
       let url, successMessage;
       
       if (currentRejectType === 'review') {
-        url = `/api/admin/reviews/${currentRejectReviewId}/reject`;
+        url = withApiUrl(`/api/admin/reviews/${currentRejectReviewId}/reject`);
         successMessage = 'Отзыв отклонен';
       } else {
-        url = `/api/admin/releases/${currentRejectTrackId}/reject`;
+        url = withApiUrl(`/api/admin/releases/${currentRejectTrackId}/reject`);
         successMessage = 'Релиз отклонен';
       }
       
@@ -407,7 +407,7 @@ async function loadTracksForReviewSelect() {
   if (!select) return;
   
   try {
-    const response = await fetch('/api/admin/tracks', {
+    const response = await fetch(withApiUrl('/api/admin/tracks'), {
       credentials: 'include'
     });
     
@@ -444,7 +444,7 @@ function initTestDataForms() {
       resultDiv.innerHTML = '<p style="color: #ff9800;">Создание...</p>';
       
       try {
-        const response = await fetch('/api/tracks/create', {
+        const response = await fetch(withApiUrl('/api/tracks/create'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -493,7 +493,7 @@ function initTestDataForms() {
       resultDiv.innerHTML = '<p style="color: #ff9800;">Создание...</p>';
       
       try {
-        const response = await fetch('/api/reviews/add', {
+        const response = await fetch(withApiUrl('/api/reviews/add'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -531,7 +531,7 @@ function initTestDataForms() {
       resultDiv.innerHTML = '<p style="color: #ff9800;">Назначение...</p>';
       
       try {
-        const response = await fetch('/api/admin/promote', {
+        const response = await fetch(withApiUrl('/api/admin/promote'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -563,7 +563,7 @@ window.deleteTrack = async function(trackId) {
   }
 
   try {
-    const response = await fetch(`/api/admin/releases/${trackId}`, {
+    const response = await fetch(withApiUrl(`/api/admin/releases/${trackId}`), {
       method: 'DELETE',
       credentials: 'include'
     });
@@ -592,7 +592,7 @@ window.deleteReview = async function(reviewId) {
   }
 
   try {
-    const response = await fetch(`/api/admin/reviews/${reviewId}`, {
+    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}`), {
       method: 'DELETE',
       credentials: 'include'
     });

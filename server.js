@@ -8,9 +8,27 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 
+const allowedOrigins = new Set([
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+]);
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.add(process.env.FRONTEND_URL);
+}
+
 // Middleware (must be before routes)
 app.use(cors({
-  origin: process.env.FRONTEND_URL || true, // Allow all origins in development
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -182,4 +200,3 @@ async function startServer() {
 
 // Start server after DB connection is established
 startServer();
-

@@ -33,18 +33,24 @@ JWT_SECRET=change-me
 FRONTEND_URL=http://localhost:3000
 ```
 
-## Deploy (Vercel + GitHub)
+## Deploy (Render API + Vercel Frontend)
 1. Push repository to GitHub.
-2. Import repository in Vercel.
-3. Add environment variables in Vercel project settings:
+2. Create Render Web Service from this repo (Blueprint): `render.yaml`.
+3. In Render set secrets:
    - `DATABASE_URL`
    - `JWT_SECRET`
-   - `FRONTEND_URL` (set to your production domain)
-4. Deploy.
+   - `BLOB_READ_WRITE_TOKEN` (optional, if uploads are stored in Vercel Blob)
+4. Keep `FRONTEND_URL=https://music-inspector.vercel.app` in Render env.
+5. Deploy frontend on Vercel (static `public/`).
+6. Frontend API base is resolved in `public/js/api.js`:
+   - Localhost -> same origin (`/api`)
+   - Production -> `https://music-inspector-api.onrender.com`
+   - If Render gives another hostname, override in browser console:
+     `localStorage.setItem('MI_API_BASE', 'https://your-api.onrender.com')`
 
 Notes:
-- API requests are routed through `api/index.js`.
-- Static files are served from `public/`.
+- Render uses `server.js` for API and static serving.
+- Cookies are configured for cross-site auth when frontend and API domains differ.
 
 ## Scripts
 - `npm run dev` - run local server

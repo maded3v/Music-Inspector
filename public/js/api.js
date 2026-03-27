@@ -1,5 +1,30 @@
-// API base URL (empty for same origin)
-const API_BASE = '';
+const DEFAULT_RENDER_API_BASE = 'https://music-inspector-api.onrender.com';
+
+function resolveApiBase() {
+  const host = window.location.hostname;
+  const override = window.localStorage.getItem('MI_API_BASE');
+
+  if (override) {
+    return override.replace(/\/$/, '');
+  }
+
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return '';
+  }
+
+  if (host.endsWith('onrender.com')) {
+    return '';
+  }
+
+  return DEFAULT_RENDER_API_BASE;
+}
+
+// API base URL
+export const API_BASE = resolveApiBase();
+
+export function withApiUrl(path) {
+  return `${API_BASE}${path}`;
+}
 
 // API wrapper functions
 
@@ -24,7 +49,7 @@ async function parseErrorResponse(response, fallbackMessage) {
  */
 export async function getMonthlyAlbums() {
   try {
-    const response = await fetch(`${API_BASE}/api/tracks/monthly-albums`);
+    const response = await fetch(withApiUrl('/api/tracks/monthly-albums'));
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       throw new Error(errorData.error || `HTTP ${response.status}`);
@@ -42,7 +67,7 @@ export async function getMonthlyAlbums() {
  */
 export async function getReleases() {
   try {
-    const response = await fetch(`${API_BASE}/api/tracks/latest`);
+    const response = await fetch(withApiUrl('/api/tracks/latest'));
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       throw new Error(errorData.error || `HTTP ${response.status}`);
@@ -60,7 +85,7 @@ export async function getReleases() {
  */
 export async function getReviews() {
   try {
-    const response = await fetch(`${API_BASE}/api/reviews/latest`);
+    const response = await fetch(withApiUrl('/api/reviews/latest'));
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       throw new Error(errorData.error || `HTTP ${response.status}`);
@@ -78,7 +103,7 @@ export async function getReviews() {
  */
 export async function getReview(id) {
   try {
-    const response = await fetch(`${API_BASE}/api/reviews/by-track/${id}`);
+    const response = await fetch(withApiUrl(`/api/reviews/by-track/${id}`));
     if (!response.ok) throw new Error('API unavailable');
     const data = await response.json();
     return data.reviews?.[0] || null;
@@ -93,7 +118,7 @@ export async function getReview(id) {
  */
 export async function getTrack(id) {
   try {
-    const response = await fetch(`${API_BASE}/api/tracks/${id}`);
+    const response = await fetch(withApiUrl(`/api/tracks/${id}`));
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       const error = new Error(errorData.error || `HTTP ${response.status}`);
@@ -114,7 +139,7 @@ export async function getTrack(id) {
  */
 export async function getReviewsByTrack(trackId) {
   try {
-    const response = await fetch(`${API_BASE}/api/reviews/by-track/${trackId}`);
+    const response = await fetch(withApiUrl(`/api/reviews/by-track/${trackId}`));
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       const error = new Error(errorData.error || `HTTP ${response.status}`);
@@ -141,7 +166,7 @@ export async function getReviewsByTrack(trackId) {
  */
 export async function addReview(reviewData) {
   try {
-    const response = await fetch(`${API_BASE}/api/reviews/add`, {
+    const response = await fetch(withApiUrl('/api/reviews/add'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -166,7 +191,7 @@ export async function addReview(reviewData) {
  */
 export async function generateMIReview(data) {
   try {
-    const response = await fetch(`${API_BASE}/api/mi-review`, {
+    const response = await fetch(withApiUrl('/api/mi-review'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -188,7 +213,7 @@ export async function generateMIReview(data) {
  */
 export async function login(credentials) {
   try {
-    const response = await fetch(`${API_BASE}/api/login`, {
+    const response = await fetch(withApiUrl('/api/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -210,7 +235,7 @@ export async function login(credentials) {
  */
 export async function register(payload) {
   try {
-    const response = await fetch(`${API_BASE}/api/register`, {
+    const response = await fetch(withApiUrl('/api/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -232,7 +257,7 @@ export async function register(payload) {
  */
 export async function getCurrentUser() {
   try {
-    const response = await fetch(`${API_BASE}/api/user/current`, {
+    const response = await fetch(withApiUrl('/api/user/current'), {
       credentials: 'include'
     });
     if (!response.ok) {
@@ -251,7 +276,7 @@ export async function getCurrentUser() {
  */
 export async function searchArtists(query) {
   try {
-    const response = await fetch(`${API_BASE}/api/artists/search?q=${encodeURIComponent(query)}`);
+    const response = await fetch(withApiUrl(`/api/artists/search?q=${encodeURIComponent(query)}`));
     if (!response.ok) throw new Error('Search failed');
     const data = await response.json();
     return data.artists || [];
@@ -266,7 +291,7 @@ export async function searchArtists(query) {
  */
 export async function createArtist(artistData) {
   try {
-    const response = await fetch(`${API_BASE}/api/artists`, {
+    const response = await fetch(withApiUrl('/api/artists'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -291,7 +316,7 @@ export async function uploadCover(file) {
     const formData = new FormData();
     formData.append('cover', file);
 
-    const response = await fetch(`${API_BASE}/api/upload/cover`, {
+    const response = await fetch(withApiUrl('/api/upload/cover'), {
       method: 'POST',
       credentials: 'include',
       body: formData
@@ -315,7 +340,7 @@ export async function uploadArtistImage(file) {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await fetch(`${API_BASE}/api/upload/artist`, {
+    const response = await fetch(withApiUrl('/api/upload/artist'), {
       method: 'POST',
       credentials: 'include',
       body: formData
@@ -336,7 +361,7 @@ export async function uploadArtistImage(file) {
  */
 export async function createTrack(trackData) {
   try {
-    const response = await fetch(`${API_BASE}/api/tracks/create`, {
+    const response = await fetch(withApiUrl('/api/tracks/create'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -361,7 +386,7 @@ export async function createTrack(trackData) {
  */
 export async function getArtistWithStats(artistId) {
   try {
-    const response = await fetch(`${API_BASE}/api/artists/${artistId}/stats`, {
+    const response = await fetch(withApiUrl(`/api/artists/${artistId}/stats`), {
       credentials: 'include'
     });
     if (!response.ok) {
@@ -384,7 +409,7 @@ export async function getArtistWithStats(artistId) {
 export async function logout() {
   try {
     // Call backend logout endpoint to clear httpOnly cookie
-    const response = await fetch(`${API_BASE}/api/logout`, {
+    const response = await fetch(withApiUrl('/api/logout'), {
       method: 'POST',
       credentials: 'include'
     });
@@ -413,7 +438,7 @@ export async function uploadAvatar(file) {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await fetch(`${API_BASE}/api/upload/avatar`, {
+    const response = await fetch(withApiUrl('/api/upload/avatar'), {
       method: 'POST',
       credentials: 'include',
       body: formData
@@ -434,7 +459,7 @@ export async function uploadAvatar(file) {
  */
 export async function getUserStats(userId) {
   try {
-    const response = await fetch(`${API_BASE}/api/users/${userId}/stats`, {
+    const response = await fetch(withApiUrl(`/api/users/${userId}/stats`), {
       credentials: 'include'
     });
     if (!response.ok) {
@@ -453,7 +478,7 @@ export async function getUserStats(userId) {
  */
 export async function getUserReviews(userId) {
   try {
-    const response = await fetch(`${API_BASE}/api/users/${userId}/reviews`, {
+    const response = await fetch(withApiUrl(`/api/users/${userId}/reviews`), {
       credentials: 'include'
     });
     if (!response.ok) {
@@ -472,7 +497,7 @@ export async function getUserReviews(userId) {
  */
 export async function getUserReleases(userId) {
   try {
-    const response = await fetch(`${API_BASE}/api/users/${userId}/releases`, {
+    const response = await fetch(withApiUrl(`/api/users/${userId}/releases`), {
       credentials: 'include'
     });
     if (!response.ok) {
@@ -491,7 +516,7 @@ export async function getUserReleases(userId) {
  */
 export async function getReviewModerationQueue() {
   try {
-    const response = await fetch(`${API_BASE}/api/admin/reviews/moderation-queue`, {
+    const response = await fetch(withApiUrl('/api/admin/reviews/moderation-queue'), {
       credentials: 'include'
     });
     if (!response.ok) {
@@ -510,7 +535,7 @@ export async function getReviewModerationQueue() {
  */
 export async function approveReview(reviewId) {
   try {
-    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}/approve`, {
+    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}/approve`), {
       method: 'POST',
       credentials: 'include'
     });
@@ -530,7 +555,7 @@ export async function approveReview(reviewId) {
  */
 export async function rejectReview(reviewId, reason) {
   try {
-    const response = await fetch(`${API_BASE}/api/admin/reviews/${reviewId}/reject`, {
+    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}/reject`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

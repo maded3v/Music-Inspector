@@ -4,6 +4,42 @@ const { query } = require('./db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+function getCookieOptions(req, includeMaxAge = true) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  let sameSite = 'lax';
+  let secure = isProduction;
+
+  const origin = req.get('origin');
+
+  if (origin) {
+    try {
+      const originHost = new URL(origin).hostname;
+      const requestHost = req.hostname;
+      const isCrossSiteRequest = originHost !== requestHost;
+
+      if (isCrossSiteRequest) {
+        sameSite = 'none';
+        secure = true;
+      }
+    } catch (error) {
+      // Keep defaults when origin is not a valid URL
+    }
+  }
+
+  const options = {
+    httpOnly: true,
+    secure,
+    sameSite,
+    path: '/'
+  };
+
+  if (includeMaxAge) {
+    options.maxAge = 7 * 24 * 60 * 60 * 1000;
+  }
+
+  return options;
+}
+
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -82,17 +118,7 @@ exports.register = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Set httpOnly cookie with proper settings for local development
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    // Use res.cookie for proper cookie handling
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-      path: '/'
-    });
+    res.cookie('token', token, getCookieOptions(req));
 
     res.json({ 
       success: true, 
@@ -155,17 +181,7 @@ exports.login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Set httpOnly cookie with proper settings for local development
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    // Use res.cookie for proper cookie handling
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax', // Lax is needed for better cross-page navigation compatibility
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-      path: '/'
-    });
+    res.cookie('token', token, getCookieOptions(req));
 
     res.json({ 
       success: true, 
@@ -234,12 +250,7 @@ exports.getUser = [
  */
 exports.logout = async (req, res) => {
   try {
-    // Clear the httpOnly cookie properly
-    res.clearCookie('token', {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/'
-    });
+    res.clearCookie('token', getCookieOptions(req, false));
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error);

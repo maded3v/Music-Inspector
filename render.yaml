@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: music-inspector-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://music-inspector.vercel.app
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: BLOB_READ_WRITE_TOKEN
+        sync: false
