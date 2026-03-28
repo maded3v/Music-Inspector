@@ -40,12 +40,12 @@ FRONTEND_URL=http://localhost:3000
    - `DATABASE_URL`
    - `JWT_SECRET`
    - `BLOB_READ_WRITE_TOKEN` (optional, if uploads are stored in Vercel Blob)
-4. Keep `FRONTEND_URL=https://music-inspector.vercel.app` in Render env.
-5. Deploy frontend on Vercel (static `public/`).
-6. Frontend API base is resolved in `public/js/api.js`:
+   - `FRONTEND_URL` (your Vercel frontend domain)
+4. Deploy frontend on Vercel (static `public/`).
+5. Frontend API base is resolved in `public/js/api.js`:
    - Localhost -> same origin (`/api`)
-   - Production -> `https://music-inspector-api.onrender.com`
-   - If Render gives another hostname, override in browser console:
+   - Production -> default Render API host
+   - Optional override in browser console:
      `localStorage.setItem('MI_API_BASE', 'https://your-api.onrender.com')`
 
 Notes:
@@ -59,3 +59,8 @@ Notes:
 - `npm run migrate` - run migrations
 - `npm run promote-admin` - grant admin role
 - `npm run set-mi-reviewers` - set MI reviewers
+
+## Security
+- Never commit real `.env` files to GitHub.
+- Keep only `.env.example` in repository.
+- Rotate secrets if any key was accidentally committed.

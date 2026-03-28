@@ -1,8 +1,12 @@
 .vercel
-node_modules
+node_modules/
+
+# Env/secrets
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 db.env
 
-.vercel
+# Logs/system
+*.log
+.DS_Store

@@ -6,6 +6,24 @@ let currentRejectReviewId = null;
 let currentRejectType = 'track'; // 'track' or 'review'
 let allTracksCache = []; // Cache for search filtering
 
+async function adminRequest(path, options = {}, fallbackMessage = 'Request failed') {
+  const response = await fetch(withApiUrl(path), {
+    credentials: 'include',
+    ...options
+  });
+
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json')
+    ? await response.json().catch(() => ({}))
+    : {};
+
+  if (!response.ok) {
+    throw new Error(payload.error || fallbackMessage);
+  }
+
+  return payload;
+}
+
 // Check admin access on page load
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = await getCurrentUser();
@@ -70,15 +88,7 @@ async function loadModerationQueue() {
   queueDiv.innerHTML = '<p>Загрузка...</p>';
 
   try {
-    const response = await fetch(withApiUrl('/api/admin/moderation-queue'), {
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load moderation queue');
-    }
-
-    const data = await response.json();
+    const data = await adminRequest('/api/admin/moderation-queue', {}, 'Failed to load moderation queue');
     const tracks = data.tracks || [];
 
     if (tracks.length === 0) {
@@ -116,15 +126,7 @@ async function loadAllTracks() {
   tracksDiv.innerHTML = '<p>Загрузка...</p>';
 
   try {
-    const response = await fetch(withApiUrl('/api/admin/tracks'), {
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load tracks');
-    }
-
-    const data = await response.json();
+    const data = await adminRequest('/api/admin/tracks', {}, 'Failed to load tracks');
     allTracksCache = data.tracks || [];
 
     renderTracksGrid(allTracksCache);
@@ -208,15 +210,7 @@ window.approveTrack = async function(trackId) {
   }
 
   try {
-    const response = await fetch(withApiUrl(`/api/admin/releases/${trackId}/approve`), {
-      method: 'POST',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to approve');
-    }
+    await adminRequest(`/api/admin/releases/${trackId}/approve`, { method: 'POST' }, 'Failed to approve');
 
     alert('Релиз одобрен!');
     loadModerationQueue();
@@ -246,15 +240,7 @@ async function loadReviewsModerationQueue() {
   queueDiv.innerHTML = '<p>Загрузка...</p>';
 
   try {
-    const response = await fetch(withApiUrl('/api/admin/reviews/moderation-queue'), {
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load reviews moderation queue');
-    }
-
-    const data = await response.json();
+    const data = await adminRequest('/api/admin/reviews/moderation-queue', {}, 'Failed to load reviews moderation queue');
     const reviews = data.reviews || [];
 
     if (reviews.length === 0) {
@@ -295,15 +281,7 @@ window.approveReview = async function(reviewId) {
   }
 
   try {
-    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}/approve`), {
-      method: 'POST',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to approve review');
-    }
+    await adminRequest(`/api/admin/reviews/${reviewId}/approve`, { method: 'POST' }, 'Failed to approve review');
 
     alert('Отзыв одобрен!');
     loadReviewsModerationQueue();
@@ -351,24 +329,18 @@ function initRejectModal() {
       let url, successMessage;
       
       if (currentRejectType === 'review') {
-        url = withApiUrl(`/api/admin/reviews/${currentRejectReviewId}/reject`);
+        url = `/api/admin/reviews/${currentRejectReviewId}/reject`;
         successMessage = 'Отзыв отклонен';
       } else {
-        url = withApiUrl(`/api/admin/releases/${currentRejectTrackId}/reject`);
+        url = `/api/admin/releases/${currentRejectTrackId}/reject`;
         successMessage = 'Релиз отклонен';
       }
       
-      const response = await fetch(url, {
+      await adminRequest(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ reason })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to reject');
-      }
+      }, 'Failed to reject');
 
       alert(successMessage);
       modal.style.display = 'none';
@@ -407,15 +379,7 @@ async function loadTracksForReviewSelect() {
   if (!select) return;
   
   try {
-    const response = await fetch(withApiUrl('/api/admin/tracks'), {
-      credentials: 'include'
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to load tracks');
-    }
-    
-    const data = await response.json();
+    const data = await adminRequest('/api/admin/tracks', {}, 'Failed to load tracks');
     const tracks = (data.tracks || []).filter(t => t.status === 'approved');
     
     select.innerHTML = '<option value="">Выберите релиз...</option>' + 
@@ -444,18 +408,11 @@ function initTestDataForms() {
       resultDiv.innerHTML = '<p style="color: #ff9800;">Создание...</p>';
       
       try {
-        const response = await fetch(withApiUrl('/api/tracks/create'), {
+        const data = await adminRequest('/api/tracks/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify({ title, artist, type, link })
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to create release');
-        }
+        }, 'Failed to create release');
         
         resultDiv.innerHTML = `<p style="color: #4CAF50;">✓ Релиз создан! ID: ${data.track?.id || 'N/A'}</p>`;
         releaseForm.reset();
@@ -493,18 +450,11 @@ function initTestDataForms() {
       resultDiv.innerHTML = '<p style="color: #ff9800;">Создание...</p>';
       
       try {
-        const response = await fetch(withApiUrl('/api/reviews/add'), {
+        const data = await adminRequest('/api/reviews/add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify({ trackId, text, score1, score2, score3, score4, score5 })
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to create review');
-        }
+        }, 'Failed to create review');
         
         resultDiv.innerHTML = `<p style="color: #4CAF50;">✓ Отзыв создан! ID: ${data.review?.id || 'N/A'}</p>`;
         reviewForm.reset();
@@ -531,18 +481,11 @@ function initTestDataForms() {
       resultDiv.innerHTML = '<p style="color: #ff9800;">Назначение...</p>';
       
       try {
-        const response = await fetch(withApiUrl('/api/admin/promote'), {
+        const data = await adminRequest('/api/admin/promote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify({ email })
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to promote user');
-        }
+        }, 'Failed to promote user');
         
         resultDiv.innerHTML = `<p style="color: #4CAF50;">✓ ${data.message}</p>`;
         promoteForm.reset();
@@ -563,15 +506,7 @@ window.deleteTrack = async function(trackId) {
   }
 
   try {
-    const response = await fetch(withApiUrl(`/api/admin/releases/${trackId}`), {
-      method: 'DELETE',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to delete track');
-    }
+    await adminRequest(`/api/admin/releases/${trackId}`, { method: 'DELETE' }, 'Failed to delete track');
 
     alert('Релиз удален!');
     loadModerationQueue();
@@ -592,15 +527,7 @@ window.deleteReview = async function(reviewId) {
   }
 
   try {
-    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}`), {
-      method: 'DELETE',
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to delete review');
-    }
+    await adminRequest(`/api/admin/reviews/${reviewId}`, { method: 'DELETE' }, 'Failed to delete review');
 
     alert('Отзыв удален!');
     loadReviewsModerationQueue();

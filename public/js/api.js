@@ -4,29 +4,27 @@ function resolveApiBase() {
   const host = window.location.hostname;
   const override = window.localStorage.getItem('MI_API_BASE');
 
-  if (override) {
-    return override.replace(/\/$/, '');
-  }
-
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return '';
-  }
-
-  if (host.endsWith('onrender.com')) {
-    return '';
-  }
+  if (override) return override.replace(/\/$/, '');
+  if (host === 'localhost' || host === '127.0.0.1') return '';
+  if (host.endsWith('onrender.com')) return '';
 
   return DEFAULT_RENDER_API_BASE;
 }
 
-// API base URL
 export const API_BASE = resolveApiBase();
 
 export function withApiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
-// API wrapper functions
+async function parseResponseBody(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json().catch(() => ({}));
+  }
+
+  return response.text().catch(() => '');
+}
 
 async function parseErrorResponse(response, fallbackMessage) {
   const contentType = response.headers.get('content-type') || '';
@@ -38,23 +36,34 @@ async function parseErrorResponse(response, fallbackMessage) {
 
   const bodyText = await response.text().catch(() => '');
   if (bodyText.includes('Vercel Security Checkpoint') || response.headers.get('x-vercel-mitigated')) {
-    return 'Vercel Security Checkpoint блокирует API. Отключите защиту проекта в Vercel.';
+    return 'Vercel Security Checkpoint блокирует API. Используйте Render API для продакшена.';
   }
 
   return fallbackMessage;
 }
 
-/**
- * Get monthly albums (exactly 6 highest-rated from current month)
- */
+async function apiRequest(path, options = {}, fallbackMessage = 'Request failed') {
+  const requestOptions = {
+    credentials: 'include',
+    ...options
+  };
+
+  const response = await fetch(withApiUrl(path), requestOptions);
+
+  if (!response.ok) {
+    const message = await parseErrorResponse(response, fallbackMessage);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+
+  const body = await parseResponseBody(response);
+  return body;
+}
+
 export async function getMonthlyAlbums() {
   try {
-    const response = await fetch(withApiUrl('/api/tracks/monthly-albums'));
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-    const data = await response.json();
+    const data = await apiRequest('/api/tracks/monthly-albums', {}, 'Failed to fetch monthly albums');
     return data.albums || [];
   } catch (error) {
     console.error('Error fetching monthly albums:', error);
@@ -62,17 +71,9 @@ export async function getMonthlyAlbums() {
   }
 }
 
-/**
- * Get latest releases/tracks
- */
 export async function getReleases() {
   try {
-    const response = await fetch(withApiUrl('/api/tracks/latest'));
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-    const data = await response.json();
+    const data = await apiRequest('/api/tracks/latest', {}, 'Failed to fetch releases');
     return data.tracks || [];
   } catch (error) {
     console.error('Error fetching releases:', error);
@@ -80,17 +81,9 @@ export async function getReleases() {
   }
 }
 
-/**
- * Get latest reviews
- */
 export async function getReviews() {
   try {
-    const response = await fetch(withApiUrl('/api/reviews/latest'));
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-    const data = await response.json();
+    const data = await apiRequest('/api/reviews/latest', {}, 'Failed to fetch reviews');
     return data.reviews || [];
   } catch (error) {
     console.error('Error fetching reviews:', error);
@@ -98,14 +91,9 @@ export async function getReviews() {
   }
 }
 
-/**
- * Get a single review by ID
- */
 export async function getReview(id) {
   try {
-    const response = await fetch(withApiUrl(`/api/reviews/by-track/${id}`));
-    if (!response.ok) throw new Error('API unavailable');
-    const data = await response.json();
+    const data = await apiRequest(`/api/reviews/by-track/${id}`, {}, 'Failed to fetch review');
     return data.reviews?.[0] || null;
   } catch (error) {
     console.error('Error fetching review:', error);
@@ -113,46 +101,21 @@ export async function getReview(id) {
   }
 }
 
-/**
- * Get a single track by ID
- */
 export async function getTrack(id) {
   try {
-    const response = await fetch(withApiUrl(`/api/tracks/${id}`));
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      const error = new Error(errorData.error || `HTTP ${response.status}`);
-      error.status = response.status;
-      error.data = errorData;
-      throw error;
-    }
-    const data = await response.json();
-    return data;
+    return await apiRequest(`/api/tracks/${id}`, {}, 'Failed to fetch track');
   } catch (error) {
     console.error('Error fetching track:', error);
     throw error;
   }
 }
 
-/**
- * Get reviews for a specific track
- */
 export async function getReviewsByTrack(trackId) {
   try {
-    const response = await fetch(withApiUrl(`/api/reviews/by-track/${trackId}`));
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      const error = new Error(errorData.error || `HTTP ${response.status}`);
-      error.status = response.status;
-      error.data = errorData;
-      throw error;
-    }
-    const data = await response.json();
-    return data;
+    return await apiRequest(`/api/reviews/by-track/${trackId}`, {}, 'Failed to fetch reviews');
   } catch (error) {
     console.error('Error fetching reviews:', error);
-    // If it's a network error, provide a more helpful message
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    if (error.name === 'TypeError' && String(error.message).includes('fetch')) {
       const networkError = new Error('Не удалось подключиться к серверу. Проверьте подключение к интернету.');
       networkError.status = 0;
       throw networkError;
@@ -161,124 +124,70 @@ export async function getReviewsByTrack(trackId) {
   }
 }
 
-/**
- * Add a review to a track
- */
 export async function addReview(reviewData) {
   try {
-    const response = await fetch(withApiUrl('/api/reviews/add'), {
+    return await apiRequest('/api/reviews/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(reviewData)
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      const error = new Error(errorData.error || `HTTP ${response.status}`);
-      error.status = response.status;
-      error.data = errorData;
-      throw error;
-    }
-    return await response.json();
+    }, 'Failed to add review');
   } catch (error) {
     console.error('Error adding review:', error);
     throw error;
   }
 }
 
-/**
- * Generate an AI review for a track
- */
 export async function generateMIReview(data) {
   try {
-    const response = await fetch(withApiUrl('/api/mi-review'), {
+    return await apiRequest('/api/mi-review', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(data)
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to generate review');
-    }
-    return await response.json();
+    }, 'Failed to generate review');
   } catch (error) {
     console.error('Error generating MI review:', error);
     throw error;
   }
 }
 
-/**
- * Login user
- */
 export async function login(credentials) {
   try {
-    const response = await fetch(withApiUrl('/api/login'), {
+    return await apiRequest('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(credentials)
-    });
-    if (!response.ok) {
-      const errorMessage = await parseErrorResponse(response, 'Login failed');
-      throw new Error(errorMessage);
-    }
-    return await response.json();
+    }, 'Login failed');
   } catch (error) {
     console.error('Login error:', error);
     throw error;
   }
 }
 
-/**
- * Register new user
- */
 export async function register(payload) {
   try {
-    const response = await fetch(withApiUrl('/api/register'), {
+    return await apiRequest('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-      const errorMessage = await parseErrorResponse(response, 'Registration failed');
-      throw new Error(errorMessage);
-    }
-    return await response.json();
+    }, 'Registration failed');
   } catch (error) {
     console.error('Registration error:', error);
     throw error;
   }
 }
 
-/**
- * Get current user with role
- */
 export async function getCurrentUser() {
   try {
-    const response = await fetch(withApiUrl('/api/user/current'), {
-      credentials: 'include'
-    });
-    if (!response.ok) {
-      return null;
-    }
-    const data = await response.json();
-    return data.user;
+    const data = await apiRequest('/api/user/current', {}, 'Failed to fetch current user');
+    return data.user || null;
   } catch (error) {
-    console.error('Get current user error:', error);
     return null;
   }
 }
 
-/**
- * Search artists (for autocomplete)
- */
 export async function searchArtists(query) {
   try {
-    const response = await fetch(withApiUrl(`/api/artists/search?q=${encodeURIComponent(query)}`));
-    if (!response.ok) throw new Error('Search failed');
-    const data = await response.json();
+    const data = await apiRequest(`/api/artists/search?q=${encodeURIComponent(query)}`, {}, 'Search failed');
     return data.artists || [];
   } catch (error) {
     console.error('Search artists error:', error);
@@ -286,286 +195,150 @@ export async function searchArtists(query) {
   }
 }
 
-/**
- * Create artist
- */
 export async function createArtist(artistData) {
   try {
-    const response = await fetch(withApiUrl('/api/artists'), {
+    return await apiRequest('/api/artists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(artistData)
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create artist');
-    }
-    return await response.json();
+    }, 'Failed to create artist');
   } catch (error) {
     console.error('Create artist error:', error);
     throw error;
   }
 }
 
-/**
- * Upload cover image
- */
 export async function uploadCover(file) {
-  try {
-    const formData = new FormData();
-    formData.append('cover', file);
+  const formData = new FormData();
+  formData.append('cover', file);
 
-    const response = await fetch(withApiUrl('/api/upload/cover'), {
+  try {
+    return await apiRequest('/api/upload/cover', {
       method: 'POST',
-      credentials: 'include',
       body: formData
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Upload failed');
-    }
-    return await response.json();
+    }, 'Upload failed');
   } catch (error) {
     console.error('Upload cover error:', error);
     throw error;
   }
 }
 
-/**
- * Upload artist image
- */
 export async function uploadArtistImage(file) {
-  try {
-    const formData = new FormData();
-    formData.append('image', file);
+  const formData = new FormData();
+  formData.append('image', file);
 
-    const response = await fetch(withApiUrl('/api/upload/artist'), {
+  try {
+    return await apiRequest('/api/upload/artist', {
       method: 'POST',
-      credentials: 'include',
       body: formData
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Upload failed');
-    }
-    return await response.json();
+    }, 'Upload failed');
   } catch (error) {
     console.error('Upload artist image error:', error);
     throw error;
   }
 }
 
-/**
- * Create track/release
- */
 export async function createTrack(trackData) {
   try {
-    const response = await fetch(withApiUrl('/api/tracks/create'), {
+    return await apiRequest('/api/tracks/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(trackData)
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      const error = new Error(errorData.error || `HTTP ${response.status}`);
-      error.status = response.status;
-      error.data = errorData;
-      throw error;
-    }
-    return await response.json();
+    }, 'Failed to create track');
   } catch (error) {
     console.error('Create track error:', error);
     throw error;
   }
 }
 
-/**
- * Get artist with stats (overall rating, my rating, releases)
- */
 export async function getArtistWithStats(artistId) {
   try {
-    const response = await fetch(withApiUrl(`/api/artists/${artistId}/stats`), {
-      credentials: 'include'
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      const error = new Error(errorData.error || `HTTP ${response.status}`);
-      error.status = response.status;
-      error.data = errorData;
-      throw error;
-    }
-    return await response.json();
+    return await apiRequest(`/api/artists/${artistId}/stats`, {}, 'Failed to fetch artist stats');
   } catch (error) {
     console.error('Get artist stats error:', error);
     throw error;
   }
 }
 
-/**
- * Logout user
- */
 export async function logout() {
   try {
-    // Call backend logout endpoint to clear httpOnly cookie
-    const response = await fetch(withApiUrl('/api/logout'), {
-      method: 'POST',
-      credentials: 'include'
-    });
-    
-    if (!response.ok) {
-      throw new Error('Logout failed');
-    }
-    
-    // Also clear any client-side token storage
+    const data = await apiRequest('/api/logout', { method: 'POST' }, 'Logout failed');
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    
-    return await response.json();
+    return data;
   } catch (error) {
     console.error('Logout error:', error);
-    // Even if backend call fails, clear client-side cookie
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     throw error;
   }
 }
 
-/**
- * Upload user avatar
- */
 export async function uploadAvatar(file) {
-  try {
-    const formData = new FormData();
-    formData.append('avatar', file);
+  const formData = new FormData();
+  formData.append('avatar', file);
 
-    const response = await fetch(withApiUrl('/api/upload/avatar'), {
+  try {
+    return await apiRequest('/api/upload/avatar', {
       method: 'POST',
-      credentials: 'include',
       body: formData
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Upload failed');
-    }
-    return await response.json();
+    }, 'Upload failed');
   } catch (error) {
     console.error('Upload avatar error:', error);
     throw error;
   }
 }
 
-/**
- * Get user's statistics
- */
 export async function getUserStats(userId) {
   try {
-    const response = await fetch(withApiUrl(`/api/users/${userId}/stats`), {
-      credentials: 'include'
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get user stats');
-    }
-    return await response.json();
+    return await apiRequest(`/api/users/${userId}/stats`, {}, 'Failed to get user stats');
   } catch (error) {
     console.error('Get user stats error:', error);
     throw error;
   }
 }
 
-/**
- * Get user's reviews
- */
 export async function getUserReviews(userId) {
   try {
-    const response = await fetch(withApiUrl(`/api/users/${userId}/reviews`), {
-      credentials: 'include'
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get user reviews');
-    }
-    return await response.json();
+    return await apiRequest(`/api/users/${userId}/reviews`, {}, 'Failed to get user reviews');
   } catch (error) {
     console.error('Get user reviews error:', error);
     throw error;
   }
 }
 
-/**
- * Get user's releases
- */
 export async function getUserReleases(userId) {
   try {
-    const response = await fetch(withApiUrl(`/api/users/${userId}/releases`), {
-      credentials: 'include'
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get user releases');
-    }
-    return await response.json();
+    return await apiRequest(`/api/users/${userId}/releases`, {}, 'Failed to get user releases');
   } catch (error) {
     console.error('Get user releases error:', error);
     throw error;
   }
 }
 
-/**
- * Get review moderation queue (admin only)
- */
 export async function getReviewModerationQueue() {
   try {
-    const response = await fetch(withApiUrl('/api/admin/reviews/moderation-queue'), {
-      credentials: 'include'
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get review moderation queue');
-    }
-    return await response.json();
+    return await apiRequest('/api/admin/reviews/moderation-queue', {}, 'Failed to get review moderation queue');
   } catch (error) {
     console.error('Get review moderation queue error:', error);
     throw error;
   }
 }
 
-/**
- * Approve review (admin only)
- */
 export async function approveReview(reviewId) {
   try {
-    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}/approve`), {
-      method: 'POST',
-      credentials: 'include'
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to approve review');
-    }
-    return await response.json();
+    return await apiRequest(`/api/admin/reviews/${reviewId}/approve`, { method: 'POST' }, 'Failed to approve review');
   } catch (error) {
     console.error('Approve review error:', error);
     throw error;
   }
 }
 
-/**
- * Reject review (admin only)
- */
 export async function rejectReview(reviewId, reason) {
   try {
-    const response = await fetch(withApiUrl(`/api/admin/reviews/${reviewId}/reject`), {
+    return await apiRequest(`/api/admin/reviews/${reviewId}/reject`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ reason })
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to reject review');
-    }
-    return await response.json();
+    }, 'Failed to reject review');
   } catch (error) {
     console.error('Reject review error:', error);
     throw error;
