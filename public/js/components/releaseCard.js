@@ -110,7 +110,7 @@ export function renderReleaseCard(release, variant = 'default') {
   }
   
   // Return compact HTML without extra whitespace
-  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${title}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
+  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${title}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
 }
 
 /**

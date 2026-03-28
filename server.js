@@ -135,7 +135,17 @@ app.get('/api/health', async (req, res) => {
 // Set index to false so we handle index.html explicitly
 app.use(express.static(path.join(__dirname, 'public'), { 
   index: false,
-  extensions: ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'svg', 'gif', 'ico']
+  extensions: ['html', 'css', 'js', 'png', 'jpg', 'jpeg', 'svg', 'gif', 'ico'],
+  maxAge: '1h',
+  etag: true,
+  setHeaders: (res, servedPath) => {
+    if (servedPath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store');
+      return;
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
 }));
 
 // Explicitly handle root path - serve index.html

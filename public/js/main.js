@@ -27,9 +27,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (currentUser && addReleaseBtn) {
     addReleaseBtn.style.display = 'inline-block';
   }
-  // Load data
-  const reviews = await getReviews();
-  const releases = await getReleases();
+  // Load data in parallel
+  const [reviews, releases, monthlyAlbums] = await Promise.all([
+    getReviews(),
+    getReleases(),
+    getMonthlyAlbums().catch((error) => {
+      console.error('Error loading monthly albums:', error);
+      return [];
+    })
+  ]);
 
   // Load and render reviews (limit to 2)
   const reviewsContainer = document.querySelector('.reviews-grid');
@@ -45,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (lastAddedTracksContainer) {
     // Show all releases (tracks and albums), sort by newest first
     const allReleases = releases
+      .slice()
       .sort((a, b) => new Date(b.created_at || b.releaseDate || 0) - new Date(a.created_at || a.releaseDate || 0));
     
     renderLastAddedReleases(allReleases, lastAddedTracksContainer);
@@ -57,17 +64,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     releasesSection.classList.add('monthly-releases-container');
     releasesContainer.appendChild(releasesSection);
     
-    // Fetch monthly albums from dedicated endpoint
     try {
-      const monthlyAlbums = await getMonthlyAlbums();
       renderMonthlyReleases(monthlyAlbums, releasesSection);
-      
+
       // Initialize tilt effect after cards are rendered
-      setTimeout(() => {
-        initTiltEffect();
-      }, 100);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => initTiltEffect());
+      });
     } catch (error) {
-      console.error('Error loading monthly albums:', error);
       releasesSection.innerHTML = `
         <div class="monthly-releases">
           <div class="monthly-releases-title">Альбомы месяца</div>
@@ -79,9 +83,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Initialize search with tracks and releases data
-  // Wait a bit for DOM to be ready (including dynamically loaded releases)
-  setTimeout(() => {
+  // Initialize search with tracks and releases data after cards are in DOM
+  requestAnimationFrame(() => {
     const tracks = Array.from(document.querySelectorAll('.track-card')).map(card => ({
       title: card.querySelector('.track-title')?.textContent || '',
       artist: card.querySelector('.track-artist')?.textContent || '',
@@ -89,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }));
     
     initSearch(tracks, releases);
-  }, 200);
+  });
 
   // Preserve existing carousel logic
   const trackWrapper = document.querySelector(".last-added-tracks");
@@ -137,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateCarousel();
     });
 
-    window.addEventListener('resize', updateCarousel);
+    window.addEventListener('resize', updateCarousel, { passive: true });
     updateCarousel();
   }
 
