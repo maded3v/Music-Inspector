@@ -1,4 +1,4 @@
-const DEFAULT_RENDER_API_BASE = 'https://music-inspector-api.onrender.com';
+const DEFAULT_RENDER_API_BASE = 'https://music-inspector.onrender.com';
 
 function resolveApiBase() {
   const host = window.location.hostname;
