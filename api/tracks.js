@@ -1,6 +1,7 @@
 const { query, pool } = require('./db');
 const { requireAuth } = require('./middleware');
 const artistRoutes = require('./artists');
+const { columnExists } = require('./utils/dbHelpers');
 
 /**
  * Create track/release with moderation workflow
@@ -10,7 +11,7 @@ const artistRoutes = require('./artists');
 exports.createTrack = [
   requireAuth,
   async (req, res) => {
-    const { title, artist, type, cover, link, artist_id } = req.body;
+    const { title, artist, type, cover, link, artist_id, release_date, releaseDate } = req.body;
     const userId = req.user.id;
     const isAdmin = req.user.role === 'admin';
 
@@ -30,6 +31,21 @@ exports.createTrack = [
     const sanitizedArtist = artist.trim();
     const sanitizedType = type.toLowerCase();
     const sanitizedLink = link ? link.trim() : null;
+    const rawReleaseDate = release_date || releaseDate || null;
+
+    let sanitizedReleaseDate = null;
+    if (rawReleaseDate) {
+      if (typeof rawReleaseDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(rawReleaseDate)) {
+        return res.status(400).json({ error: 'release_date must be in YYYY-MM-DD format' });
+      }
+
+      const parsedReleaseDate = new Date(`${rawReleaseDate}T00:00:00Z`);
+      if (Number.isNaN(parsedReleaseDate.getTime())) {
+        return res.status(400).json({ error: 'Invalid release_date' });
+      }
+
+      sanitizedReleaseDate = rawReleaseDate;
+    }
 
     try {
       // Determine status based on user role
@@ -53,11 +69,22 @@ exports.createTrack = [
         }
 
         // Insert track
-        const trackResult = await client.query(
-          `INSERT INTO tracks (title, artist, type, cover, link, user_id, status, approved_at, approved_by, artist_id) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-          [sanitizedTitle, sanitizedArtist, sanitizedType, cover, sanitizedLink, userId, status, approvedAt, approvedBy, linkedArtistId]
-        );
+        const hasReleaseDateColumn = await columnExists('tracks', 'release_date');
+
+        let trackResult;
+        if (hasReleaseDateColumn) {
+          trackResult = await client.query(
+            `INSERT INTO tracks (title, artist, type, cover, link, user_id, status, approved_at, approved_by, artist_id, release_date) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+            [sanitizedTitle, sanitizedArtist, sanitizedType, cover, sanitizedLink, userId, status, approvedAt, approvedBy, linkedArtistId, sanitizedReleaseDate]
+          );
+        } else {
+          trackResult = await client.query(
+            `INSERT INTO tracks (title, artist, type, cover, link, user_id, status, approved_at, approved_by, artist_id) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+            [sanitizedTitle, sanitizedArtist, sanitizedType, cover, sanitizedLink, userId, status, approvedAt, approvedBy, linkedArtistId]
+          );
+        }
 
         const track = trackResult.rows[0];
 
@@ -258,7 +285,7 @@ exports.getCatalog = async (req, res) => {
 
   try {
     // Validate and sanitize sort and order parameters to prevent SQL injection
-    const allowedSortFields = ['created_at', 'title', 'artist', 'type'];
+    const allowedSortFields = ['created_at', 'release_date', 'title', 'artist', 'type'];
     const allowedOrders = ['asc', 'desc'];
     
     const sanitizedSort = allowedSortFields.includes(sort) ? sort : 'created_at';

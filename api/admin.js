@@ -2,6 +2,23 @@ const { query } = require('./db');
 const { requireAdmin } = require('./middleware');
 const { columnExists } = require('./utils/dbHelpers');
 
+function parseReleaseDate(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error('release_date must be in YYYY-MM-DD format');
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(parsedDate.getTime())) {
+    throw new Error('Invalid release_date');
+  }
+
+  return value;
+}
+
 /**
  * Get moderation queue - pending releases
  */
@@ -420,6 +437,91 @@ exports.deleteReview = [
 ];
 
 /**
+ * Update release fields (admin only)
+ */
+exports.updateRelease = [
+  requireAdmin,
+  async (req, res) => {
+    const { id } = req.params;
+    const { title, artist, type, link, release_date } = req.body;
+
+    try {
+      const trackId = parseInt(id);
+      if (isNaN(trackId) || trackId <= 0) {
+        return res.status(400).json({ error: 'Invalid track ID' });
+      }
+
+      const sanitizedTitle = typeof title === 'string' ? title.trim() : '';
+      const sanitizedArtist = typeof artist === 'string' ? artist.trim() : '';
+      const sanitizedType = typeof type === 'string' ? type.trim().toLowerCase() : '';
+      const sanitizedLink = typeof link === 'string' && link.trim() ? link.trim() : null;
+
+      if (!sanitizedTitle) {
+        return res.status(400).json({ error: 'Title is required' });
+      }
+
+      if (!sanitizedArtist) {
+        return res.status(400).json({ error: 'Artist is required' });
+      }
+
+      if (!['single', 'album', 'ep'].includes(sanitizedType)) {
+        return res.status(400).json({ error: 'Type must be single, album, or ep' });
+      }
+
+      let normalizedReleaseDate = null;
+      try {
+        normalizedReleaseDate = parseReleaseDate(release_date);
+      } catch (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      const trackCheck = await query('SELECT id FROM tracks WHERE id = $1', [trackId]);
+      if (trackCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Track not found' });
+      }
+
+      const hasReleaseDateColumn = await columnExists('tracks', 'release_date');
+
+      let result;
+      if (hasReleaseDateColumn) {
+        result = await query(
+          `UPDATE tracks
+           SET title = $1,
+               artist = $2,
+               type = $3,
+               link = $4,
+               release_date = $5
+           WHERE id = $6
+           RETURNING *`,
+          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, normalizedReleaseDate, trackId]
+        );
+      } else {
+        result = await query(
+          `UPDATE tracks
+           SET title = $1,
+               artist = $2,
+               type = $3,
+               link = $4
+           WHERE id = $5
+           RETURNING *`,
+          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, trackId]
+        );
+      }
+
+      res.json({ success: true, track: result.rows[0] });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'updateRelease');
+    }
+  }
+];
+
+/**
  * Promote user to admin by email
  */
 exports.promoteToAdmin = [
@@ -462,5 +564,4 @@ exports.promoteToAdmin = [
     }
   }
 ];
-
 

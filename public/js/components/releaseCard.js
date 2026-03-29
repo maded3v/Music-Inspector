@@ -104,13 +104,19 @@ export function renderReleaseCard(release, variant = 'default') {
   // Build badges section for non-monthly
   let badgesSection = '';
   if (variant !== 'monthly') {
-    const peopleBadge = peopleRating !== null ? `<div class="rewiews-badge-people">${Math.round(peopleRating)}</div>` : '';
-    const miBadge = miRating !== null ? `<div class="rewiews-badge-MI">${Math.round(miRating)}</div>` : '';
+    const peopleBadge = peopleRating !== null ? `<div class="rewiews-badge-people">${formatBadgeScore(peopleRating)}</div>` : '';
+    const miBadge = miRating !== null ? `<div class="rewiews-badge-MI">${formatBadgeScore(miRating)}</div>` : '';
     badgesSection = `<div class="rewiews-badges">${peopleBadge}${miBadge}</div>`;
   }
   
   // Return compact HTML without extra whitespace
   return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${title}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
+}
+
+function formatBadgeScore(value) {
+  const num = parseFloat(value);
+  if (Number.isNaN(num)) return '0';
+  return Number.isInteger(num) ? String(num) : num.toFixed(1);
 }
 
 /**

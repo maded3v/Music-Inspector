@@ -15,6 +15,7 @@ CREATE TABLE tracks (
   type VARCHAR(50) NOT NULL CHECK (type IN ('single', 'album', 'ep')),
   cover VARCHAR(500),
   link VARCHAR(500),
+  release_date DATE,
   user_id INTEGER REFERENCES users(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

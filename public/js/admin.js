@@ -5,6 +5,7 @@ let currentRejectTrackId = null;
 let currentRejectReviewId = null;
 let currentRejectType = 'track'; // 'track' or 'review'
 let allTracksCache = []; // Cache for search filtering
+let currentEditTrackId = null;
 
 async function adminRequest(path, options = {}, fallbackMessage = 'Request failed') {
   const response = await fetch(withApiUrl(path), {
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   loadModerationQueue();
   initRejectModal();
+  initEditModal();
   initTestDataForms();
 });
 
@@ -103,6 +105,7 @@ async function loadModerationQueue() {
           <h3>${track.title}</h3>
           <p><strong>Исполнитель:</strong> ${track.artist}</p>
           <p><strong>Тип:</strong> ${track.type === 'single' ? 'Сингл' : track.type === 'album' ? 'Альбом' : 'EP'}</p>
+          <p><strong>Дата релиза:</strong> ${track.release_date ? new Date(track.release_date).toLocaleDateString('ru-RU') : 'Не указана'}</p>
           <p><strong>Добавил:</strong> ${track.submitter_name || 'Неизвестен'} (${track.submitter_email || 'N/A'})</p>
           <p><strong>Дата:</strong> ${new Date(track.created_at).toLocaleString('ru-RU')}</p>
         </div>
@@ -187,18 +190,88 @@ function renderTracksGrid(tracks) {
         <div style="padding: 10px;">
           <div style="font-weight: bold; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${track.title}">${track.title}</div>
           <div style="color: #969696; font-size: 0.8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${track.artist}">${track.artist}</div>
+          <div style="color: #969696; font-size: 0.75em; margin-top: 3px;">${track.release_date ? new Date(track.release_date).toLocaleDateString('ru-RU') : 'Дата не указана'}</div>
           <div style="margin-top: 5px;"><span class="status-badge ${statusClass}" style="font-size: 0.7em; padding: 2px 8px;">${statusText}</span></div>
           <div style="display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap;">
             ${track.status === 'pending' ? `
               <button class="btn-approve" onclick="approveTrack(${track.id})" style="padding: 5px 8px; font-size: 0.75em;">✓</button>
               <button class="btn-reject" onclick="showRejectModal(${track.id})" style="padding: 5px 8px; font-size: 0.75em;">✗</button>
             ` : ''}
+            <button class="btn-approve" onclick="openEditTrack(${track.id})" style="padding: 5px 8px; font-size: 0.75em;">✎</button>
             <button class="btn-reject" onclick="deleteTrack(${track.id})" style="background: #880000; padding: 5px 8px; font-size: 0.75em;">🗑</button>
           </div>
         </div>
       </div>
     `;
   }).join('');
+}
+
+window.openEditTrack = function(trackId) {
+  const track = allTracksCache.find((item) => item.id === trackId);
+  if (!track) {
+    alert('Релиз не найден для редактирования');
+    return;
+  }
+
+  currentEditTrackId = trackId;
+
+  document.getElementById('edit-title').value = track.title || '';
+  document.getElementById('edit-artist').value = track.artist || '';
+  document.getElementById('edit-type').value = track.type || 'single';
+  document.getElementById('edit-link').value = track.link || '';
+  document.getElementById('edit-release-date').value = track.release_date ? String(track.release_date).slice(0, 10) : '';
+
+  document.getElementById('edit-modal').style.display = 'flex';
+};
+
+function initEditModal() {
+  const modal = document.getElementById('edit-modal');
+  const cancelBtn = document.getElementById('cancel-edit');
+  const saveBtn = document.getElementById('confirm-edit');
+
+  if (!modal || !cancelBtn || !saveBtn) return;
+
+  const closeModal = () => {
+    modal.style.display = 'none';
+    currentEditTrackId = null;
+  };
+
+  cancelBtn.addEventListener('click', closeModal);
+
+  saveBtn.addEventListener('click', async () => {
+    if (!currentEditTrackId) return;
+
+    const payload = {
+      title: document.getElementById('edit-title').value.trim(),
+      artist: document.getElementById('edit-artist').value.trim(),
+      type: document.getElementById('edit-type').value,
+      link: document.getElementById('edit-link').value.trim(),
+      release_date: document.getElementById('edit-release-date').value || null
+    };
+
+    try {
+      await adminRequest(`/api/admin/releases/${currentEditTrackId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }, 'Failed to update release');
+
+      alert('Релиз обновлен');
+      closeModal();
+      await loadAllTracks();
+      await loadModerationQueue();
+      await loadTracksForReviewSelect();
+    } catch (error) {
+      console.error('Error updating release:', error);
+      alert(`Ошибка: ${error.message}`);
+    }
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
 }
 
 /**

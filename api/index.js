@@ -86,6 +86,7 @@ app.get('/api/users/:userId/releases', userRoutes.getUserReleases);
 app.get('/api/admin/moderation-queue', adminRoutes.getModerationQueue);
 app.post('/api/admin/releases/:id/approve', adminRoutes.approveRelease);
 app.post('/api/admin/releases/:id/reject', adminRoutes.rejectRelease);
+app.put('/api/admin/releases/:id', adminRoutes.updateRelease);
 app.delete('/api/admin/releases/:id', adminRoutes.deleteRelease);
 app.get('/api/admin/tracks', adminRoutes.getAllTracks);
 app.get('/api/admin/reviews/moderation-queue', adminRoutes.getReviewModerationQueue);

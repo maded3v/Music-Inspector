@@ -12,8 +12,32 @@ function resolveApiBase() {
 }
 
 export const API_BASE = resolveApiBase();
-const CACHE_PREFIX = 'MI_CACHE::';
+const CACHE_PREFIX = 'MI_CACHE_V2::';
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function migrateOldCacheNamespace() {
+  try {
+    const migrationKey = 'MI_CACHE_NAMESPACE_V2_MIGRATED';
+    if (localStorage.getItem(migrationKey) === '1') {
+      return;
+    }
+
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('MI_CACHE::')) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+    localStorage.setItem(migrationKey, '1');
+  } catch {
+    // Ignore storage errors silently
+  }
+}
+
+migrateOldCacheNamespace();
 
 export function withApiUrl(path) {
   return `${API_BASE}${path}`;

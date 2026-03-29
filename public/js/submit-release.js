@@ -7,6 +7,7 @@ let coverImagePath = null;
 let artistImagePath = null;
 let isCreatingNewArtist = false;
 let searchTimeout = null;
+let previewElements = null;
 
 // Generate random color for avatar background
 function generateAvatarColor(email) {
@@ -81,12 +82,82 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   updateAuthStatus(currentUser);
+  initLivePreview();
   initArtistSearch();
   initCoverPreview();
   initArtistImagePreview();
   initRatingSliders();
   initForm();
 });
+
+function initLivePreview() {
+  previewElements = {
+    cover: document.getElementById('release-live-cover'),
+    title: document.getElementById('release-live-title'),
+    artist: document.getElementById('release-live-artist'),
+    type: document.getElementById('release-live-type'),
+    date: document.getElementById('release-live-date'),
+    scores: document.getElementById('release-live-scores')
+  };
+
+  const bindInput = (id, handler) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', handler);
+      el.addEventListener('change', handler);
+    }
+  };
+
+  bindInput('title', () => {
+    if (!previewElements?.title) return;
+    const value = document.getElementById('title').value.trim();
+    previewElements.title.textContent = value || 'Название релиза';
+  });
+
+  bindInput('artist', () => {
+    if (!previewElements?.artist) return;
+    const value = document.getElementById('artist').value.trim();
+    previewElements.artist.textContent = value || 'Исполнитель';
+  });
+
+  bindInput('type', () => {
+    if (!previewElements?.type) return;
+    const type = document.getElementById('type').value;
+    const label = {
+      single: 'Сингл',
+      album: 'Альбом',
+      ep: 'EP'
+    }[type] || 'Сингл';
+    previewElements.type.textContent = label;
+  });
+
+  bindInput('release-date', () => {
+    if (!previewElements?.date) return;
+    const dateValue = document.getElementById('release-date').value;
+    if (!dateValue) {
+      previewElements.date.textContent = 'Дата релиза не указана';
+      return;
+    }
+
+    const date = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(date.getTime())) {
+      previewElements.date.textContent = 'Дата релиза не указана';
+      return;
+    }
+
+    previewElements.date.textContent = `Релиз: ${date.toLocaleDateString('ru-RU')}`;
+  });
+
+  updatePreviewAverageScore();
+}
+
+function updatePreviewAverageScore() {
+  if (!previewElements?.scores) return;
+
+  const values = [1, 2, 3, 4, 5].map((i) => parseFloat(document.getElementById(`score${i}`)?.value || '5'));
+  const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
+  previewElements.scores.textContent = `Средняя оценка: ${avg.toFixed(1)}`;
+}
 
 /**
  * Initialize artist search with autocomplete
@@ -128,6 +199,7 @@ function initArtistSearch() {
               const artistId = item.dataset.id;
               const artistName = item.dataset.name;
               artistInput.value = artistName;
+              artistInput.dispatchEvent(new Event('input'));
               selectedArtistId = parseInt(artistId);
               suggestionsDiv.innerHTML = '';
               createBtn.style.display = 'none';
@@ -203,9 +275,10 @@ function initRatingSliders() {
     
     if (slider && valueDisplay) {
       // Update display on change
-      slider.addEventListener('input', (e) => {
-        valueDisplay.textContent = parseFloat(e.target.value).toFixed(1);
-      });
+        slider.addEventListener('input', (e) => {
+          valueDisplay.textContent = parseFloat(e.target.value).toFixed(1);
+          updatePreviewAverageScore();
+        });
       
       // Initialize display
       valueDisplay.textContent = parseFloat(slider.value).toFixed(1);
@@ -242,6 +315,10 @@ function initCoverPreview() {
     const reader = new FileReader();
     reader.onload = (e) => {
       previewDiv.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 300px; max-height: 300px; border-radius: 8px;">`;
+
+      if (previewElements?.cover) {
+        previewElements.cover.src = e.target.result;
+      }
     };
     reader.readAsDataURL(file);
     clearError('cover-error');
@@ -310,6 +387,7 @@ function initForm() {
         type: document.getElementById('type').value,
         cover: coverImagePath,
         link: document.getElementById('link').value.trim() || null,
+        release_date: document.getElementById('release-date').value || null,
         artist_id: selectedArtistId || null
       };
 
@@ -436,6 +514,12 @@ function validateForm() {
     isValid = false;
   }
 
+  const releaseDate = document.getElementById('release-date').value;
+  if (releaseDate && !/^\d{4}-\d{2}-\d{2}$/.test(releaseDate)) {
+    showError('release-date-error', 'Используйте формат ГГГГ-ММ-ДД');
+    isValid = false;
+  }
+
   const cover = document.getElementById('cover').files[0];
   if (!cover) {
     showError('cover-error', 'Обложка обязательна');
@@ -471,7 +555,7 @@ function clearError(fieldId) {
 function clearAllErrors() {
   ['title-error', 'artist-error', 'type-error', 'cover-error', 'link-error', 
    'review-text-error', 'score1-error', 'score2-error', 'score3-error', 'score4-error', 'score5-error',
-   'artist-image-error'].forEach(id => {
+   'artist-image-error', 'release-date-error'].forEach(id => {
     clearError(id);
   });
 }
@@ -484,6 +568,3 @@ function isValidUrl(string) {
     return false;
   }
 }
-
-
-

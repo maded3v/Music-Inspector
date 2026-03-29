@@ -5,7 +5,7 @@
     <title>Music Inspector - Добавить релиз</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="submit-release-page">
   <div class="nav-bar">
     <a href="index.html">
       <div class="svg-logo"><svg fill="#D9D9D9" width="45px" height="45px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg">
@@ -36,129 +36,151 @@
   </div>
 
   <div class="container">
-    <div class="main-content">
+    <div class="main-content submit-release-content">
       <h1>Добавить релиз</h1>
-      
-      <form id="release-form" class="release-form">
-        <div class="form-group">
-          <label for="title">Название релиза *</label>
-          <input type="text" id="title" name="title" required maxlength="255" placeholder="Название трека или альбома">
-          <span class="error-message" id="title-error"></span>
-        </div>
 
-        <div class="form-group">
-          <label for="artist">Исполнитель *</label>
-          <div class="artist-input-wrapper">
-            <input type="text" id="artist" name="artist" required maxlength="255" placeholder="Имя исполнителя" autocomplete="off">
-            <div id="artist-suggestions" class="artist-suggestions"></div>
-          </div>
-          <button type="button" id="create-artist-btn" class="create-artist-btn" style="display: none;">Создать нового исполнителя</button>
-          <span class="error-message" id="artist-error"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="type">Тип релиза *</label>
-          <select id="type" name="type" required>
-            <option value="">Выберите тип</option>
-            <option value="single">Сингл</option>
-            <option value="album">Альбом</option>
-            <option value="ep">EP</option>
-          </select>
-          <span class="error-message" id="type-error"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="cover">Обложка *</label>
-          <input type="file" id="cover" name="cover" accept="image/jpeg,image/jpg,image/png,image/webp" required>
-          <div id="cover-preview" class="cover-preview"></div>
-          <span class="error-message" id="cover-error"></span>
-        </div>
-
-        <div class="form-group">
-          <label for="link">Ссылка на прослушивание</label>
-          <input type="url" id="link" name="link" placeholder="https://...">
-          <span class="error-message" id="link-error"></span>
-        </div>
-
-        <!-- Artist image (required when creating new artist) -->
-        <div class="form-group" id="artist-image-group" style="display: none;">
-          <label for="artist-image">Изображение исполнителя *</label>
-          <input type="file" id="artist-image" name="artist-image" accept="image/jpeg,image/jpg,image/png,image/webp">
-          <div id="artist-image-preview" class="cover-preview"></div>
-          <span class="error-message" id="artist-image-error"></span>
-          <small>Обязательно при создании нового исполнителя</small>
-        </div>
-
-        <!-- Review section -->
-        <div class="form-section">
-          <h2>Рецензия *</h2>
-          <p class="form-hint">Для добавления релиза необходимо оставить рецензию с оценками</p>
-          
+      <div class="submit-release-layout">
+        <form id="release-form" class="release-form release-form-card">
           <div class="form-group">
-            <label for="review-text">Текст рецензии *</label>
-            <textarea id="review-text" name="review-text" rows="6" required placeholder="Опишите ваше впечатление от релиза..."></textarea>
-            <span class="error-message" id="review-text-error"></span>
+            <label for="title">Название релиза</label>
+            <input type="text" id="title" name="title" required maxlength="255" placeholder="Название трека или альбома">
+            <span class="error-message" id="title-error"></span>
           </div>
 
-          <div class="ratings-section">
-            <h3>Оценки по критериям (0-10) *</h3>
-            
-            <div class="rating-group">
-              <label for="score1">Рифмы / образы</label>
-              <div class="slider-container">
-                <input type="range" id="score1" name="score1" min="0" max="10" value="5" step="0.5" class="rating-slider">
-                <span class="slider-value" id="score1-value">5</span>
-              </div>
-              <span class="error-message" id="score1-error"></span>
+          <div class="form-group">
+            <label for="artist">Исполнитель</label>
+            <div class="artist-input-wrapper">
+              <input type="text" id="artist" name="artist" required maxlength="255" placeholder="Имя исполнителя" autocomplete="off">
+              <div id="artist-suggestions" class="artist-suggestions"></div>
+            </div>
+            <button type="button" id="create-artist-btn" class="create-artist-btn" style="display: none;">Создать нового исполнителя</button>
+            <span class="error-message" id="artist-error"></span>
+          </div>
+
+          <div class="form-row two-columns">
+            <div class="form-group">
+              <label for="type">Тип релиза</label>
+              <select id="type" name="type" required>
+                <option value="">Выберите тип</option>
+                <option value="single">Сингл</option>
+                <option value="album">Альбом</option>
+                <option value="ep">EP</option>
+              </select>
+              <span class="error-message" id="type-error"></span>
             </div>
 
-            <div class="rating-group">
-              <label for="score2">Структура / ритм</label>
-              <div class="slider-container">
-                <input type="range" id="score2" name="score2" min="0" max="10" value="5" step="0.5" class="rating-slider">
-                <span class="slider-value" id="score2-value">5</span>
-              </div>
-              <span class="error-message" id="score2-error"></span>
-            </div>
-
-            <div class="rating-group">
-              <label for="score3">Реализация стиля</label>
-              <div class="slider-container">
-                <input type="range" id="score3" name="score3" min="0" max="10" value="5" step="0.5" class="rating-slider">
-                <span class="slider-value" id="score3-value">5</span>
-              </div>
-              <span class="error-message" id="score3-error"></span>
-            </div>
-
-            <div class="rating-group">
-              <label for="score4">Личность / харизма</label>
-              <div class="slider-container">
-                <input type="range" id="score4" name="score4" min="0" max="10" value="5" step="0.5" class="rating-slider">
-                <span class="slider-value" id="score4-value">5</span>
-              </div>
-              <span class="error-message" id="score4-error"></span>
-            </div>
-
-            <div class="rating-group">
-              <label for="score5">Атмосфера / вайб</label>
-              <div class="slider-container">
-                <input type="range" id="score5" name="score5" min="0" max="10" value="5" step="0.5" class="rating-slider">
-                <span class="slider-value" id="score5-value">5</span>
-              </div>
-              <span class="error-message" id="score5-error"></span>
+            <div class="form-group">
+              <label for="release-date">Дата релиза</label>
+              <input type="date" id="release-date" name="release-date">
+              <span class="error-message" id="release-date-error"></span>
             </div>
           </div>
-        </div>
 
-        <button type="submit" id="submit-btn" class="submit-btn">Отправить на модерацию</button>
-        <div id="form-message" class="form-message"></div>
-      </form>
+          <div class="form-group">
+            <label for="cover">Обложка</label>
+            <input type="file" id="cover" name="cover" accept="image/jpeg,image/jpg,image/png,image/webp" required>
+            <div id="cover-preview" class="cover-preview"></div>
+            <span class="error-message" id="cover-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="link">Ссылка на прослушивание</label>
+            <input type="url" id="link" name="link" placeholder="https://...">
+            <span class="error-message" id="link-error"></span>
+          </div>
+
+          <div class="form-group" id="artist-image-group" style="display: none;">
+            <label for="artist-image">Изображение исполнителя</label>
+            <input type="file" id="artist-image" name="artist-image" accept="image/jpeg,image/jpg,image/png,image/webp">
+            <div id="artist-image-preview" class="cover-preview"></div>
+            <span class="error-message" id="artist-image-error"></span>
+            <small>Обязательно при создании нового исполнителя</small>
+          </div>
+
+          <div class="form-section">
+            <h2>Рецензия</h2>
+            <p class="form-hint">Для добавления релиза оставьте рецензию и выставьте оценки</p>
+
+            <div class="form-group">
+              <label for="review-text">Текст рецензии</label>
+              <textarea id="review-text" name="review-text" rows="6" required placeholder="Опишите ваше впечатление от релиза..."></textarea>
+              <span class="error-message" id="review-text-error"></span>
+            </div>
+
+            <div class="ratings-section ratings-mixer">
+              <h3>Оценки по критериям (0-10)</h3>
+
+              <div class="mixer-grid">
+                <div class="rating-group mixer-channel">
+                  <label for="score1">Рифмы / образы</label>
+                  <div class="slider-container mixer-slider-container">
+                    <input type="range" id="score1" name="score1" min="0" max="10" value="5" step="0.5" class="rating-slider mixer-slider">
+                    <span class="slider-value" id="score1-value">5</span>
+                  </div>
+                  <span class="error-message" id="score1-error"></span>
+                </div>
+
+                <div class="rating-group mixer-channel">
+                  <label for="score2">Структура / ритм</label>
+                  <div class="slider-container mixer-slider-container">
+                    <input type="range" id="score2" name="score2" min="0" max="10" value="5" step="0.5" class="rating-slider mixer-slider">
+                    <span class="slider-value" id="score2-value">5</span>
+                  </div>
+                  <span class="error-message" id="score2-error"></span>
+                </div>
+
+                <div class="rating-group mixer-channel">
+                  <label for="score3">Реализация стиля</label>
+                  <div class="slider-container mixer-slider-container">
+                    <input type="range" id="score3" name="score3" min="0" max="10" value="5" step="0.5" class="rating-slider mixer-slider">
+                    <span class="slider-value" id="score3-value">5</span>
+                  </div>
+                  <span class="error-message" id="score3-error"></span>
+                </div>
+
+                <div class="rating-group mixer-channel">
+                  <label for="score4">Личность / харизма</label>
+                  <div class="slider-container mixer-slider-container">
+                    <input type="range" id="score4" name="score4" min="0" max="10" value="5" step="0.5" class="rating-slider mixer-slider">
+                    <span class="slider-value" id="score4-value">5</span>
+                  </div>
+                  <span class="error-message" id="score4-error"></span>
+                </div>
+
+                <div class="rating-group mixer-channel">
+                  <label for="score5">Атмосфера / вайб</label>
+                  <div class="slider-container mixer-slider-container">
+                    <input type="range" id="score5" name="score5" min="0" max="10" value="5" step="0.5" class="rating-slider mixer-slider">
+                    <span class="slider-value" id="score5-value">5</span>
+                  </div>
+                  <span class="error-message" id="score5-error"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" id="submit-btn" class="submit-btn">Отправить на модерацию</button>
+          <div id="form-message" class="form-message"></div>
+        </form>
+
+        <aside class="release-preview-card" aria-label="Предпросмотр карточки">
+          <div class="release-preview-cover-wrap">
+            <img id="release-live-cover" src="svg/album.png" alt="Предпросмотр обложки" class="release-preview-cover" onerror="this.onerror=null; this.src='svg/album.png';">
+          </div>
+          <div class="release-preview-meta">
+            <div id="release-live-type" class="release-preview-type">Сингл</div>
+            <h3 id="release-live-title">Название релиза</h3>
+            <p id="release-live-artist">Исполнитель</p>
+            <p id="release-live-date" class="release-preview-date">Дата релиза не указана</p>
+          </div>
+          <div class="release-preview-scores" id="release-live-scores">Средняя оценка: 5.0</div>
+        </aside>
+      </div>
     </div>
   </div>
 
   <script type="module" src="js/submit-release.js"></script>
 </body>
 </html>
-
 
 
