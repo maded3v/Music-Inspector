@@ -83,6 +83,34 @@ textarea {
   border: #969696 1px solid;
 }
 
+.nav-toggle {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #1e1e1e;
+  border-radius: 10px;
+  background: #282828;
+  color: #e6e6e6;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: #d9d9d9;
+  border-radius: 999px;
+}
+
+.nav-mobile-panel {
+  display: flex;
+  align-items: center;
+}
+
 .about-page {
   max-width: 1122px;
   margin: 24px auto 40px;
@@ -147,13 +175,34 @@ textarea {
 }
 
 @media (max-width: 768px) {
-  .nav-bar {
+  .nav-bar.nav-mobile-ready {
     height: auto;
     min-height: 65px;
-    flex-wrap: wrap;
     justify-content: flex-start;
     gap: 8px;
     padding: 8px 10px;
+  }
+
+  .nav-bar.nav-mobile-ready .nav-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .nav-bar.nav-mobile-ready .nav-mobile-panel {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  .nav-bar.nav-mobile-ready.mobile-open .nav-mobile-panel {
+    display: flex;
+  }
+
+  .nav-bar.nav-mobile-ready .nav-mobile-panel > a {
+    justify-content: flex-start;
   }
 
   .svg-logo {
@@ -167,10 +216,11 @@ textarea {
     margin-left: 0;
   }
 
-  .but-back {
-    margin-left: auto;
+  .nav-bar.nav-mobile-ready .nav-mobile-panel .but-back {
+    margin-left: 0;
     margin-top: 0;
     height: 36px;
+    width: fit-content;
   }
 
   .about-page {
