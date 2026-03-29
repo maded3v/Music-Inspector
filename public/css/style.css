@@ -363,7 +363,9 @@ color: white;
   padding: 20px;
   background-color: #333333;
   border-radius: 12px;
-  width: 1082px;
+  width: 100%;
+  max-width: 1082px;
+  box-sizing: border-box;
   box-shadow: var(--shadow-s);
   
 }
@@ -423,6 +425,7 @@ text-decoration: none;
 
 
 .last-added-tracks-wrapper {
+  width: 100%;
   overflow: hidden;
 }
 
