@@ -111,16 +111,23 @@ exports.rejectRelease = [
         return res.status(400).json({ error: 'Track is not pending approval' });
       }
 
-      // Reject track
+      // On rejection, hard-delete release and related user-submitted data
+      // Reviews are removed automatically via ON DELETE CASCADE
       const result = await query(
-        `UPDATE tracks 
-         SET status = 'rejected', rejected_reason = $1
-         WHERE id = $2
-         RETURNING *`,
-        [reason.trim(), trackId]
+        `DELETE FROM tracks WHERE id = $1 RETURNING id, title, artist`,
+        [trackId]
       );
 
-      res.json({ success: true, track: result.rows[0] });
+      res.json({
+        success: true,
+        message: 'Release rejected and removed',
+        release: {
+          id: result.rows[0].id,
+          title: result.rows[0].title,
+          artist: result.rows[0].artist,
+          rejectionReason: reason.trim()
+        }
+      });
     } catch (error) {
       const { handleDatabaseError, handleServerError } = require('./utils/errors');
       
@@ -312,16 +319,22 @@ exports.rejectReview = [
         return res.status(400).json({ error: 'Review is not pending approval' });
       }
 
-      // Reject review
+      // On rejection, hard-delete the review to prevent moderation spam buildup
       const result = await query(
-        `UPDATE reviews 
-         SET status = 'rejected', rejected_reason = $1
-         WHERE id = $2
-         RETURNING *`,
-        [reason.trim(), reviewId]
+        `DELETE FROM reviews WHERE id = $1 RETURNING id, track_id, user_id`,
+        [reviewId]
       );
 
-      res.json({ success: true, review: result.rows[0] });
+      res.json({
+        success: true,
+        message: 'Review rejected and removed',
+        review: {
+          id: result.rows[0].id,
+          track_id: result.rows[0].track_id,
+          user_id: result.rows[0].user_id,
+          rejectionReason: reason.trim()
+        }
+      });
     } catch (error) {
       const { handleDatabaseError, handleServerError } = require('./utils/errors');
       
@@ -449,6 +462,5 @@ exports.promoteToAdmin = [
     }
   }
 ];
-
 
 

@@ -28,7 +28,8 @@ function getAvatarUrl(avatar) {
 export function renderReviewCard(review) {
   // Map API fields to expected format
   const reviewText = review.text || '';
-  const trimmedText = trimText(reviewText);
+  const isExpandable = reviewText.length > 300;
+  const trimmedText = isExpandable ? trimText(reviewText) : reviewText;
   const isExpanded = false; // Initially not expanded
   
   // Get subscores from API (score1-score5) or fallback to array
@@ -86,7 +87,7 @@ export function renderReviewCard(review) {
         <div class="review-text">${trimmedText}</div>
       </div>
       <div class="review-footer">
-        <button class="review-btn expand">${isExpanded ? '⤡' : '⤢'}</button>
+        ${isExpandable ? `<button class="review-btn expand">${isExpanded ? '⤡' : '⤢'}</button>` : ''}
       </div>
     </div>
   `;
@@ -103,8 +104,10 @@ export function initReviewExpand(container) {
   container.addEventListener('click', (e) => {
     if (e.target.classList.contains('expand')) {
       const card = e.target.closest('.review-card');
+      if (!card) return;
       const textEl = card.querySelector('.review-text');
       const btn = e.target;
+      if (!textEl || !btn) return;
 
       if (card.classList.contains('expanded')) {
         // Collapse

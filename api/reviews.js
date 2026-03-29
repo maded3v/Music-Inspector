@@ -58,11 +58,78 @@ exports.addReview = [
         return res.status(400).json({ error: 'Can only review approved tracks' });
       }
 
-      // Calculate average score (use parsed scores)
-      const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+      // Basic anti-spam protection: limit posting frequency
+      const recentReviewsResult = await query(
+        `SELECT COUNT(*)::int AS count
+         FROM reviews
+         WHERE user_id = $1
+           AND created_at > NOW() - INTERVAL '15 minutes'`,
+        [userId]
+      );
+      if ((recentReviewsResult.rows[0]?.count || 0) >= 5) {
+        return res.status(429).json({ error: 'Too many reviews in a short period. Please try again later.' });
+      }
+
+      // Prevent posting the same review text repeatedly
+      const duplicateTextResult = await query(
+        `SELECT id
+         FROM reviews
+         WHERE user_id = $1
+           AND LOWER(TRIM(text)) = LOWER(TRIM($2))
+           AND created_at > NOW() - INTERVAL '7 days'
+         LIMIT 1`,
+        [userId, sanitizedText]
+      );
+      if (duplicateTextResult.rows.length > 0) {
+        return res.status(409).json({ error: 'Duplicate review detected. Please post a unique review text.' });
+      }
 
       // Check if status column exists
       const statusColumnExists = await columnExists('reviews', 'status');
+
+      // Prevent repeated reviews for the same release
+      let latestUserReviewResult;
+      if (statusColumnExists) {
+        latestUserReviewResult = await query(
+          `SELECT id, status, created_at
+           FROM reviews
+           WHERE user_id = $1 AND track_id = $2
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [userId, parsedTrackId]
+        );
+      } else {
+        latestUserReviewResult = await query(
+          `SELECT id, created_at
+           FROM reviews
+           WHERE user_id = $1 AND track_id = $2
+           ORDER BY created_at DESC
+           LIMIT 1`,
+          [userId, parsedTrackId]
+        );
+      }
+
+      if (latestUserReviewResult.rows.length > 0) {
+        const latest = latestUserReviewResult.rows[0];
+        const latestStatus = latest.status || 'approved';
+
+        if (latestStatus === 'approved') {
+          return res.status(409).json({ error: 'You already have an approved review for this release.' });
+        }
+
+        if (latestStatus === 'pending') {
+          return res.status(409).json({ error: 'You already have a pending review for this release.' });
+        }
+
+        // For rejected reviews, enforce cooldown before reposting
+        const cooldownDeadline = new Date(latest.created_at).getTime() + (24 * 60 * 60 * 1000);
+        if (!Number.isNaN(cooldownDeadline) && Date.now() < cooldownDeadline) {
+          return res.status(429).json({ error: 'Please wait before resubmitting a review for this release.' });
+        }
+      }
+
+      // Calculate average score (use parsed scores)
+      const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
       
       // Determine review status: admins auto-approve, others go to moderation
       const reviewStatus = isAdmin ? 'approved' : 'pending';

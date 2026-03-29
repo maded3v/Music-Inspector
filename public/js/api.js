@@ -348,10 +348,12 @@ export async function logout() {
   try {
     const data = await apiRequest('/api/logout', { method: 'POST' }, 'Logout failed');
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    clearPublicCache();
     return data;
   } catch (error) {
     console.error('Logout error:', error);
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    clearPublicCache();
     throw error;
   }
 }

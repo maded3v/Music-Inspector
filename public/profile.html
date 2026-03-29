@@ -7,12 +7,12 @@
     <style>
       .profile-container {
         max-width: 1122px;
-        margin: 40px auto;
+        margin: 30px auto;
         padding: 0 20px;
       }
       .profile-layout {
         display: flex;
-        gap: 40px;
+        gap: 24px;
       }
       .profile-left {
         flex: 1;
@@ -24,6 +24,11 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 20px;
+        box-sizing: border-box;
       }
       .profile-avatar-large {
         width: 150px;
@@ -62,32 +67,39 @@
         width: 100%;
       }
       .profile-btn {
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
+        padding: 10px 12px;
+        border: 1px solid #1e1e1e;
+        border-radius: 10px;
         cursor: pointer;
         font-size: 14px;
-        transition: background 0.2s;
+        transition: color 0.3s, background-color 0.3s, border-color 0.3s;
+        text-align: center;
+        user-select: none;
+        text-decoration: none;
       }
       .profile-btn-avatar {
-        background: #2a2a2a;
+        background: #282828;
         color: white;
-        border: 1px solid #444;
       }
       .profile-btn-avatar:hover {
-        background: #3a3a3a;
+        background-color: #E1E1E1;
+        color: #969696;
+        border: #969696 1px solid;
       }
       .profile-btn-logout {
-        background: #d32f2f;
+        background: #282828;
         color: white;
       }
       .profile-btn-logout:hover {
-        background: #b71c1c;
+        background-color: #E1E1E1;
+        color: #969696;
+        border: #969696 1px solid;
       }
       .stats-section {
         background: #1a1a1a;
         padding: 20px;
         border-radius: 12px;
+        border: 1px solid #333;
         margin-bottom: 30px;
       }
       .stats-section h3 {
@@ -116,6 +128,7 @@
         background: #1a1a1a;
         padding: 20px;
         border-radius: 12px;
+        border: 1px solid #333;
         margin-bottom: 20px;
       }
       .last-review-section h3 {
@@ -168,21 +181,37 @@
         font-weight: bold;
         text-align: right;
       }
-      .show-all-btn {
-        display: block;
-        width: 100%;
-        padding: 15px;
-        background: #2a2a2a;
-        color: white;
-        border: 1px solid #444;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        text-align: center;
-        transition: background 0.2s;
+      .pending-reviews-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
-      .show-all-btn:hover {
-        background: #3a3a3a;
+      .pending-review-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        background: #252525;
+        border-radius: 8px;
+        border: 1px solid #383838;
+        padding: 10px 12px;
+      }
+      .pending-review-track {
+        font-size: 0.95rem;
+        color: #d9d9d9;
+        text-align: left;
+      }
+      .pending-review-date {
+        font-size: 0.85rem;
+        color: #969696;
+      }
+      .pending-review-badge {
+        border: 1px solid #ff9800;
+        color: #ffb14b;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 0.8rem;
+        white-space: nowrap;
       }
       .all-reviews-modal {
         display: none;
@@ -265,19 +294,6 @@
   <div class="profile-container">
     <div id="profile-content">
       <p style="text-align: center;">Загрузка...</p>
-    </div>
-  </div>
-
-  <!-- All Reviews Modal -->
-  <div id="all-reviews-modal" class="all-reviews-modal">
-    <div class="all-reviews-content">
-      <div class="all-reviews-header">
-        <h2>Все отзывы</h2>
-        <button class="close-modal-btn" onclick="closeAllReviewsModal()">Закрыть</button>
-      </div>
-      <div id="all-reviews-list" class="reviews-list">
-        <!-- Reviews will be loaded here -->
-      </div>
     </div>
   </div>
 
@@ -436,7 +452,23 @@
         allReviews = [];
       }
       
-      const lastReview = allReviews.length > 0 ? allReviews[0] : null;
+      const pendingReviews = allReviews.filter((review) => review.status === 'pending');
+      const approvedOrPublishedReviews = allReviews.filter((review) => review.status !== 'pending');
+      const lastReview = approvedOrPublishedReviews.length > 0 ? approvedOrPublishedReviews[0] : null;
+
+      const pendingReviewsMarkup = pendingReviews.length > 0
+        ? `<div class="pending-reviews-list">
+            ${pendingReviews.slice(0, 8).map((review) => `
+              <div class="pending-review-item">
+                <div>
+                  <div class="pending-review-track">${review.track_title} - ${review.track_artist}</div>
+                  <div class="pending-review-date">${formatDate(review.created_at)}</div>
+                </div>
+                <div class="pending-review-badge">На проверке</div>
+              </div>
+            `).join('')}
+          </div>`
+        : '<div class="no-reviews" style="padding: 18px 0;">Нет отзывов на проверке</div>';
       
       profileContent.innerHTML = `
         <div class="profile-layout">
@@ -465,13 +497,11 @@
               <h3>Последний отзыв</h3>
               ${lastReview ? renderReviewCard(lastReview) : '<div class="no-reviews">У вас пока нет отзывов</div>'}
             </div>
-            
-            <!-- Show All Reviews Button -->
-            ${allReviews.length > 0 ? `
-              <button class="show-all-btn" onclick="openAllReviewsModal()">
-                Показать все отзывы (${allReviews.length})
-              </button>
-            ` : ''}
+
+            <div class="last-review-section">
+              <h3>Отзывы на проверке</h3>
+              ${pendingReviewsMarkup}
+            </div>
           </div>
           
           <div class="profile-right">
@@ -513,35 +543,7 @@
           await handleLogout();
         });
       }
-      
-      // Populate all reviews modal
-      const allReviewsList = document.getElementById('all-reviews-list');
-      if (allReviewsList) {
-        if (allReviews.length === 0) {
-          allReviewsList.innerHTML = '<div class="no-reviews">У вас пока нет отзывов</div>';
-        } else {
-          allReviewsList.innerHTML = allReviews.map(renderReviewCard).join('');
-        }
-      }
     }
-    
-    // Global functions for modal
-    window.openAllReviewsModal = function() {
-      document.getElementById('all-reviews-modal').style.display = 'block';
-      document.body.style.overflow = 'hidden';
-    };
-    
-    window.closeAllReviewsModal = function() {
-      document.getElementById('all-reviews-modal').style.display = 'none';
-      document.body.style.overflow = 'auto';
-    };
-    
-    // Close modal on outside click
-    document.getElementById('all-reviews-modal').addEventListener('click', (e) => {
-      if (e.target.id === 'all-reviews-modal') {
-        closeAllReviewsModal();
-      }
-    });
     
     document.addEventListener('DOMContentLoaded', async () => {
       const currentUser = await getCurrentUser();

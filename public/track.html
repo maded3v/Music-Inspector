@@ -290,16 +290,12 @@
       try {
         const response = await getReviewsByTrack(trackId);
         const reviews = response.reviews || [];
-        
-        console.log('Loaded reviews:', reviews); // Debug log
-        
+
         // Filter only approved reviews or reviews without status (legacy)
         // Include reviews where status is undefined, null, or 'approved'
         const approvedReviews = reviews.filter(r => 
           !r.status || r.status === 'approved' || r.status === null || r.status === undefined
         );
-
-        console.log('Approved reviews:', approvedReviews); // Debug log
 
         const reviewsList = document.getElementById('reviews-list');
         
@@ -310,6 +306,9 @@
 
         // Sort by date (newest first)
         approvedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        const miReviews = approvedReviews.filter(r => Boolean(r.is_mi_review));
+        const userReviews = approvedReviews.filter(r => !r.is_mi_review);
 
         // Helper function to get avatar URL
         function getAvatarUrl(avatar) {
@@ -323,7 +322,8 @@
           return `uploads/avatars/${avatar}`;
         }
 
-        reviewsList.innerHTML = approvedReviews.map(review => `
+        function renderReviewCard(review) {
+          return `
           <div class="review-card-track">
             <div class="review-header-track">
               <div class="review-author-track">
@@ -332,7 +332,7 @@
                 </div>
                 <div class="review-author-info">
                   <div class="review-author-name-track">
-                    ${review.author_name || 'Music Inspector AI'}
+                    ${review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь')}
                     ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
                   </div>
                   <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
@@ -349,7 +349,25 @@
             </div>
             <div class="review-text-track">${review.text}</div>
           </div>
-        `).join('');
+          `;
+        }
+
+        function renderSection(title, sectionReviews, emptyText) {
+          const isEmpty = sectionReviews.length === 0;
+          return `
+            <div class="reviews-subsection ${isEmpty ? 'empty' : ''}">
+              <div class="reviews-subsection-title">${title}</div>
+              ${isEmpty
+                ? `<div class="no-reviews">${emptyText}</div>`
+                : sectionReviews.map(renderReviewCard).join('')}
+            </div>
+          `;
+        }
+
+        reviewsList.innerHTML = `
+          ${renderSection('MI рецензии', miReviews, 'Пока нет MI-рецензий')}
+          ${renderSection('Рецензии пользователей', userReviews, 'Пока нет рецензий пользователей')}
+        `;
       } catch (error) {
         console.error('Error loading reviews:', error);
         
