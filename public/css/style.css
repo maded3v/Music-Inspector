@@ -222,7 +222,8 @@ textarea {
 
 .container {
   display: flex;
-  height: calc(100vh - 65px);
+  min-height: calc(100dvh - 65px);
+  height: auto;
   justify-content: center;
 }
 
@@ -2496,5 +2497,167 @@ text-decoration: none;
 
   .artist-stats {
     justify-content: center;
+  }
+}
+
+@media (max-width: 900px) {
+  .nav-bar {
+    height: auto;
+    min-height: 65px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .svg-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .name-logo {
+    font-size: 1.6rem;
+    line-height: 1.2;
+    margin-left: 0;
+  }
+
+  .about-us-but,
+  .sing-in-but,
+  .sing-up-but {
+    margin-top: 0;
+    margin-left: 0;
+    height: 36px;
+  }
+
+  .sing-in-but,
+  .sing-up-but {
+    font-size: 1rem;
+    width: auto;
+    padding: 0 12px;
+  }
+
+  .search-bar {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    height: 40px;
+  }
+
+  .profile-section {
+    margin-left: auto;
+  }
+
+  .main-content,
+  .home-page .main-content,
+  .releases-page .main-content {
+    width: 100%;
+    box-sizing: border-box;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .home-page .text-h1,
+  .text-h1 {
+    font-size: 1.8rem;
+  }
+
+  .home-page .text-p,
+  .text-p {
+    font-size: 0.95rem;
+  }
+
+  .last-added-tracks-main,
+  .reviews-wrapper,
+  .monthly-releases {
+    padding: 14px;
+  }
+
+  .release-page,
+  .artist-page {
+    padding: 20px 12px;
+    box-sizing: border-box;
+    gap: 24px;
+  }
+
+  .release-cover-large {
+    width: 220px;
+    height: 220px;
+  }
+
+  .release-title-large {
+    font-size: 1.7rem;
+  }
+
+  .reviews-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .profile-layout {
+    flex-direction: column-reverse !important;
+    gap: 16px !important;
+  }
+
+  .profile-right {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .name-logo {
+    font-size: 1.35rem;
+  }
+
+  .search-bar {
+    height: 38px;
+  }
+
+  .releases-page {
+    --release-card-width: min(43vw, 160px);
+    --releases-gap: 10px;
+    --releases-columns: 2;
+  }
+
+  .releases-headline {
+    font-size: 1.45rem;
+  }
+
+  .sort-btn {
+    font-size: 0.85rem;
+    padding: 7px 9px;
+  }
+
+  .release-cover-large {
+    width: min(78vw, 260px);
+    height: min(78vw, 260px);
+  }
+
+  .artist-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .rating-badge-item {
+    padding: 6px 10px;
+  }
+
+  .review-card-track {
+    padding: 12px;
+  }
+
+  .submit-release-content {
+    padding: 14px 10px 20px;
+  }
+
+  .release-form-card {
+    padding: 12px;
+  }
+
+  .ratings-mixer .mixer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ratings-mixer .mixer-channel {
+    min-height: 190px;
   }
 }

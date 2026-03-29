@@ -18,6 +18,13 @@ body {
   color: var(--text-color);
 }
 
+button,
+input,
+select,
+textarea {
+  font-family: Inter, sans-serif;
+}
+
 .nav-bar {
   justify-content: center;
   align-items: center;
@@ -137,4 +144,41 @@ body {
   text-align: center;
   color: #e6e6e6;
   font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .nav-bar {
+    height: auto;
+    min-height: 65px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .svg-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .name-logo {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin-left: 0;
+  }
+
+  .but-back {
+    margin-left: auto;
+    margin-top: 0;
+    height: 36px;
+  }
+
+  .about-page {
+    margin-top: 16px;
+    padding: 0 12px 20px;
+  }
+
+  .about-card {
+    padding: 14px;
+  }
 }
