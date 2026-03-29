@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('./db');
+const { columnExists } = require('./utils/dbHelpers');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -38,6 +39,17 @@ function getCookieOptions(req, includeMaxAge = true) {
   }
 
   return options;
+}
+
+async function getUsersColumnsState() {
+  const [hasRole, hasMiReviewer, hasAvatar, hasIsBanned] = await Promise.all([
+    columnExists('users', 'role'),
+    columnExists('users', 'is_mi_reviewer'),
+    columnExists('users', 'avatar'),
+    columnExists('users', 'is_banned')
+  ]);
+
+  return { hasRole, hasMiReviewer, hasAvatar, hasIsBanned };
 }
 
 exports.register = async (req, res) => {
@@ -152,9 +164,20 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    const { hasRole, hasMiReviewer, hasIsBanned } = await getUsersColumnsState();
+
     // Find user
     const result = await query(
-      'SELECT id, name, email, password, role, is_mi_reviewer FROM users WHERE email = $1', 
+      `SELECT
+        id,
+        name,
+        email,
+        password,
+        ${hasRole ? 'role' : "'user'::text AS role"},
+        ${hasMiReviewer ? 'is_mi_reviewer' : 'FALSE AS is_mi_reviewer'},
+        ${hasIsBanned ? 'COALESCE(is_banned, FALSE)' : 'FALSE'} AS is_banned
+       FROM users
+       WHERE email = $1`,
       [email]
     );
     if (result.rows.length === 0) {
@@ -167,6 +190,10 @@ exports.login = async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return res.status(400).json({ error: 'Invalid credentials' });
+    }
+
+    if (user.is_banned) {
+      return res.status(403).json({ error: 'Your account is banned' });
     }
 
     // Generate token with role and is_mi_reviewer
@@ -227,14 +254,29 @@ exports.getUser = [
   exports.authenticate,
   async (req, res) => {
     try {
-      // Fetch full user data including role
+      const { hasRole, hasMiReviewer, hasAvatar, hasIsBanned } = await getUsersColumnsState();
+
       const result = await query(
-        'SELECT id, name, email, role, is_mi_reviewer, avatar FROM users WHERE id = $1',
+        `SELECT
+          id,
+          name,
+          email,
+          ${hasRole ? 'role' : "'user'::text AS role"},
+          ${hasMiReviewer ? 'is_mi_reviewer' : 'FALSE AS is_mi_reviewer'},
+          ${hasAvatar ? 'avatar' : 'NULL AS avatar'},
+          ${hasIsBanned ? 'COALESCE(is_banned, FALSE)' : 'FALSE'} AS is_banned
+         FROM users
+         WHERE id = $1`,
         [req.user.id]
       );
       
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (result.rows[0].is_banned) {
+        res.clearCookie('token', getCookieOptions(req, false));
+        return res.status(403).json({ error: 'Your account is banned' });
       }
       
       res.json({ user: result.rows[0] });

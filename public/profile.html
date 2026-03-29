@@ -521,7 +521,7 @@
               <label for="avatar-upload" class="profile-btn profile-btn-avatar">
                 Загрузить аватар
               </label>
-              <input type="file" id="avatar-upload" accept="image/*" style="display: none;" />
+              <input type="file" id="avatar-upload" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none;" />
               <button id="logout-btn" class="profile-btn profile-btn-logout">
                 Выйти
               </button>
@@ -536,6 +536,21 @@
         avatarUpload.addEventListener('change', (e) => {
           const file = e.target.files[0];
           if (file) {
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            const maxSize = 5 * 1024 * 1024;
+
+            if (!allowedTypes.includes(file.type)) {
+              showMessage('Допустимые форматы: JPG, PNG, WebP', 'error');
+              avatarUpload.value = '';
+              return;
+            }
+
+            if (file.size > maxSize) {
+              showMessage('Максимальный размер файла: 5MB', 'error');
+              avatarUpload.value = '';
+              return;
+            }
+
             handleAvatarUpload(file);
           }
         });

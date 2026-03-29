@@ -19,6 +19,21 @@ function parseReleaseDate(value) {
   return value;
 }
 
+async function getBanColumnsState() {
+  const [isBannedExists, bannedAtExists, bannedReasonExists] = await Promise.all([
+    columnExists('users', 'is_banned'),
+    columnExists('users', 'banned_at'),
+    columnExists('users', 'banned_reason')
+  ]);
+
+  return { isBannedExists, bannedAtExists, bannedReasonExists };
+}
+
+function parseUserId(rawId) {
+  const userId = parseInt(rawId, 10);
+  return Number.isInteger(userId) && userId > 0 ? userId : null;
+}
+
 /**
  * Get moderation queue - pending releases
  */
@@ -565,3 +580,233 @@ exports.promoteToAdmin = [
   }
 ];
 
+/**
+ * Get all users (admin only)
+ */
+exports.getAllUsers = [
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { isBannedExists, bannedAtExists, bannedReasonExists } = await getBanColumnsState();
+
+      const result = await query(
+        `SELECT
+          u.id,
+          u.name,
+          u.email,
+          u.role,
+          u.avatar,
+          u.created_at,
+          ${isBannedExists ? 'COALESCE(u.is_banned, FALSE)' : 'FALSE'} AS is_banned,
+          ${bannedAtExists ? 'u.banned_at' : 'NULL'} AS banned_at,
+          ${bannedReasonExists ? 'u.banned_reason' : 'NULL'} AS banned_reason,
+          COUNT(DISTINCT r.id)::INT AS review_count,
+          COUNT(DISTINCT t.id)::INT AS release_count
+         FROM users u
+         LEFT JOIN reviews r ON r.user_id = u.id
+         LEFT JOIN tracks t ON t.user_id = u.id
+         GROUP BY u.id
+         ORDER BY u.created_at DESC`
+      );
+
+      return res.json({ users: result.rows || [] });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'getAllUsers');
+    }
+  }
+];
+
+/**
+ * Update user name (admin only)
+ */
+exports.updateUserName = [
+  requireAdmin,
+  async (req, res) => {
+    const userId = parseUserId(req.params.id);
+    const newName = req.body?.name?.trim();
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    if (!newName || newName.length < 2 || newName.length > 80) {
+      return res.status(400).json({ error: 'Name must be between 2 and 80 characters' });
+    }
+
+    try {
+      const result = await query(
+        `UPDATE users
+         SET name = $1
+         WHERE id = $2
+         RETURNING id, name, email, role, avatar`,
+        [newName, userId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({ success: true, user: result.rows[0] });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'updateUserName');
+    }
+  }
+];
+
+/**
+ * Remove user avatar (admin only)
+ */
+exports.removeUserAvatar = [
+  requireAdmin,
+  async (req, res) => {
+    const userId = parseUserId(req.params.id);
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+      const result = await query(
+        `UPDATE users
+         SET avatar = NULL
+         WHERE id = $1
+         RETURNING id, name, email, role, avatar`,
+        [userId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({ success: true, user: result.rows[0] });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'removeUserAvatar');
+    }
+  }
+];
+
+/**
+ * Ban user (admin only)
+ */
+exports.banUser = [
+  requireAdmin,
+  async (req, res) => {
+    const userId = parseUserId(req.params.id);
+    const reason = req.body?.reason?.trim() || null;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: 'You cannot ban your own account' });
+    }
+
+    if (reason && reason.length > 500) {
+      return res.status(400).json({ error: 'Ban reason must not exceed 500 characters' });
+    }
+
+    try {
+      const { isBannedExists, bannedAtExists, bannedReasonExists } = await getBanColumnsState();
+      if (!isBannedExists || !bannedAtExists || !bannedReasonExists) {
+        return res.status(400).json({
+          error: 'Ban system is not available. Please run migration 010.'
+        });
+      }
+
+      const target = await query('SELECT id, role FROM users WHERE id = $1', [userId]);
+      if (target.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (target.rows[0].role === 'admin') {
+        return res.status(400).json({ error: 'Cannot ban another admin account' });
+      }
+
+      const result = await query(
+        `UPDATE users
+         SET is_banned = TRUE,
+             banned_at = NOW(),
+             banned_reason = $1
+         WHERE id = $2
+         RETURNING id, name, email, role, avatar, is_banned, banned_at, banned_reason`,
+        [reason, userId]
+      );
+
+      return res.json({ success: true, user: result.rows[0] });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'banUser');
+    }
+  }
+];
+
+/**
+ * Unban user (admin only)
+ */
+exports.unbanUser = [
+  requireAdmin,
+  async (req, res) => {
+    const userId = parseUserId(req.params.id);
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+      const { isBannedExists, bannedAtExists, bannedReasonExists } = await getBanColumnsState();
+      if (!isBannedExists || !bannedAtExists || !bannedReasonExists) {
+        return res.status(400).json({
+          error: 'Ban system is not available. Please run migration 010.'
+        });
+      }
+
+      const result = await query(
+        `UPDATE users
+         SET is_banned = FALSE,
+             banned_at = NULL,
+             banned_reason = NULL
+         WHERE id = $1
+         RETURNING id, name, email, role, avatar, is_banned, banned_at, banned_reason`,
+        [userId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({ success: true, user: result.rows[0] });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'unbanUser');
+    }
+  }
+];

@@ -94,6 +94,11 @@ app.post('/api/admin/reviews/:id/approve', adminRoutes.approveReview);
 app.post('/api/admin/reviews/:id/reject', adminRoutes.rejectReview);
 app.delete('/api/admin/reviews/:id', adminRoutes.deleteReview);
 app.post('/api/admin/promote', adminRoutes.promoteToAdmin);
+app.get('/api/admin/users', adminRoutes.getAllUsers);
+app.patch('/api/admin/users/:id/name', adminRoutes.updateUserName);
+app.delete('/api/admin/users/:id/avatar', adminRoutes.removeUserAvatar);
+app.post('/api/admin/users/:id/ban', adminRoutes.banUser);
+app.post('/api/admin/users/:id/unban', adminRoutes.unbanUser);
 
 // Health check
 app.get('/api/health', (req, res) => {

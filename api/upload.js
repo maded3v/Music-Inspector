@@ -27,12 +27,31 @@ const upload = multer({
   }
 });
 
+function uploadSingle(fieldName) {
+  return (req, res, next) => {
+    upload.single(fieldName)(req, res, (error) => {
+      if (!error) {
+        return next();
+      }
+
+      if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File too large. Maximum size: 5MB' });
+        }
+        return res.status(400).json({ error: error.message || 'Upload failed' });
+      }
+
+      return res.status(400).json({ error: error.message || 'Upload failed' });
+    });
+  };
+}
+
 /**
  * Upload cover image for release
  */
 exports.uploadCover = [
   requireAuth,
-  upload.single('cover'),
+  uploadSingle('cover'),
   async (req, res) => {
     try {
       // Validate file
@@ -83,7 +102,7 @@ exports.uploadCover = [
  */
 exports.uploadArtistImage = [
   requireAuth,
-  upload.single('image'),
+  uploadSingle('image'),
   async (req, res) => {
     try {
       // Validate file
@@ -129,7 +148,7 @@ exports.uploadArtistImage = [
  */
 exports.uploadAvatar = [
   requireAuth,
-  upload.single('avatar'),
+  uploadSingle('avatar'),
   async (req, res) => {
     try {
       const { query } = require('./db');

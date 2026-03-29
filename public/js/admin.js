@@ -6,6 +6,7 @@ let currentRejectTrackId = null;
 let currentRejectReviewId = null;
 let currentRejectType = 'track'; // 'track' or 'review'
 let allTracksCache = []; // Cache for search filtering
+let allUsersCache = []; // Cache for users filtering
 let currentEditTrackId = null;
 
 async function adminRequest(path, options = {}, fallbackMessage = 'Request failed') {
@@ -77,6 +78,8 @@ function initTabs() {
         loadReviewsModerationQueue();
       } else if (targetTab === 'tracks') {
         loadAllTracks();
+      } else if (targetTab === 'users') {
+        loadUsers();
       } else if (targetTab === 'test-data') {
         loadTracksForReviewSelect();
       }
@@ -275,6 +278,165 @@ function initEditModal() {
     }
   });
 }
+
+/**
+ * Load all users for admin management
+ */
+async function loadUsers() {
+  const usersList = document.getElementById('users-list');
+  usersList.innerHTML = '<p>Загрузка...</p>';
+
+  try {
+    const data = await adminRequest('/api/admin/users', {}, 'Failed to load users');
+    allUsersCache = data.users || [];
+    renderUsersList(allUsersCache);
+
+    const searchInput = document.getElementById('users-search');
+    if (searchInput) {
+      searchInput.removeEventListener('input', handleUsersSearch);
+      searchInput.addEventListener('input', handleUsersSearch);
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+    usersList.innerHTML = '<p style="color: red;">Ошибка загрузки пользователей</p>';
+  }
+}
+
+function handleUsersSearch(e) {
+  const query = e.target.value.toLowerCase().trim();
+  if (!query) {
+    renderUsersList(allUsersCache);
+    return;
+  }
+
+  const filtered = allUsersCache.filter(user => {
+    const name = (user.name || '').toLowerCase();
+    const email = (user.email || '').toLowerCase();
+    return name.includes(query) || email.includes(query);
+  });
+
+  renderUsersList(filtered);
+}
+
+function renderUsersList(users) {
+  const usersList = document.getElementById('users-list');
+
+  if (!users || users.length === 0) {
+    usersList.innerHTML = '<p style="color: #969696;">Пользователи не найдены</p>';
+    return;
+  }
+
+  usersList.innerHTML = users.map(user => {
+    const joined = user.created_at ? new Date(user.created_at).toLocaleDateString('ru-RU') : 'N/A';
+    const roleLabel = user.role === 'admin' ? 'Админ' : 'Пользователь';
+    const banBadge = user.is_banned
+      ? `<span class="user-badge banned">Забанен</span>`
+      : '<span class="user-badge">Активен</span>';
+
+    return `
+      <div class="user-row" data-id="${user.id}">
+        <div class="user-main">
+          <div class="user-name">${user.name || 'Без имени'} (${roleLabel})</div>
+          <div class="user-meta">${user.email || 'N/A'} · Релизов: ${user.release_count || 0} · Отзывов: ${user.review_count || 0} · С ${joined}</div>
+          ${banBadge}
+        </div>
+        <div class="user-actions">
+          <button class="btn-neutral" onclick="renameUser(${user.id}, '${escapeJsString(user.name || '')}')">Переименовать</button>
+          <button class="btn-neutral" onclick="removeUserAvatar(${user.id})">Удалить аватар</button>
+          ${user.is_banned
+            ? `<button class="btn-neutral btn-ok" onclick="unbanUser(${user.id})">Разбанить</button>`
+            : `<button class="btn-neutral btn-warn" onclick="banUser(${user.id})">Забанить</button>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeJsString(value) {
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, ' ');
+}
+
+window.renameUser = async function(userId, currentName) {
+  const nextName = prompt('Введите новое имя пользователя:', currentName || '');
+  if (!nextName) {
+    return;
+  }
+
+  try {
+    await adminRequest(`/api/admin/users/${userId}/name`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: nextName.trim() })
+    }, 'Failed to rename user');
+
+    alert('Имя пользователя обновлено');
+    loadUsers();
+  } catch (error) {
+    console.error('Error renaming user:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+};
+
+window.removeUserAvatar = async function(userId) {
+  if (!confirm('Удалить аватар пользователя?')) {
+    return;
+  }
+
+  try {
+    await adminRequest(`/api/admin/users/${userId}/avatar`, {
+      method: 'DELETE'
+    }, 'Failed to remove avatar');
+
+    alert('Аватар удален');
+    loadUsers();
+  } catch (error) {
+    console.error('Error removing avatar:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+};
+
+window.banUser = async function(userId) {
+  const reason = prompt('Причина бана (опционально):', '') || '';
+  if (!confirm('Забанить пользователя?')) {
+    return;
+  }
+
+  try {
+    await adminRequest(`/api/admin/users/${userId}/ban`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reason.trim() })
+    }, 'Failed to ban user');
+
+    alert('Пользователь забанен');
+    loadUsers();
+  } catch (error) {
+    console.error('Error banning user:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+};
+
+window.unbanUser = async function(userId) {
+  if (!confirm('Разбанить пользователя?')) {
+    return;
+  }
+
+  try {
+    await adminRequest(`/api/admin/users/${userId}/unban`, {
+      method: 'POST'
+    }, 'Failed to unban user');
+
+    alert('Пользователь разбанен');
+    loadUsers();
+  } catch (error) {
+    console.error('Error unbanning user:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+};
 
 /**
  * Approve track

@@ -131,6 +131,86 @@
         background: #f44336;
         color: white;
       }
+      .users-toolbar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .users-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .user-row {
+        background: #1a1a1a;
+        border: 1px solid #2e2e2e;
+        border-radius: 8px;
+        padding: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .user-main {
+        min-width: 0;
+      }
+      .user-name {
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .user-meta {
+        color: #969696;
+        font-size: 0.9em;
+      }
+      .user-badge {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 2px 8px;
+        font-size: 0.78em;
+        border-radius: 10px;
+        background: #2e2e2e;
+      }
+      .user-badge.banned {
+        background: #7a1d1d;
+        color: #ffd7d7;
+      }
+      .user-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .btn-neutral {
+        padding: 8px 12px;
+        border: 1px solid #1e1e1e;
+        border-radius: 10px;
+        background: #282828;
+        color: #fff;
+        cursor: pointer;
+        transition: color 0.3s, background-color 0.3s, border-color 0.3s;
+      }
+      .btn-neutral:hover {
+        background-color: #E1E1E1;
+        color: #969696;
+        border: #969696 1px solid;
+      }
+      .btn-warn {
+        background: #8d6e12;
+      }
+      .btn-ok {
+        background: #2e7d32;
+      }
+
+      @media (max-width: 900px) {
+        .user-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .user-actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+      }
     </style>
 </head>
 <body>
@@ -156,6 +236,7 @@
       <a href="#" class="admin-tab active" data-tab="moderation">Модерация релизов</a>
       <a href="#" class="admin-tab" data-tab="reviews-moderation">Модерация отзывов</a>
       <a href="#" class="admin-tab" data-tab="tracks">Все релизы</a>
+      <a href="#" class="admin-tab" data-tab="users">Пользователи</a>
       <a href="#" class="admin-tab" data-tab="test-data">Тестовые данные</a>
       <a href="#" class="admin-tab" data-tab="admin-management">Управление админами</a>
     </div>
@@ -336,6 +417,18 @@
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
         <button id="cancel-edit" style="padding: 8px 12px; background: #282828; color: white; border: 1px solid #1e1e1e; border-radius: 10px; cursor: pointer;">Отмена</button>
         <button id="confirm-edit" style="padding: 8px 12px; background: #282828; color: white; border: 1px solid #1e1e1e; border-radius: 10px; cursor: pointer;">Сохранить</button>
+      </div>
+    </div>
+
+    <!-- Users Management -->
+    <div id="users-tab" class="admin-tab-content" style="display: none;">
+      <h2>Пользователи</h2>
+      <div class="users-toolbar">
+        <input type="text" id="users-search" placeholder="Поиск по имени или email..."
+               style="width: 100%; max-width: 700px; padding: 12px 14px; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 15px; box-sizing: border-box;">
+      </div>
+      <div id="users-list" class="users-list">
+        <p>Загрузка...</p>
       </div>
     </div>
   </div>

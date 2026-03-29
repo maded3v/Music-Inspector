@@ -1,7 +1,65 @@
 const { query } = require('./db');
 const jwt = require('jsonwebtoken');
+const { columnExists } = require('./utils/dbHelpers');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+function getCookieClearOptions(req) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  let sameSite = 'lax';
+  let secure = isProduction;
+
+  const origin = req.get('origin');
+  if (origin) {
+    try {
+      const originHost = new URL(origin).hostname;
+      const requestHost = req.hostname;
+      if (originHost !== requestHost) {
+        sameSite = 'none';
+        secure = true;
+      }
+    } catch (error) {
+      // Keep defaults when origin is not a valid URL
+    }
+  }
+
+  return {
+    httpOnly: true,
+    secure,
+    sameSite,
+    path: '/'
+  };
+}
+
+async function getUsersColumnsState() {
+  const [hasAvatar, hasRole, hasMiReviewer, hasIsBanned] = await Promise.all([
+    columnExists('users', 'avatar'),
+    columnExists('users', 'role'),
+    columnExists('users', 'is_mi_reviewer'),
+    columnExists('users', 'is_banned')
+  ]);
+
+  return { hasAvatar, hasRole, hasMiReviewer, hasIsBanned };
+}
+
+async function getUserByIdWithSafeColumns(userId) {
+  const { hasAvatar, hasRole, hasMiReviewer, hasIsBanned } = await getUsersColumnsState();
+  const result = await query(
+    `SELECT
+      id,
+      name,
+      email,
+      ${hasRole ? 'role' : "'user'::text AS role"},
+      ${hasMiReviewer ? 'is_mi_reviewer' : 'FALSE AS is_mi_reviewer'},
+      ${hasAvatar ? 'avatar' : 'NULL AS avatar'},
+      ${hasIsBanned ? 'COALESCE(is_banned, FALSE)' : 'FALSE'} AS is_banned
+     FROM users
+     WHERE id = $1`,
+    [userId]
+  );
+
+  return result.rows[0] || null;
+}
 
 /**
  * Authentication middleware - verifies JWT token and attaches user to request
@@ -15,18 +73,18 @@ exports.requireAuth = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    
-    // Fetch full user data including role, is_mi_reviewer, and avatar
-    const result = await query(
-      'SELECT id, name, email, role, is_mi_reviewer, avatar FROM users WHERE id = $1',
-      [decoded.id]
-    );
 
-    if (result.rows.length === 0) {
+    const user = await getUserByIdWithSafeColumns(decoded.id);
+    if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    req.user = result.rows[0];
+    if (user.is_banned) {
+      res.clearCookie('token', getCookieClearOptions(req));
+      return res.status(403).json({ error: 'Your account is banned' });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
@@ -58,23 +116,23 @@ exports.getCurrentUser = async (req, res) => {
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    
-    const result = await query(
-      'SELECT id, name, email, role, is_mi_reviewer, avatar FROM users WHERE id = $1',
-      [decoded.id]
-    );
-    
-    if (result.rows.length === 0) {
+
+    const user = await getUserByIdWithSafeColumns(decoded.id);
+    if (!user) {
+      return res.json({ user: null });
+    }
+
+    if (user.is_banned) {
+      res.clearCookie('token', getCookieClearOptions(req));
       return res.json({ user: null });
     }
     
-    res.json({ user: result.rows[0] });
+    res.json({ user });
   } catch (error) {
     console.error('getCurrentUser error:', error.message);
     res.json({ user: null });
   }
 };
-
 
 
 
