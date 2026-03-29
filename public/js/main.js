@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Show "Add Release" button if logged in
   const addReleaseBtn = document.getElementById('add-release-btn');
   if (currentUser && addReleaseBtn) {
-    addReleaseBtn.style.display = 'inline-block';
+    addReleaseBtn.classList.remove('is-hidden');
   }
   // Load data in parallel
   const [reviews, releases, monthlyAlbums] = await Promise.all([

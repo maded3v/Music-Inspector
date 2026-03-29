@@ -380,7 +380,7 @@ color: white;
   display: flex;
   align-items: center;
   gap: 12px;
-  
+  flex-wrap: nowrap;
 }
 
 .but-prev-last-added-tracks,
@@ -443,24 +443,29 @@ text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #4CAF50, #45a049);
-  border: none;
+  min-width: 148px;
+  padding: 8px 10px;
+  background-color: #282828;
+  border: 1px solid #1e1e1e;
   border-radius: 10px;
   color: white;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  user-select: none;
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s;
 }
 
 .add-release-btn:hover {
-  background: linear-gradient(135deg, #66BB6A, #4CAF50);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-  color: white;
+  background-color: #E1E1E1;
+  color: #969696;
+  border: #969696 1px solid;
+}
+
+.add-release-btn.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .nav-last-added-text-text{
