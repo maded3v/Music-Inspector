@@ -4,6 +4,7 @@
  */
 
 import { getCurrentUser } from './api.js';
+import { initGlobalSearch } from './search.js';
 
 // Generate random color for avatar background
 function generateAvatarColor(email) {
@@ -83,10 +84,10 @@ export function updateAuthStatus(user) {
 
 // Initialize auth status on page load
 export async function initAuthStatus() {
+  await initGlobalSearch();
   const currentUser = await getCurrentUser();
   updateAuthStatus(currentUser);
   return currentUser;
 }
-
 
 

@@ -63,9 +63,6 @@ let allReleases = [];
 let currentSort = 'rating';
 let currentOrder = 'desc';
 let navSearchInput = null;
-let navSuggestions = null;
-let currentSuggestions = [];
-let activeSuggestionIndex = -1;
 
 function getSearchValue() {
   return (navSearchInput?.value || '').toLowerCase().trim();
@@ -87,97 +84,6 @@ function renderReleases(releases) {
 
   const sorted = sortReleases(filtered, currentSort, currentOrder);
   grid.innerHTML = sorted.map(renderReleaseCardAll).join('');
-}
-
-function getSearchSuggestions(query) {
-  if (!query) return [];
-
-  const q = query.toLowerCase();
-  const candidates = new Map();
-
-  allReleases.forEach((release) => {
-    const artist = (release.artist || '').trim();
-    const title = (release.title || '').trim();
-
-    if (artist && artist.toLowerCase().includes(q)) {
-      const key = `artist:${artist.toLowerCase()}`;
-      if (!candidates.has(key)) {
-        candidates.set(key, { label: artist, type: 'Исполнитель' });
-      }
-    }
-
-    if (title && title.toLowerCase().includes(q)) {
-      const key = `title:${title.toLowerCase()}`;
-      if (!candidates.has(key)) {
-        candidates.set(key, { label: title, type: 'Релиз' });
-      }
-    }
-  });
-
-  return Array.from(candidates.values()).slice(0, 8);
-}
-
-function closeSuggestions() {
-  if (!navSuggestions) return;
-  navSuggestions.innerHTML = '';
-  navSuggestions.style.display = 'none';
-  currentSuggestions = [];
-  activeSuggestionIndex = -1;
-}
-
-function applySuggestion(value) {
-  if (!navSearchInput) return;
-  navSearchInput.value = value || '';
-  closeSuggestions();
-  renderReleases(allReleases);
-}
-
-function highlightActiveSuggestion() {
-  if (!navSuggestions) return;
-  const buttons = navSuggestions.querySelectorAll('.nav-search-suggestion');
-  buttons.forEach((button, index) => {
-    const isActive = index === activeSuggestionIndex;
-    button.classList.toggle('is-active', isActive);
-    if (isActive) {
-      button.scrollIntoView({ block: 'nearest' });
-    }
-  });
-}
-
-function renderSuggestions() {
-  if (!navSuggestions || !navSearchInput) return;
-
-  const query = navSearchInput.value.trim();
-  const suggestions = getSearchSuggestions(query);
-  currentSuggestions = suggestions;
-  activeSuggestionIndex = -1;
-
-  if (!query || suggestions.length === 0) {
-    closeSuggestions();
-    return;
-  }
-
-  navSuggestions.innerHTML = suggestions
-    .map((item, index) => `
-      <button type="button" class="nav-search-suggestion" data-index="${index}" data-value="${item.label.replace(/"/g, '&quot;')}">
-        <span>${item.label}</span>
-        <span class="nav-search-suggestion-type">${item.type}</span>
-      </button>
-    `)
-    .join('');
-  navSuggestions.style.display = 'block';
-
-  navSuggestions.querySelectorAll('.nav-search-suggestion').forEach((button) => {
-    button.addEventListener('mouseenter', () => {
-      const idx = Number(button.dataset.index);
-      activeSuggestionIndex = Number.isNaN(idx) ? -1 : idx;
-      highlightActiveSuggestion();
-    });
-
-    button.addEventListener('click', () => {
-      applySuggestion(button.dataset.value || '');
-    });
-  });
 }
 
 function getReleaseDateValue(release) {
@@ -240,7 +146,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initAuthStatus();
 
   navSearchInput = document.querySelector('.search-bar .search-input');
-  navSuggestions = document.getElementById('nav-search-suggestions');
   
   allReleases = await getReleases();
   
@@ -257,59 +162,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (navSearchInput) {
     navSearchInput.addEventListener('input', () => {
       renderReleases(allReleases);
-      renderSuggestions();
-    });
-
-    navSearchInput.addEventListener('keydown', (event) => {
-      const hasSuggestions = currentSuggestions.length > 0 && navSuggestions && navSuggestions.style.display !== 'none';
-
-      if (event.key === 'ArrowDown' && hasSuggestions) {
-        event.preventDefault();
-        activeSuggestionIndex = activeSuggestionIndex < currentSuggestions.length - 1
-          ? activeSuggestionIndex + 1
-          : 0;
-        highlightActiveSuggestion();
-        return;
-      }
-
-      if (event.key === 'ArrowUp' && hasSuggestions) {
-        event.preventDefault();
-        activeSuggestionIndex = activeSuggestionIndex > 0
-          ? activeSuggestionIndex - 1
-          : currentSuggestions.length - 1;
-        highlightActiveSuggestion();
-        return;
-      }
-
-      if (event.key === 'Enter') {
-        event.preventDefault();
-
-        if (hasSuggestions && activeSuggestionIndex >= 0) {
-          const picked = currentSuggestions[activeSuggestionIndex];
-          applySuggestion(picked?.label || '');
-          return;
-        }
-
-        closeSuggestions();
-        renderReleases(allReleases);
-      }
-
-      if (event.key === 'Escape') {
-        closeSuggestions();
-      }
-    });
-
-    navSearchInput.addEventListener('focus', () => {
-      renderSuggestions();
     });
   }
-
-  document.addEventListener('click', (event) => {
-    if (!navSuggestions || !navSearchInput) return;
-    if (!navSuggestions.contains(event.target) && !navSearchInput.contains(event.target)) {
-      closeSuggestions();
-    }
-  });
 
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {

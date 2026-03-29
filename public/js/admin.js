@@ -1,4 +1,5 @@
 import { getCurrentUser, withApiUrl } from './api.js';
+import { initGlobalSearch } from './search.js';
 
 let currentUser = null;
 let currentRejectTrackId = null;
@@ -27,6 +28,7 @@ async function adminRequest(path, options = {}, fallbackMessage = 'Request faile
 
 // Check admin access on page load
 document.addEventListener('DOMContentLoaded', async () => {
+  await initGlobalSearch();
   currentUser = await getCurrentUser();
   
   if (!currentUser) {

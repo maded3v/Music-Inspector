@@ -79,6 +79,7 @@ color: white;
 
 .search-bar {
   display: flex;
+  position: relative;
   width: 398px;
   height: 38px;
   cursor: pointer;
@@ -1022,6 +1023,30 @@ text-decoration: none;
   display: flex;
   justify-content: space-between;
   gap: 10px;
+  align-items: center;
+}
+
+.nav-search-suggestion-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nav-search-suggestion-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #353535;
+  background: #1a1a1a;
+}
+
+.nav-search-suggestion-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-search-suggestion:last-child {

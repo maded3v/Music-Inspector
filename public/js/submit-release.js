@@ -1,5 +1,6 @@
 import { getCurrentUser, searchArtists, createArtist, uploadCover, uploadArtistImage, addReview, getTrack } from './api.js';
 import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './modal.js';
+import { initGlobalSearch } from './search.js';
 
 let currentUser = null;
 let selectedArtistId = null;
@@ -62,6 +63,7 @@ function updateAuthStatus(user) {
 
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', async () => {
+  await initGlobalSearch();
   currentUser = await getCurrentUser();
   
   if (!currentUser) {
