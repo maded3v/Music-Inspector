@@ -22,6 +22,7 @@
         <svg stroke="currentColor" fill="#969696" stroke-width="0" viewBox="0 0 512 512" class="size-4" height="25px" width="25px" xmlns="http://www.w3.org/2000/svg"><path d="M337.509 305.372h-17.501l-6.571-5.486c20.791-25.232 33.922-57.054 33.922-93.257C347.358 127.632 283.896 64 205.135 64 127.452 64 64 127.632 64 206.629s63.452 142.628 142.225 142.628c35.011 0 67.831-13.167 92.991-34.008l6.561 5.487v17.551L415.18 448 448 415.086 337.509 305.372zm-131.284 0c-54.702 0-98.463-43.887-98.463-98.743 0-54.858 43.761-98.742 98.463-98.742 54.7 0 98.462 43.884 98.462 98.742 0 54.856-43.762 98.743-98.462 98.743z"></path></svg>
       </div>
       <input type="text" class="search-input" placeholder="Поиск...">
+      <div id="nav-search-suggestions" class="nav-search-suggestions"></div>
       </div>
     <!-- Auth buttons (shown when not logged in) -->
     <a href="login.html" class="sing-in-but auth-buttons">Войти</a>
@@ -41,9 +42,6 @@
  <div class="container">
   <div class="main-content">
     <div class="releases-headline">Все релизы</div>
-    <div class="search-section">
-      <input type="text" id="search-input" placeholder="Поиск релизов...">
-    </div>
     <div class="sort-section">
       <button class="sort-btn" data-sort="rating">Сортировка по рейтингу</button>
       <button class="sort-btn" data-sort="date">Сортировка по дате</button>
@@ -64,10 +62,18 @@ import { initAuthStatus } from './js/auth-status.js';
 let allReleases = [];
 let currentSort = 'rating';
 let currentOrder = 'desc';
+let navSearchInput = null;
+let navSuggestions = null;
+let currentSuggestions = [];
+let activeSuggestionIndex = -1;
+
+function getSearchValue() {
+  return (navSearchInput?.value || '').toLowerCase().trim();
+}
 
 function renderReleases(releases) {
   const grid = document.querySelector('.releases-grid');
-  const searchValue = document.getElementById('search-input').value.toLowerCase();
+  const searchValue = getSearchValue();
   const filtered = releases.filter((r) => {
     const title = (r.title || '').toLowerCase();
     const artist = (r.artist || '').toLowerCase();
@@ -81,6 +87,97 @@ function renderReleases(releases) {
 
   const sorted = sortReleases(filtered, currentSort, currentOrder);
   grid.innerHTML = sorted.map(renderReleaseCardAll).join('');
+}
+
+function getSearchSuggestions(query) {
+  if (!query) return [];
+
+  const q = query.toLowerCase();
+  const candidates = new Map();
+
+  allReleases.forEach((release) => {
+    const artist = (release.artist || '').trim();
+    const title = (release.title || '').trim();
+
+    if (artist && artist.toLowerCase().includes(q)) {
+      const key = `artist:${artist.toLowerCase()}`;
+      if (!candidates.has(key)) {
+        candidates.set(key, { label: artist, type: 'Исполнитель' });
+      }
+    }
+
+    if (title && title.toLowerCase().includes(q)) {
+      const key = `title:${title.toLowerCase()}`;
+      if (!candidates.has(key)) {
+        candidates.set(key, { label: title, type: 'Релиз' });
+      }
+    }
+  });
+
+  return Array.from(candidates.values()).slice(0, 8);
+}
+
+function closeSuggestions() {
+  if (!navSuggestions) return;
+  navSuggestions.innerHTML = '';
+  navSuggestions.style.display = 'none';
+  currentSuggestions = [];
+  activeSuggestionIndex = -1;
+}
+
+function applySuggestion(value) {
+  if (!navSearchInput) return;
+  navSearchInput.value = value || '';
+  closeSuggestions();
+  renderReleases(allReleases);
+}
+
+function highlightActiveSuggestion() {
+  if (!navSuggestions) return;
+  const buttons = navSuggestions.querySelectorAll('.nav-search-suggestion');
+  buttons.forEach((button, index) => {
+    const isActive = index === activeSuggestionIndex;
+    button.classList.toggle('is-active', isActive);
+    if (isActive) {
+      button.scrollIntoView({ block: 'nearest' });
+    }
+  });
+}
+
+function renderSuggestions() {
+  if (!navSuggestions || !navSearchInput) return;
+
+  const query = navSearchInput.value.trim();
+  const suggestions = getSearchSuggestions(query);
+  currentSuggestions = suggestions;
+  activeSuggestionIndex = -1;
+
+  if (!query || suggestions.length === 0) {
+    closeSuggestions();
+    return;
+  }
+
+  navSuggestions.innerHTML = suggestions
+    .map((item, index) => `
+      <button type="button" class="nav-search-suggestion" data-index="${index}" data-value="${item.label.replace(/"/g, '&quot;')}">
+        <span>${item.label}</span>
+        <span class="nav-search-suggestion-type">${item.type}</span>
+      </button>
+    `)
+    .join('');
+  navSuggestions.style.display = 'block';
+
+  navSuggestions.querySelectorAll('.nav-search-suggestion').forEach((button) => {
+    button.addEventListener('mouseenter', () => {
+      const idx = Number(button.dataset.index);
+      activeSuggestionIndex = Number.isNaN(idx) ? -1 : idx;
+      highlightActiveSuggestion();
+    });
+
+    button.addEventListener('click', () => {
+      applySuggestion(button.dataset.value || '');
+    });
+  });
 }
 
 function getReleaseDateValue(release) {
@@ -141,20 +238,78 @@ function updateSortButtonState() {
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize auth status
   await initAuthStatus();
+
+  navSearchInput = document.querySelector('.search-bar .search-input');
+  navSuggestions = document.getElementById('nav-search-suggestions');
   
   allReleases = await getReleases();
   
   // Check for search parameter in URL
   const urlParams = new URLSearchParams(window.location.search);
   const searchQuery = urlParams.get('search');
-  if (searchQuery) {
-    document.getElementById('search-input').value = searchQuery;
+  if (searchQuery && navSearchInput) {
+    navSearchInput.value = searchQuery;
   }
   
   updateSortButtonState();
   renderReleases(allReleases);
 
-  document.getElementById('search-input').addEventListener('input', () => renderReleases(allReleases));
+  if (navSearchInput) {
+    navSearchInput.addEventListener('input', () => {
+      renderReleases(allReleases);
+      renderSuggestions();
+    });
+
+    navSearchInput.addEventListener('keydown', (event) => {
+      const hasSuggestions = currentSuggestions.length > 0 && navSuggestions && navSuggestions.style.display !== 'none';
+
+      if (event.key === 'ArrowDown' && hasSuggestions) {
+        event.preventDefault();
+        activeSuggestionIndex = activeSuggestionIndex < currentSuggestions.length - 1
+          ? activeSuggestionIndex + 1
+          : 0;
+        highlightActiveSuggestion();
+        return;
+      }
+
+      if (event.key === 'ArrowUp' && hasSuggestions) {
+        event.preventDefault();
+        activeSuggestionIndex = activeSuggestionIndex > 0
+          ? activeSuggestionIndex - 1
+          : currentSuggestions.length - 1;
+        highlightActiveSuggestion();
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
+
+        if (hasSuggestions && activeSuggestionIndex >= 0) {
+          const picked = currentSuggestions[activeSuggestionIndex];
+          applySuggestion(picked?.label || '');
+          return;
+        }
+
+        closeSuggestions();
+        renderReleases(allReleases);
+      }
+
+      if (event.key === 'Escape') {
+        closeSuggestions();
+      }
+    });
+
+    navSearchInput.addEventListener('focus', () => {
+      renderSuggestions();
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!navSuggestions || !navSearchInput) return;
+    if (!navSuggestions.contains(event.target) && !navSearchInput.contains(event.target)) {
+      closeSuggestions();
+    }
+  });
 
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {
