@@ -1,5 +1,5 @@
- // Function to trim text to 300 characters, considering spaces and punctuation
-function trimText(text, maxLength = 300) {
+// Function to trim text, considering spaces and punctuation
+function trimText(text, maxLength = 220) {
   if (text.length <= maxLength) return text;
   let trimmed = text.substring(0, maxLength);
   // Find the last space or punctuation to avoid cutting words
@@ -10,6 +10,15 @@ function trimText(text, maxLength = 300) {
     trimmed = trimmed.substring(0, cutIndex + 1);
   }
   return trimmed + '...';
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // Function to get avatar URL
@@ -27,10 +36,9 @@ function getAvatarUrl(avatar) {
 // Function to render a single review card
 export function renderReviewCard(review) {
   // Map API fields to expected format
-  const reviewText = review.text || '';
-  const isExpandable = reviewText.length > 300;
-  const trimmedText = isExpandable ? trimText(reviewText) : reviewText;
-  const isExpanded = false; // Initially not expanded
+  const reviewText = String(review.text || '');
+  const trimmedText = trimText(reviewText);
+  const encodedFullText = encodeURIComponent(reviewText);
   
   // Get subscores from API (score1-score5) or fallback to array
   const subscores = review.subscores || [
@@ -66,12 +74,12 @@ export function renderReviewCard(review) {
   const trackId = review.track_id || null;
 
   return `
-    <div class="review-card" data-id="${review.id}" data-track-id="${trackId}" data-full-text="${reviewText}">
+    <div class="review-card" data-id="${review.id}" data-track-id="${trackId}" data-full-text="${encodedFullText}">
       <div class="review-top">
         <div class="review-author">
           <img src="${authorAvatar}" alt="avatar" class="review-avatar" onerror="this.src='svg/person.png'">
           <div class="review-author-name">
-            ${author} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}
+            ${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}
           </div>
         </div>
         <div class="review-right">
@@ -83,24 +91,63 @@ export function renderReviewCard(review) {
         </div>
       </div>
       <div class="review-body">
-        <div class="review-title">${title}</div>
-        <div class="review-text">${trimmedText}</div>
+        <div class="review-title">${escapeHtml(title)}</div>
+        <div class="review-text">${escapeHtml(trimmedText)}</div>
       </div>
       <div class="review-footer">
-        ${isExpandable ? `<button class="review-btn expand">${isExpanded ? '⤡' : '⤢'}</button>` : ''}
+        <button class="review-btn expand">Развернуть</button>
       </div>
     </div>
   `;
+}
+
+function syncReviewExpandButtons(container) {
+  const cards = container.querySelectorAll('.review-card');
+
+  cards.forEach((card) => {
+    const textEl = card.querySelector('.review-text');
+    const btn = card.querySelector('.review-btn.expand');
+    if (!textEl || !btn) return;
+
+    let fullText = '';
+    try {
+      fullText = decodeURIComponent(card.dataset.fullText || '');
+    } catch {
+      fullText = card.dataset.fullText || '';
+    }
+
+    const trimmed = trimText(fullText);
+    card.classList.remove('expanded');
+    textEl.textContent = trimmed;
+    btn.textContent = 'Развернуть';
+
+    const overflowByLength = trimmed !== fullText;
+    const overflowByLayout = textEl.scrollHeight > textEl.clientHeight + 1;
+
+    if (!overflowByLength && !overflowByLayout) {
+      textEl.textContent = fullText;
+      btn.remove();
+    }
+  });
 }
 
 // Function to render all review cards into the reviews-grid
 export function renderReviews(reviews, container) {
   const html = reviews.map(renderReviewCard).join('');
   container.innerHTML = html;
+
+  requestAnimationFrame(() => {
+    syncReviewExpandButtons(container);
+  });
 }
 
 // Function to handle expand/collapse with event delegation
 export function initReviewExpand(container) {
+  if (!container || container.dataset.expandBound === '1') {
+    return;
+  }
+  container.dataset.expandBound = '1';
+
   container.addEventListener('click', (e) => {
     if (e.target.classList.contains('expand')) {
       const card = e.target.closest('.review-card');
@@ -108,20 +155,24 @@ export function initReviewExpand(container) {
       const textEl = card.querySelector('.review-text');
       const btn = e.target;
       if (!textEl || !btn) return;
+      let fullText = '';
+      try {
+        fullText = decodeURIComponent(card.dataset.fullText || '');
+      } catch {
+        fullText = card.dataset.fullText || '';
+      }
 
       if (card.classList.contains('expanded')) {
         // Collapse
         card.classList.remove('expanded');
-        btn.textContent = '⤢';
+        btn.textContent = 'Развернуть';
         // Reset to trimmed text
-        const fullText = card.dataset.fullText;
         textEl.textContent = trimText(fullText);
       } else {
         // Expand
         card.classList.add('expanded');
-        btn.textContent = '⤡';
+        btn.textContent = 'Свернуть';
         // Show full text
-        const fullText = card.dataset.fullText;
         textEl.textContent = fullText;
       }
     }

@@ -16,13 +16,13 @@ color: white;
     /* dark shadow */ 0 6px 10px #00000015; /* soft shadow */
 }
 .nav-bar{
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   display: flex;
   width: 100%;
   height: 65px;
   box-sizing: border-box;
-  padding: 0 clamp(12px, calc((100vw - 1122px) / 2), 120px);
+  padding: 0 12px;
   background-color: rgb(20, 20, 20);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   top: 0;
@@ -86,7 +86,6 @@ color: white;
   border-radius: 10px;
   margin-top: 4.5px;
   margin-left: 15px;
-  margin-right: auto;
   border: #1E1E1E 1px solid ;
   align-items: center;
   justify-content: left; 
@@ -783,14 +782,20 @@ text-decoration: none;
 }
 
 .review-btn {
-  background: none;
-  border: none;
-  color: #ccc;
+  background-color: #282828;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  color: #fff;
   cursor: pointer;
-  font-size: 1.1rem;
-  transition: color 0.2s;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s;
 }
-.review-btn:hover { color: #fff; }
+.review-btn:hover {
+  background-color: #E1E1E1;
+  color: #969696;
+  border: #969696 1px solid;
+}
 
 @media (max-width: 1100px) {
   .reviews-grid {
