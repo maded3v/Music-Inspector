@@ -372,6 +372,8 @@ color: white;
   display: flex;
   align-items: center;
   justify-content: space-between; /* название слева, кнопки справа */
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 0.75rem;
   margin-top: -0.75rem;
 }
@@ -380,7 +382,10 @@ color: white;
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+  max-width: 100%;
 }
 
 .but-prev-last-added-tracks,
@@ -443,7 +448,6 @@ text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 148px;
   padding: 8px 10px;
   background-color: #282828;
   border: 1px solid #1e1e1e;
@@ -464,8 +468,7 @@ text-decoration: none;
 }
 
 .add-release-btn.is-hidden {
-  visibility: hidden;
-  pointer-events: none;
+  display: none;
 }
 
 .nav-last-added-text-text{

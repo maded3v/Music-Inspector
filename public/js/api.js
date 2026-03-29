@@ -12,9 +12,67 @@ function resolveApiBase() {
 }
 
 export const API_BASE = resolveApiBase();
+const CACHE_PREFIX = 'MI_CACHE::';
+const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export function withApiUrl(path) {
   return `${API_BASE}${path}`;
+}
+
+function getCacheKey(path) {
+  return `${CACHE_PREFIX}${path}`;
+}
+
+function readCache(path, ttlMs = DEFAULT_CACHE_TTL_MS) {
+  try {
+    const raw = localStorage.getItem(getCacheKey(path));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || !('timestamp' in parsed)) return null;
+
+    if (Date.now() - parsed.timestamp > ttlMs) {
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function readStaleCache(path) {
+  try {
+    const raw = localStorage.getItem(getCacheKey(path));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(path, data) {
+  try {
+    localStorage.setItem(getCacheKey(path), JSON.stringify({ timestamp: Date.now(), data }));
+  } catch {
+    // Ignore quota and storage errors silently
+  }
+}
+
+function clearPublicCache() {
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(CACHE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // Ignore storage errors silently
+  }
 }
 
 async function parseResponseBody(response) {
@@ -61,9 +119,29 @@ async function apiRequest(path, options = {}, fallbackMessage = 'Request failed'
   return body;
 }
 
+async function apiCachedRequest(path, fallbackMessage, ttlMs = DEFAULT_CACHE_TTL_MS) {
+  const cached = readCache(path, ttlMs);
+  if (cached !== null) {
+    return cached;
+  }
+
+  try {
+    const fresh = await apiRequest(path, {}, fallbackMessage);
+    writeCache(path, fresh);
+    return fresh;
+  } catch (error) {
+    const stale = readStaleCache(path);
+    if (stale !== null) {
+      console.warn(`Using stale cache for ${path}`);
+      return stale;
+    }
+    throw error;
+  }
+}
+
 export async function getMonthlyAlbums() {
   try {
-    const data = await apiRequest('/api/tracks/monthly-albums', {}, 'Failed to fetch monthly albums');
+    const data = await apiCachedRequest('/api/tracks/monthly-albums', 'Failed to fetch monthly albums');
     return data.albums || [];
   } catch (error) {
     console.error('Error fetching monthly albums:', error);
@@ -73,7 +151,7 @@ export async function getMonthlyAlbums() {
 
 export async function getReleases() {
   try {
-    const data = await apiRequest('/api/tracks/latest', {}, 'Failed to fetch releases');
+    const data = await apiCachedRequest('/api/tracks/latest', 'Failed to fetch releases');
     return data.tracks || [];
   } catch (error) {
     console.error('Error fetching releases:', error);
@@ -83,7 +161,7 @@ export async function getReleases() {
 
 export async function getReviews() {
   try {
-    const data = await apiRequest('/api/reviews/latest', {}, 'Failed to fetch reviews');
+    const data = await apiCachedRequest('/api/reviews/latest', 'Failed to fetch reviews');
     return data.reviews || [];
   } catch (error) {
     console.error('Error fetching reviews:', error);
@@ -93,7 +171,7 @@ export async function getReviews() {
 
 export async function getReview(id) {
   try {
-    const data = await apiRequest(`/api/reviews/by-track/${id}`, {}, 'Failed to fetch review');
+    const data = await apiCachedRequest(`/api/reviews/by-track/${id}`, 'Failed to fetch review', 2 * 60 * 1000);
     return data.reviews?.[0] || null;
   } catch (error) {
     console.error('Error fetching review:', error);
@@ -103,7 +181,7 @@ export async function getReview(id) {
 
 export async function getTrack(id) {
   try {
-    return await apiRequest(`/api/tracks/${id}`, {}, 'Failed to fetch track');
+    return await apiCachedRequest(`/api/tracks/${id}`, 'Failed to fetch track', 2 * 60 * 1000);
   } catch (error) {
     console.error('Error fetching track:', error);
     throw error;
@@ -112,7 +190,7 @@ export async function getTrack(id) {
 
 export async function getReviewsByTrack(trackId) {
   try {
-    return await apiRequest(`/api/reviews/by-track/${trackId}`, {}, 'Failed to fetch reviews');
+    return await apiCachedRequest(`/api/reviews/by-track/${trackId}`, 'Failed to fetch reviews', 2 * 60 * 1000);
   } catch (error) {
     console.error('Error fetching reviews:', error);
     if (error.name === 'TypeError' && String(error.message).includes('fetch')) {
@@ -126,11 +204,13 @@ export async function getReviewsByTrack(trackId) {
 
 export async function addReview(reviewData) {
   try {
-    return await apiRequest('/api/reviews/add', {
+    const result = await apiRequest('/api/reviews/add', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reviewData)
     }, 'Failed to add review');
+    clearPublicCache();
+    return result;
   } catch (error) {
     console.error('Error adding review:', error);
     throw error;
@@ -197,11 +277,13 @@ export async function searchArtists(query) {
 
 export async function createArtist(artistData) {
   try {
-    return await apiRequest('/api/artists', {
+    const result = await apiRequest('/api/artists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(artistData)
     }, 'Failed to create artist');
+    clearPublicCache();
+    return result;
   } catch (error) {
     console.error('Create artist error:', error);
     throw error;
@@ -240,11 +322,13 @@ export async function uploadArtistImage(file) {
 
 export async function createTrack(trackData) {
   try {
-    return await apiRequest('/api/tracks/create', {
+    const result = await apiRequest('/api/tracks/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(trackData)
     }, 'Failed to create track');
+    clearPublicCache();
+    return result;
   } catch (error) {
     console.error('Create track error:', error);
     throw error;
