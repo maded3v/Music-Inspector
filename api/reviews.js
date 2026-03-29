@@ -11,8 +11,8 @@ exports.addReview = [
   async (req, res) => {
     const { trackId, text, score1, score2, score3, score4, score5 } = req.body;
     const userId = req.user.id;
-    const isMIReviewer = req.user.is_mi_reviewer || false;
     const isAdmin = req.user.role === 'admin';
+    const isMIReviewer = isAdmin || req.user.is_mi_reviewer || false;
 
     // Validate required fields
     if (!trackId) {
