@@ -61,6 +61,7 @@
               <span id="artist-name" class="artist-name">Загрузка...</span>
             </a>
           </div>
+          <div id="release-date" class="release-date-large">Дата релиза: --.--.----</div>
         </div>
       </div>
 
@@ -216,6 +217,21 @@
 
         document.getElementById('release-cover').src = cover;
         document.getElementById('release-title').textContent = track.title || 'Без названия';
+
+        const releaseDateEl = document.getElementById('release-date');
+        if (releaseDateEl) {
+          const rawReleaseDate = track.release_date || track.releaseDate || track.created_at || null;
+          if (rawReleaseDate) {
+            const parsed = new Date(rawReleaseDate);
+            if (!Number.isNaN(parsed.getTime())) {
+              releaseDateEl.textContent = `Дата релиза: ${parsed.toLocaleDateString('ru-RU')}`;
+            } else {
+              releaseDateEl.textContent = 'Дата релиза: --.--.----';
+            }
+          } else {
+            releaseDateEl.textContent = 'Дата релиза: --.--.----';
+          }
+        }
         
         // Artist information
         const artistName = track.artist_name || track.artist || 'Неизвестный исполнитель';

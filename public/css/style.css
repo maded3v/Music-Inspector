@@ -1995,6 +1995,12 @@ text-decoration: none;
   font-weight: 500;
 }
 
+.release-date-large {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #9f9f9f;
+}
+
 /* Reviews Section */
 .release-reviews-section {
   display: flex;
