@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 html, body {
 margin: 0;
 padding: 0;
@@ -5,6 +7,13 @@ background-color: rgb(30, 30, 30);
 font-family:  Inter, sans-serif;
 font-size: 16px;
 color: white;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: Inter, sans-serif;
 }
 
 :root {
@@ -938,6 +947,13 @@ text-decoration: none;
 }
 
 /* Releases page styles */
+.releases-page {
+  --release-card-width: 161px;
+  --releases-gap: 16px;
+  --releases-columns: 6;
+  --releases-grid-width: calc(var(--releases-columns) * var(--release-card-width) + (var(--releases-columns) - 1) * var(--releases-gap));
+}
+
 .releases-page .container {
   min-height: calc(100vh - 65px);
   background:
@@ -968,6 +984,14 @@ text-decoration: none;
   gap: 10px;
   margin-bottom: 14px;
   flex-wrap: wrap;
+}
+
+.releases-headline,
+.sort-section,
+.releases-grid {
+  width: min(100%, var(--releases-grid-width));
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .sort-btn {
@@ -1069,33 +1093,33 @@ text-decoration: none;
 
 .releases-grid {
   display: grid;
-  grid-template-columns: repeat(6, 161px);
-  gap: 16px;
-  justify-content: center;
+  grid-template-columns: repeat(var(--releases-columns), var(--release-card-width));
+  gap: var(--releases-gap);
+  justify-content: start;
   align-items: start;
 }
 
 @media (max-width: 1120px) {
-  .releases-grid {
-    grid-template-columns: repeat(5, 161px);
+  .releases-page {
+    --releases-columns: 5;
   }
 }
 
 @media (max-width: 960px) {
-  .releases-grid {
-    grid-template-columns: repeat(4, 161px);
+  .releases-page {
+    --releases-columns: 4;
   }
 }
 
 @media (max-width: 780px) {
-  .releases-grid {
-    grid-template-columns: repeat(3, 161px);
+  .releases-page {
+    --releases-columns: 3;
   }
 }
 
 @media (max-width: 600px) {
-  .releases-grid {
-    grid-template-columns: repeat(2, 161px);
+  .releases-page {
+    --releases-columns: 2;
   }
 }
 

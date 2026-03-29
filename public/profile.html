@@ -300,8 +300,11 @@
   <script type="module">
     import { getCurrentUser, uploadAvatar, getUserReviews, getUserStats } from './js/api.js';
     import { handleLogout } from './js/auth-refactored.js';
+    import { initGlobalSearch } from './js/search.js';
     
     let allReviews = [];
+
+    await initGlobalSearch();
     
     function generateAvatarColor(email) {
       let hash = 0;
