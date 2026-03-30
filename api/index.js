@@ -86,6 +86,7 @@ app.post('/api/upload/avatar', uploadRoutes.uploadAvatar);
 
 // User routes
 const userRoutes = require('./users');
+app.patch('/api/user/name', userRoutes.updateCurrentUserName);
 app.get('/api/users/:userId/stats', userRoutes.getUserStats);
 app.get('/api/users/:userId/reviews', userRoutes.getUserReviews);
 app.get('/api/users/:userId/releases', userRoutes.getUserReleases);

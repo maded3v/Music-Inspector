@@ -44,6 +44,30 @@ export function withApiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
+export function resolveMediaUrl(path) {
+  if (!path) {
+    return '';
+  }
+
+  const value = String(path).trim();
+  if (!value) {
+    return '';
+  }
+
+  if (
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('data:') ||
+    value.startsWith('blob:') ||
+    value.startsWith('//')
+  ) {
+    return value;
+  }
+
+  const normalized = value.startsWith('/') ? value : `/${value}`;
+  return withApiUrl(normalized);
+}
+
 export function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : '';
@@ -353,6 +377,19 @@ export async function getCurrentUser() {
     return data.user || null;
   } catch (error) {
     return null;
+  }
+}
+
+export async function updateMyName(name) {
+  try {
+    return await apiRequest('/api/user/name', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    }, 'Failed to update name');
+  } catch (error) {
+    console.error('Update name error:', error);
+    throw error;
   }
 }
 

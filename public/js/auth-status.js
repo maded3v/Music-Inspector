@@ -3,7 +3,7 @@
  * Updates nav-bar auth buttons on all pages
  */
 
-import { getCurrentUser } from './api.js';
+import { getCurrentUser, resolveMediaUrl } from './api.js';
 import { initGlobalSearch } from './search.js';
 
 // Generate random color for avatar background
@@ -55,12 +55,7 @@ export function updateAuthStatus(user) {
       if (profileAvatar) {
         if (user.avatar) {
           // Display user avatar if available
-          let avatarPath = user.avatar;
-          if (!avatarPath.startsWith('http://') && !avatarPath.startsWith('https://') && !avatarPath.startsWith('/')) {
-            if (!avatarPath.startsWith('uploads/')) {
-              avatarPath = `uploads/avatars/${avatarPath}`;
-            }
-          }
+          const avatarPath = resolveMediaUrl(user.avatar);
           profileAvatar.innerHTML = `<img src="${avatarPath}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${getFirstLetter(nickname)}'; this.parentElement.style.backgroundColor='${generateAvatarColor(user.email || user.name)}';">`;
         } else {
           // Fallback to generated avatar
@@ -89,5 +84,4 @@ export async function initAuthStatus() {
   updateAuthStatus(currentUser);
   return currentUser;
 }
-
 

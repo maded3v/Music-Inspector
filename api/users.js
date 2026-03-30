@@ -149,4 +149,39 @@ exports.getUserReleases = [
   }
 ];
 
+/**
+ * Update current user's display name
+ */
+exports.updateCurrentUserName = [
+  requireAuth,
+  async (req, res) => {
+    const nextName = req.body?.name?.trim();
+
+    if (!nextName || nextName.length < 2 || nextName.length > 80) {
+      return res.status(400).json({ error: 'Name must be between 2 and 80 characters' });
+    }
+
+    try {
+      const result = await query(
+        `UPDATE users
+         SET name = $1
+         WHERE id = $2
+         RETURNING id, name, email, role, avatar`,
+        [nextName, req.user.id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({ success: true, user: result.rows[0] });
+    } catch (error) {
+      console.error('Error updating current user name:', error);
+      res.status(500).json({
+        error: 'Server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+];
 

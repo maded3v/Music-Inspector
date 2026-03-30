@@ -1,4 +1,4 @@
-import { getCurrentUser, withApiUrl, getCsrfToken } from './api.js';
+import { getCurrentUser, withApiUrl, getCsrfToken, resolveMediaUrl } from './api.js';
 import { initGlobalSearch } from './search.js';
 
 let currentUser = null;
@@ -138,7 +138,7 @@ async function loadModerationQueue() {
 
     queueDiv.innerHTML = tracks.map(track => `
       <div class="moderation-item" data-id="${track.id}">
-        <img src="${track.cover || '../svg/album.png'}" alt="Cover" class="moderation-cover" onerror="this.src='../svg/album.png'">
+        <img src="${resolveMediaUrl(track.cover) || 'svg/album.png'}" alt="Cover" class="moderation-cover" onerror="this.src='svg/album.png'">
         <div class="moderation-info">
           <h3>${track.title}</h3>
           <p><strong>Исполнитель:</strong> ${track.artist}</p>
@@ -224,7 +224,7 @@ function renderTracksGrid(tracks) {
 
     return `
       <div class="admin-track-card" data-id="${track.id}" style="width: 175px; background: #1a1a1a; border-radius: 8px; overflow: hidden; flex-shrink: 0;">
-        <img src="${track.cover || '../svg/album.png'}" alt="Cover" style="width: 175px; height: 175px; object-fit: cover; display: block;" onerror="this.src='../svg/album.png'">
+        <img src="${resolveMediaUrl(track.cover) || 'svg/album.png'}" alt="Cover" style="width: 175px; height: 175px; object-fit: cover; display: block;" onerror="this.src='svg/album.png'">
         <div style="padding: 10px;">
           <div style="font-weight: bold; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${track.title}">${track.title}</div>
           <div style="color: #969696; font-size: 0.8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${track.artist}">${track.artist}</div>
@@ -520,7 +520,7 @@ async function loadReviewsModerationQueue() {
 
     queueDiv.innerHTML = reviews.map(review => `
       <div class="moderation-item" data-id="${review.id}">
-        <img src="${review.track_cover || '../svg/album.png'}" alt="Cover" class="moderation-cover" onerror="this.src='../svg/album.png'">
+        <img src="${resolveMediaUrl(review.track_cover) || 'svg/album.png'}" alt="Cover" class="moderation-cover" onerror="this.src='svg/album.png'">
         <div class="moderation-info">
           <h3>Отзыв на: ${review.track_title}</h3>
           <p><strong>Исполнитель:</strong> ${review.track_artist}</p>
