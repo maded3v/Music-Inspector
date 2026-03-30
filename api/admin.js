@@ -458,7 +458,7 @@ exports.updateRelease = [
   requireAdmin,
   async (req, res) => {
     const { id } = req.params;
-    const { title, artist, type, link, release_date } = req.body;
+    const { title, artist, type, link, release_date, cover } = req.body;
 
     try {
       const trackId = parseInt(id);
@@ -470,6 +470,10 @@ exports.updateRelease = [
       const sanitizedArtist = typeof artist === 'string' ? artist.trim() : '';
       const sanitizedType = typeof type === 'string' ? type.trim().toLowerCase() : '';
       const sanitizedLink = typeof link === 'string' && link.trim() ? link.trim() : null;
+      const hasCoverInput = Object.prototype.hasOwnProperty.call(req.body, 'cover');
+      const sanitizedCover = hasCoverInput
+        ? (typeof cover === 'string' && cover.trim() ? cover.trim() : null)
+        : undefined;
 
       if (!sanitizedTitle) {
         return res.status(400).json({ error: 'Title is required' });
@@ -481,6 +485,10 @@ exports.updateRelease = [
 
       if (!['single', 'album', 'ep'].includes(sanitizedType)) {
         return res.status(400).json({ error: 'Type must be single, album, or ep' });
+      }
+
+      if (hasCoverInput && sanitizedCover && sanitizedCover.length > 500) {
+        return res.status(400).json({ error: 'Cover path is too long' });
       }
 
       let normalizedReleaseDate = null;
@@ -496,32 +504,36 @@ exports.updateRelease = [
       }
 
       const hasReleaseDateColumn = await columnExists('tracks', 'release_date');
+      const updates = [
+        'title = $1',
+        'artist = $2',
+        'type = $3',
+        'link = $4'
+      ];
+      const values = [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink];
+      let paramIndex = values.length + 1;
 
-      let result;
       if (hasReleaseDateColumn) {
-        result = await query(
-          `UPDATE tracks
-           SET title = $1,
-               artist = $2,
-               type = $3,
-               link = $4,
-               release_date = $5
-           WHERE id = $6
-           RETURNING *`,
-          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, normalizedReleaseDate, trackId]
-        );
-      } else {
-        result = await query(
-          `UPDATE tracks
-           SET title = $1,
-               artist = $2,
-               type = $3,
-               link = $4
-           WHERE id = $5
-           RETURNING *`,
-          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, trackId]
-        );
+        updates.push(`release_date = $${paramIndex}`);
+        values.push(normalizedReleaseDate);
+        paramIndex += 1;
       }
+
+      if (hasCoverInput) {
+        updates.push(`cover = $${paramIndex}`);
+        values.push(sanitizedCover);
+        paramIndex += 1;
+      }
+
+      values.push(trackId);
+
+      const result = await query(
+        `UPDATE tracks
+         SET ${updates.join(', ')}
+         WHERE id = $${paramIndex}
+         RETURNING *`,
+        values
+      );
 
       res.json({ success: true, track: result.rows[0] });
     } catch (error) {

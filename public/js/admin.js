@@ -8,6 +8,8 @@ let currentRejectType = 'track'; // 'track' or 'review'
 let allTracksCache = []; // Cache for search filtering
 let allUsersCache = []; // Cache for users filtering
 let currentEditTrackId = null;
+let currentEditTrackCover = null;
+let allArtistsCache = [];
 
 async function resolveAdminCsrfToken() {
   const cookieToken = getCsrfToken();
@@ -111,6 +113,8 @@ function initTabs() {
         loadReviewsModerationQueue();
       } else if (targetTab === 'tracks') {
         loadAllTracks();
+      } else if (targetTab === 'artists') {
+        loadArtistsManager();
       } else if (targetTab === 'users') {
         loadUsers();
       } else if (targetTab === 'test-data') {
@@ -167,7 +171,7 @@ async function loadAllTracks() {
   tracksDiv.innerHTML = '<p>Загрузка...</p>';
 
   try {
-    const data = await adminRequest('/api/admin/tracks', {}, 'Failed to load tracks');
+    const data = await adminRequest('/api/admin/tracks?limit=500', {}, 'Failed to load tracks');
     allTracksCache = data.tracks || [];
 
     renderTracksGrid(allTracksCache);
@@ -252,12 +256,21 @@ window.openEditTrack = function(trackId) {
   }
 
   currentEditTrackId = trackId;
+  currentEditTrackCover = track.cover || null;
 
   document.getElementById('edit-title').value = track.title || '';
   document.getElementById('edit-artist').value = track.artist || '';
   document.getElementById('edit-type').value = track.type || 'single';
   document.getElementById('edit-link').value = track.link || '';
   document.getElementById('edit-release-date').value = track.release_date ? String(track.release_date).slice(0, 10) : '';
+  const coverPreview = document.getElementById('edit-cover-preview');
+  if (coverPreview) {
+    coverPreview.src = resolveMediaUrl(track.cover) || 'svg/album.png';
+  }
+  const coverInput = document.getElementById('edit-cover-file');
+  if (coverInput) {
+    coverInput.value = '';
+  }
 
   document.getElementById('edit-modal').style.display = 'flex';
 };
@@ -266,12 +279,41 @@ function initEditModal() {
   const modal = document.getElementById('edit-modal');
   const cancelBtn = document.getElementById('cancel-edit');
   const saveBtn = document.getElementById('confirm-edit');
+  const coverInput = document.getElementById('edit-cover-file');
+  const coverPreview = document.getElementById('edit-cover-preview');
 
   if (!modal || !cancelBtn || !saveBtn) return;
+
+  if (coverInput && coverPreview) {
+    coverInput.addEventListener('change', (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Допустимые форматы: JPG, PNG, WebP');
+        coverInput.value = '';
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Максимальный размер файла: 5MB');
+        coverInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (loadEvent) => {
+        coverPreview.src = loadEvent.target?.result || 'svg/album.png';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
   const closeModal = () => {
     modal.style.display = 'none';
     currentEditTrackId = null;
+    currentEditTrackCover = null;
   };
 
   cancelBtn.addEventListener('click', closeModal);
@@ -288,6 +330,20 @@ function initEditModal() {
     };
 
     try {
+      const selectedCoverFile = coverInput?.files?.[0];
+      if (selectedCoverFile) {
+        const formData = new FormData();
+        formData.append('cover', selectedCoverFile);
+        const uploaded = await adminRequest('/api/upload/cover', {
+          method: 'POST',
+          body: formData
+        }, 'Failed to upload cover');
+
+        payload.cover = uploaded.imagePath;
+      } else if (currentEditTrackCover) {
+        payload.cover = currentEditTrackCover;
+      }
+
       await adminRequest(`/api/admin/releases/${currentEditTrackId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -298,6 +354,7 @@ function initEditModal() {
       closeModal();
       await loadAllTracks();
       await loadModerationQueue();
+      await loadArtistsManager();
       await loadTracksForReviewSelect();
     } catch (error) {
       console.error('Error updating release:', error);
@@ -311,6 +368,169 @@ function initEditModal() {
     }
   });
 }
+
+function normalizeArtistName(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function collectArtistReleases(artist) {
+  const artistId = Number(artist.id);
+  const normalizedArtistName = normalizeArtistName(artist.name);
+
+  return allTracksCache.filter((track) => {
+    if (track.artist_id && Number(track.artist_id) === artistId) {
+      return true;
+    }
+
+    if (!track.artist_id && normalizeArtistName(track.artist) === normalizedArtistName) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
+async function loadArtistsManager() {
+  const container = document.getElementById('artists-manager-list');
+  if (!container) return;
+
+  container.innerHTML = '<p>Загрузка...</p>';
+
+  try {
+    const [artistsData, tracksData] = await Promise.all([
+      adminRequest('/api/artists?limit=500', {}, 'Failed to load artists'),
+      adminRequest('/api/admin/tracks?limit=500', {}, 'Failed to load tracks')
+    ]);
+
+    allArtistsCache = artistsData.artists || [];
+    allTracksCache = tracksData.tracks || [];
+
+    renderArtistsManager(allArtistsCache);
+
+    const searchInput = document.getElementById('artists-search');
+    if (searchInput) {
+      searchInput.removeEventListener('input', handleArtistsSearch);
+      searchInput.addEventListener('input', handleArtistsSearch);
+    }
+  } catch (error) {
+    console.error('Error loading artists manager:', error);
+    container.innerHTML = '<p style="color: red;">Ошибка загрузки артистов</p>';
+  }
+}
+
+function handleArtistsSearch(event) {
+  const query = String(event.target.value || '').trim().toLowerCase();
+  if (!query) {
+    renderArtistsManager(allArtistsCache);
+    return;
+  }
+
+  const filtered = allArtistsCache.filter((artist) =>
+    String(artist.name || '').toLowerCase().includes(query)
+  );
+
+  renderArtistsManager(filtered);
+}
+
+function renderArtistsManager(artists) {
+  const container = document.getElementById('artists-manager-list');
+  if (!container) return;
+
+  if (!artists || artists.length === 0) {
+    container.innerHTML = '<p style="color: #969696;">Исполнители не найдены</p>';
+    return;
+  }
+
+  container.innerHTML = artists.map((artist) => {
+    const releases = collectArtistReleases(artist);
+    const imageUrl = resolveMediaUrl(artist.image_path) || 'svg/person.png';
+
+    const releasesMarkup = releases.length > 0
+      ? releases.map((track) => {
+        const statusText = {
+          pending: 'На модерации',
+          approved: 'Одобрен',
+          rejected: 'Отклонен'
+        }[track.status] || (track.status || 'Неизвестно');
+
+        return `
+          <div class="artist-release-row">
+            <img src="${resolveMediaUrl(track.cover) || 'svg/album.png'}" alt="cover" onerror="this.onerror=null; this.src='svg/album.png';">
+            <div class="artist-release-main">
+              <div class="artist-release-title">${track.title || 'Без названия'}</div>
+              <div class="artist-release-sub">${statusText}</div>
+            </div>
+            <button class="btn-neutral" onclick="openEditTrack(${track.id})">Редактировать</button>
+            <button class="btn-neutral btn-warn" onclick="deleteTrack(${track.id})">Удалить</button>
+          </div>
+        `;
+      }).join('')
+      : '<p style="color:#969696; margin:0;">У артиста пока нет релизов</p>';
+
+    return `
+      <div class="artist-admin-row" data-id="${artist.id}">
+        <div class="artist-admin-head">
+          <img src="${imageUrl}" alt="artist" class="artist-admin-avatar" onerror="this.onerror=null; this.src='svg/person.png';">
+          <div class="artist-admin-meta">
+            <div class="artist-admin-name">${artist.name || 'Без имени'}</div>
+            <div class="artist-admin-sub">Релизов: ${releases.length}</div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label for="artist-image-${artist.id}" class="btn-neutral">Сменить картинку</label>
+            <input id="artist-image-${artist.id}" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;" onchange="uploadArtistImageForAdmin(${artist.id}, this)">
+          </div>
+        </div>
+        <div class="artist-admin-releases">
+          ${releasesMarkup}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.uploadArtistImageForAdmin = async function(artistId, input) {
+  const file = input?.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    alert('Допустимые форматы: JPG, PNG, WebP');
+    input.value = '';
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Максимальный размер файла: 5MB');
+    input.value = '';
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const uploaded = await adminRequest('/api/upload/artist', {
+      method: 'POST',
+      body: formData
+    }, 'Failed to upload artist image');
+
+    await adminRequest(`/api/artists/${artistId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_path: uploaded.imagePath })
+    }, 'Failed to update artist image');
+
+    alert('Картинка артиста обновлена');
+    await loadArtistsManager();
+  } catch (error) {
+    console.error('Error updating artist image:', error);
+    alert(`Ошибка: ${error.message}`);
+  } finally {
+    input.value = '';
+  }
+};
 
 /**
  * Load all users for admin management
@@ -781,6 +1001,7 @@ window.deleteTrack = async function(trackId) {
     alert('Релиз удален!');
     loadModerationQueue();
     loadAllTracks();
+    loadArtistsManager();
     loadTracksForReviewSelect();
   } catch (error) {
     console.error('Error deleting track:', error);

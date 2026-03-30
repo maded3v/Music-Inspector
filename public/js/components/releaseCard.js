@@ -1,4 +1,4 @@
-/**
+п»ї/**
  * Unified Release Card Component
  * Used across all sections: latest releases, monthly albums, artist pages.
  */
@@ -8,12 +8,6 @@ function normalizeCoverPath(cover) {
   if (!cover) return 'svg/album.png';
   if (cover.startsWith('svg/')) return cover;
   return resolveMediaUrl(cover);
-}
-
-function normalizeAvatarPath(avatar) {
-  if (!avatar) return 'svg/person.png';
-  if (avatar.startsWith('svg/')) return avatar;
-  return resolveMediaUrl(avatar);
 }
 
 function escapeHtml(value) {
@@ -55,7 +49,7 @@ export function renderReleaseCard(release, variant = 'default') {
   const title = release.title;
   if (!title || typeof title !== 'string' || title.trim() === '') return '';
 
-  const artistName = release.artist_name || release.artist || 'Неизвестный исполнитель';
+  const artistName = release.artist_name || release.artist || 'РќРµРёР·РІРµСЃС‚РЅС‹Р№ РёСЃРїРѕР»РЅРёС‚РµР»СЊ';
   const artistId = release.artist_id || null;
   const cover = normalizeCoverPath(release.cover || release.cover_path);
 
@@ -90,17 +84,10 @@ export function renderReleaseCard(release, variant = 'default') {
   }
 
   if (variant === 'home') {
-    const creatorId = release.creator_id || null;
-    const creatorName = release.creator_name || 'Пользователь';
-    const creatorAvatar = normalizeAvatarPath(release.creator_avatar || '');
-    const creatorMarkup = creatorId
-      ? `<a href="profile.html?id=${creatorId}" class="track-creator-link" title="Профиль ${escapeHtml(creatorName)}"><img src="${creatorAvatar}" alt="avatar" class="track-creator-avatar" onerror="this.onerror=null; this.src='svg/person.png';"><span class="track-creator-name">${escapeHtml(creatorName)}</span></a>`
-      : `<div class="track-creator-link is-static"><img src="${creatorAvatar}" alt="avatar" class="track-creator-avatar" onerror="this.onerror=null; this.src='svg/person.png';"><span class="track-creator-name">${escapeHtml(creatorName)}</span></div>`;
-
-    return `<div class="track-card track-card-home" data-type="${releaseType}" data-id="${releaseId}"><a href="track.html?id=${releaseId}" class="track-main-link"><div class="track-cover-wrapper"><img src="${cover}" alt="Обложка" class="track-cover" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="track-badge">${badgeIcon}</div></div><div class="track-info"><div class="track-title">${escapeHtml(title)}</div>${artistSection}</div></a>${badgesSection}${creatorMarkup}</div>`;
+    return `<div class="track-card track-card-home" data-type="${releaseType}" data-id="${releaseId}"><a href="track.html?id=${releaseId}" class="track-main-link"><div class="track-cover-wrapper"><img src="${cover}" alt="РћР±Р»РѕР¶РєР°" class="track-cover" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="track-badge">${badgeIcon}</div></div><div class="track-info"><div class="track-title">${escapeHtml(title)}</div>${artistSection}</div></a>${badgesSection}</div>`;
   }
 
-  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${escapeHtml(title)}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
+  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="РћР±Р»РѕР¶РєР°" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${escapeHtml(title)}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
 }
 
 export function renderReleaseCards(releases, variant = 'default') {
