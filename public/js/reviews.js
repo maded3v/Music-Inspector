@@ -1,4 +1,4 @@
-п»їimport { resolveMediaUrl } from './api.js';
+import { resolveMediaUrl } from './api.js';
 
 function trimText(text, maxLength = 220) {
   if (text.length <= maxLength) return text;
@@ -45,10 +45,10 @@ export function renderReviewCard(review) {
     ? Math.round((subscores.reduce((sum, item) => sum + item, 0) / subscores.length) * 10) / 10
     : 0);
 
-  const author = review.author_name || review.author || 'РђРЅРѕРЅРёРјРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ';
+  const author = review.author_name || review.author || 'Анонимный пользователь';
   const authorAvatar = getAvatarUrl(review.author_avatar);
   const cover = resolveMediaUrl(review.track_cover || review.cover) || 'svg/album.png';
-  const title = review.title || `${review.track_title || 'Р РµС†РµРЅР·РёСЏ'} - ${review.track_artist || ''}`;
+  const title = review.title || `${review.track_title || 'Рецензия'} - ${review.track_artist || ''}`;
   const isMIReview = Boolean(review.is_mi_review || review.miBadge);
   const trackId = review.track_id || null;
 
@@ -78,7 +78,7 @@ export function renderReviewCard(review) {
         <div class="review-text">${escapeHtml(trimmedText)}</div>
       </div>
       <div class="review-footer">
-        <button class="review-btn expand" aria-label="Р Р°Р·РІРµСЂРЅСѓС‚СЊ" title="Р Р°Р·РІРµСЂРЅСѓС‚СЊ"><span aria-hidden="true">в–ѕ</span></button>
+        <button class="review-btn expand">Развернуть</button>
       </div>
     </div>
   `;
@@ -102,9 +102,7 @@ function syncReviewExpandButtons(container) {
     const trimmed = trimText(fullText);
     card.classList.remove('expanded');
     textEl.textContent = trimmed;
-    btn.innerHTML = '<span aria-hidden="true">в–ѕ</span>';
-    btn.setAttribute('aria-label', 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ');
-    btn.setAttribute('title', 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ');
+    btn.textContent = 'Развернуть';
 
     const overflowByLength = trimmed !== fullText;
     const overflowByLayout = textEl.scrollHeight > textEl.clientHeight + 1;
@@ -132,12 +130,11 @@ export function initReviewExpand(container) {
   container.dataset.expandBound = '1';
 
   container.addEventListener('click', (e) => {
-    const expandBtn = e.target.closest('.review-btn.expand');
-    if (expandBtn) {
-      const card = expandBtn.closest('.review-card');
+    if (e.target.classList.contains('expand')) {
+      const card = e.target.closest('.review-card');
       if (!card) return;
       const textEl = card.querySelector('.review-text');
-      const btn = expandBtn;
+      const btn = e.target;
       if (!textEl || !btn) return;
 
       let fullText = '';
@@ -149,15 +146,11 @@ export function initReviewExpand(container) {
 
       if (card.classList.contains('expanded')) {
         card.classList.remove('expanded');
-        btn.innerHTML = '<span aria-hidden="true">в–ѕ</span>';
-        btn.setAttribute('aria-label', 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ');
-        btn.setAttribute('title', 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ');
+        btn.textContent = 'Развернуть';
         textEl.textContent = trimText(fullText);
       } else {
         card.classList.add('expanded');
-        btn.innerHTML = '<span aria-hidden="true">в–ґ</span>';
-        btn.setAttribute('aria-label', 'РЎРІРµСЂРЅСѓС‚СЊ');
-        btn.setAttribute('title', 'РЎРІРµСЂРЅСѓС‚СЊ');
+        btn.textContent = 'Свернуть';
         textEl.textContent = fullText;
       }
     }
