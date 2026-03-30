@@ -14,7 +14,7 @@ function renderLastAddedReleases(releases, container) {
   }
 
   // Use unified release card component
-  container.innerHTML = renderReleaseCards(releases, 'default');
+  container.innerHTML = renderReleaseCards(releases, 'home');
 }
 
 // Initialize the page

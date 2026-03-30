@@ -300,101 +300,122 @@
 
   <script src="js/nav-mobile.js" defer></script>
   <script type="module">
-    import { getCurrentUser, uploadAvatar, getUserReviews, getUserStats, resolveMediaUrl, updateMyName } from './js/api.js';
+    import {
+      getCurrentUser,
+      uploadAvatar,
+      getUserReviews,
+      getUserStats,
+      resolveMediaUrl,
+      updateMyName,
+      getPublicUserProfile
+    } from './js/api.js';
     import { handleLogout } from './js/auth-refactored.js';
     import { initGlobalSearch } from './js/search.js';
-    
-    let allReviews = [];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedProfileId = Number.parseInt(urlParams.get('id') || '', 10);
+
+    let currentUser = null;
 
     await initGlobalSearch();
-    
-    function generateAvatarColor(email) {
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function generateAvatarColor(seed) {
+      const source = String(seed || 'music-inspector');
       let hash = 0;
-      for (let i = 0; i < email.length; i++) {
-        hash = email.charCodeAt(i) + ((hash << 5) - hash);
+      for (let i = 0; i < source.length; i++) {
+        hash = source.charCodeAt(i) + ((hash << 5) - hash);
       }
       const hue = Math.abs(hash % 360);
-      const saturation = 60 + (Math.abs(hash) % 20);
-      const lightness = 45 + (Math.abs(hash) % 15);
+      const saturation = 58 + (Math.abs(hash) % 18);
+      const lightness = 42 + (Math.abs(hash) % 12);
       return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
-    
-    function getNickname(email) {
-      if (!email) return '';
-      return email.split('@')[0];
+
+    function getNickname(value) {
+      if (!value) return '';
+      const normalized = String(value);
+      return normalized.includes('@') ? normalized.split('@')[0] : normalized;
     }
-    
-    function getFirstLetter(name) {
-      if (!name) return '?';
-      return name.charAt(0).toUpperCase();
+
+    function getFirstLetter(value) {
+      if (!value) return '?';
+      return String(value).trim().charAt(0).toUpperCase() || '?';
     }
 
     function resolveAvatarPath(avatar) {
       if (!avatar) return '';
-      if (avatar.startsWith('uploads/')) {
-        return resolveMediaUrl(avatar);
+      const normalized = String(avatar).trim();
+      if (!normalized) return '';
+      if (normalized.startsWith('http://') || normalized.startsWith('https://') || normalized.startsWith('/')) {
+        return resolveMediaUrl(normalized);
       }
-      if (!avatar.startsWith('http://') && !avatar.startsWith('https://') && !avatar.startsWith('/')) {
-        return resolveMediaUrl(`uploads/avatars/${avatar}`);
+      if (normalized.startsWith('uploads/')) {
+        return resolveMediaUrl(normalized);
       }
-      return resolveMediaUrl(avatar);
+      return resolveMediaUrl(`uploads/avatars/${normalized}`);
     }
-    
+
     function formatDate(dateStr) {
       const date = new Date(dateStr);
+      if (Number.isNaN(date.getTime())) {
+        return '—';
+      }
       return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
     }
-    
+
     function updateAuthStatus(user) {
       const authButtons = document.querySelectorAll('.auth-buttons');
       const profileSection = document.querySelector('.profile-section');
       const profileAvatar = document.getElementById('profile-avatar');
       const profileNickname = document.getElementById('profile-nickname');
-      
-      if (user) {
-        authButtons.forEach(btn => btn.style.display = 'none');
-        if (profileSection) {
-          profileSection.style.display = 'flex';
-          const nickname = getNickname(user.email || user.name);
-          if (profileNickname) {
-            profileNickname.textContent = nickname;
-          }
-          if (profileAvatar) {
-            if (user.avatar) {
-              const avatarPath = resolveAvatarPath(user.avatar);
-              profileAvatar.innerHTML = `<img src="${avatarPath}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${getFirstLetter(nickname)}'; this.parentElement.style.backgroundColor='${generateAvatarColor(user.email || user.name)}';">`;
-            } else {
-              const firstLetter = getFirstLetter(nickname);
-              const bgColor = generateAvatarColor(user.email || user.name);
-              profileAvatar.textContent = firstLetter;
-              profileAvatar.style.backgroundColor = bgColor;
-            }
-          }
-        }
-      } else {
-        authButtons.forEach(btn => btn.style.display = 'flex');
+
+      if (!user) {
+        authButtons.forEach((btn) => {
+          btn.style.display = 'flex';
+        });
         if (profileSection) {
           profileSection.style.display = 'none';
         }
-        window.location.href = 'login.html';
+        return;
+      }
+
+      authButtons.forEach((btn) => {
+        btn.style.display = 'none';
+      });
+
+      if (!profileSection) {
+        return;
+      }
+
+      profileSection.style.display = 'flex';
+      const nickname = getNickname(user.name || user.email);
+      if (profileNickname) {
+        profileNickname.textContent = nickname;
+      }
+
+      if (!profileAvatar) {
+        return;
+      }
+
+      if (user.avatar) {
+        const avatarPath = resolveAvatarPath(user.avatar);
+        profileAvatar.innerHTML = `<img src="${avatarPath}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${getFirstLetter(nickname)}'; this.parentElement.style.backgroundColor='${generateAvatarColor(user.email || user.name)}';">`;
+      } else {
+        profileAvatar.innerHTML = '';
+        profileAvatar.textContent = getFirstLetter(nickname);
+        profileAvatar.style.backgroundColor = generateAvatarColor(user.email || user.name);
       }
     }
-    
-    async function handleAvatarUpload(file) {
-      try {
-        const result = await uploadAvatar(file);
-        if (result.success) {
-          const currentUser = await getCurrentUser();
-          updateAuthStatus(currentUser);
-          renderProfile(currentUser);
-          showMessage('✓ Аватар успешно загружен!', 'success');
-        }
-      } catch (error) {
-        console.error('Avatar upload error:', error);
-        showMessage(`Ошибка загрузки аватара: ${error.message || 'Неизвестная ошибка'}`, 'error');
-      }
-    }
-    
+
     function showMessage(text, type) {
       const messageDiv = document.createElement('div');
       messageDiv.style.cssText = `
@@ -411,75 +432,69 @@
       document.body.appendChild(messageDiv);
       setTimeout(() => messageDiv.remove(), 3000);
     }
-    
+
     function renderReviewCard(review) {
+      const score = Number(review.avg_score);
+      const displayScore = Number.isFinite(score) ? score.toFixed(1) : '—';
       const statusColor = {
-        'pending': '#ff9800',
-        'approved': '#4CAF50',
-        'rejected': '#f44336'
+        pending: '#ff9800',
+        approved: '#4CAF50',
+        rejected: '#f44336'
       }[review.status] || '#4CAF50';
-      
+
+      const coverUrl = resolveMediaUrl(review.track_cover) || 'svg/album.png';
+      const title = `${review.track_title || 'Трек'} - ${review.track_artist || 'Исполнитель'}`;
+      const preview = review.text || 'Нет текста';
+
       return `
         <a href="track.html?id=${review.track_id}" class="review-card-profile">
-          <img src="${resolveMediaUrl(review.track_cover) || 'svg/album.png'}" alt="Cover" class="review-cover-small" onerror="this.src='svg/album.png'">
+          <img src="${coverUrl}" alt="Cover" class="review-cover-small" onerror="this.onerror=null; this.src='svg/album.png';">
           <div class="review-info">
-            <div class="review-track-title">${review.track_title} - ${review.track_artist}</div>
-            <div class="review-text-preview">${review.text || 'Нет текста'}</div>
+            <div class="review-track-title">${escapeHtml(title)}</div>
+            <div class="review-text-preview">${escapeHtml(preview)}</div>
           </div>
-          <div class="review-score-large" style="color: ${statusColor};">${review.avg_score}</div>
+          <div class="review-score-large" style="color: ${statusColor};">${displayScore}</div>
         </a>
       `;
     }
-    
-    async function renderProfile(user) {
-      const profileContent = document.getElementById('profile-content');
-      
-      // Get avatar path
-      const avatarPath = resolveAvatarPath(user.avatar || null);
-      
-      const nickname = getNickname(user.email || user.name);
-      const firstLetter = getFirstLetter(nickname);
-      const bgColor = generateAvatarColor(user.email || user.name);
-      
-      // Load stats and reviews
-      let stats = { registrationDate: null, reviewCount: 0, favoriteArtist: null };
-      try {
-        const statsData = await getUserStats(user.id);
-        stats = statsData.stats || stats;
-      } catch (e) {
-        console.error('Error loading stats:', e);
-      }
-      
-      try {
-        const reviewsData = await getUserReviews(user.id);
-        allReviews = reviewsData.reviews || [];
-      } catch (e) {
-        console.error('Error loading reviews:', e);
-        allReviews = [];
-      }
-      
-      const pendingReviews = allReviews.filter((review) => review.status === 'pending');
-      const approvedOrPublishedReviews = allReviews.filter((review) => review.status !== 'pending');
-      const lastReview = approvedOrPublishedReviews.length > 0 ? approvedOrPublishedReviews[0] : null;
 
-      const pendingReviewsMarkup = pendingReviews.length > 0
-        ? `<div class="pending-reviews-list">
-            ${pendingReviews.slice(0, 8).map((review) => `
-              <div class="pending-review-item">
-                <div>
-                  <div class="pending-review-track">${review.track_title} - ${review.track_artist}</div>
-                  <div class="pending-review-date">${formatDate(review.created_at)}</div>
+    function renderProfileView(user, stats, reviews, ownProfile) {
+      const profileContent = document.getElementById('profile-content');
+      const avatarPath = resolveAvatarPath(user.avatar || '');
+      const nickname = getNickname(user.name || user.email);
+      const firstLetter = getFirstLetter(nickname);
+      const bgColor = generateAvatarColor(user.email || user.name || user.id);
+
+      const pendingReviews = ownProfile ? reviews.filter((review) => review.status === 'pending') : [];
+      const visibleReviews = ownProfile
+        ? reviews.filter((review) => review.status !== 'pending')
+        : reviews;
+      const lastReview = visibleReviews.length > 0 ? visibleReviews[0] : null;
+
+      const pendingReviewsMarkup = ownProfile
+        ? pendingReviews.length > 0
+          ? `<div class="pending-reviews-list">
+              ${pendingReviews.slice(0, 8).map((review) => `
+                <div class="pending-review-item">
+                  <div>
+                    <div class="pending-review-track">${escapeHtml(review.track_title || 'Трек')} - ${escapeHtml(review.track_artist || 'Исполнитель')}</div>
+                    <div class="pending-review-date">${formatDate(review.created_at)}</div>
+                  </div>
+                  <div class="pending-review-badge">На проверке</div>
                 </div>
-                <div class="pending-review-badge">На проверке</div>
-              </div>
-            `).join('')}
-          </div>`
-        : '<div class="no-reviews" style="padding: 18px 0;">Нет отзывов на проверке</div>';
-      
+              `).join('')}
+            </div>`
+          : '<div class="no-reviews" style="padding: 18px 0;">Нет отзывов на проверке</div>'
+        : '';
+
+      const statsFavorite = stats.favoriteArtist || '—';
+      const roleText = ownProfile
+        ? (user.role === 'admin' ? 'Администратор' : 'Пользователь')
+        : 'Публичный профиль';
+
       profileContent.innerHTML = `
         <div class="profile-layout">
           <div class="profile-left">
-            <!-- Statistics -->
             <div class="stats-section">
               <h3>Статистика</h3>
               <div class="stats-grid">
@@ -488,84 +503,110 @@
                   <div class="stat-label">Дата регистрации</div>
                 </div>
                 <div class="stat-item">
-                  <div class="stat-value">${stats.reviewCount || 0}</div>
-                  <div class="stat-label">Отзывов написано</div>
+                  <div class="stat-value">${Number(stats.reviewCount || 0)}</div>
+                  <div class="stat-label">Отзывы</div>
                 </div>
                 <div class="stat-item">
-                  <div class="stat-value" style="font-size: ${stats.favoriteArtist && stats.favoriteArtist.length > 15 ? '1em' : '1.5em'};">${stats.favoriteArtist || '—'}</div>
+                  <div class="stat-value" style="font-size: ${String(statsFavorite).length > 15 ? '1em' : '1.5em'};">${escapeHtml(statsFavorite)}</div>
                   <div class="stat-label">Любимый артист</div>
                 </div>
               </div>
             </div>
-            
-            <!-- Last Review -->
-            <div class="last-review-section">
-              <h3>Последний отзыв</h3>
-              ${lastReview ? renderReviewCard(lastReview) : '<div class="no-reviews">У вас пока нет отзывов</div>'}
-            </div>
 
             <div class="last-review-section">
-              <h3>Отзывы на проверке</h3>
-              ${pendingReviewsMarkup}
+              <h3>Последний отзыв</h3>
+              ${lastReview ? renderReviewCard(lastReview) : '<div class="no-reviews">Пока нет отзывов</div>'}
             </div>
+
+            ${ownProfile ? `
+              <div class="last-review-section">
+                <h3>Отзывы на проверке</h3>
+                ${pendingReviewsMarkup}
+              </div>
+            ` : ''}
           </div>
-          
+
           <div class="profile-right">
             <div class="profile-avatar-large" style="background-color: ${bgColor};">
               ${avatarPath ? `<img src="${avatarPath}" alt="Avatar" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${firstLetter}';">` : firstLetter}
             </div>
-            <div class="profile-name">${user.name || nickname}</div>
-            <div class="profile-email">${user.email}</div>
-            <div class="profile-role">${user.role === 'admin' ? 'Администратор' : 'Пользователь'}</div>
-            
-            <div class="profile-buttons">
-              <label for="avatar-upload" class="profile-btn profile-btn-avatar">
-                Загрузить аватар
-              </label>
-              <input type="file" id="avatar-upload" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none;" />
-              <button id="rename-btn" class="profile-btn profile-btn-avatar">Сменить ник</button>
-              <button id="logout-btn" class="profile-btn profile-btn-logout">
-                Выйти
-              </button>
-            </div>
+            <div class="profile-name">${escapeHtml(user.name || nickname || 'Пользователь')}</div>
+            <div class="profile-email">${ownProfile ? escapeHtml(user.email || '') : ''}</div>
+            <div class="profile-role">${roleText}</div>
+
+            ${ownProfile ? `
+              <div class="profile-buttons">
+                <label for="avatar-upload" class="profile-btn profile-btn-avatar">Загрузить аватар</label>
+                <input type="file" id="avatar-upload" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none;" />
+                <button id="rename-btn" class="profile-btn profile-btn-avatar">Сменить ник</button>
+                <button id="logout-btn" class="profile-btn profile-btn-logout">Выйти</button>
+              </div>
+            ` : ''}
           </div>
         </div>
       `;
-      
-      // Setup avatar upload
+    }
+
+    async function handleAvatarUpload(file) {
+      try {
+        const result = await uploadAvatar(file);
+        if (!result?.success) {
+          throw new Error('Ошибка загрузки аватара');
+        }
+
+        if (currentUser && result.avatarPath) {
+          currentUser.avatar = result.avatarPath;
+        }
+
+        const refreshedUser = await getCurrentUser();
+        if (refreshedUser) {
+          currentUser = {
+            ...refreshedUser,
+            avatar: refreshedUser.avatar || currentUser?.avatar || null
+          };
+        }
+
+        updateAuthStatus(currentUser);
+        await loadOwnProfile();
+        showMessage('Аватар успешно загружен', 'success');
+      } catch (error) {
+        console.error('Avatar upload error:', error);
+        showMessage(`Ошибка загрузки аватара: ${error.message || 'Неизвестная ошибка'}`, 'error');
+      }
+    }
+
+    function bindOwnProfileActions(user) {
       const avatarUpload = document.getElementById('avatar-upload');
       if (avatarUpload) {
-        avatarUpload.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-            const maxSize = 5 * 1024 * 1024;
+        avatarUpload.addEventListener('change', (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
 
-            if (!allowedTypes.includes(file.type)) {
-              showMessage('Допустимые форматы: JPG, PNG, WebP', 'error');
-              avatarUpload.value = '';
-              return;
-            }
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+          const maxSize = 5 * 1024 * 1024;
 
-            if (file.size > maxSize) {
-              showMessage('Максимальный размер файла: 5MB', 'error');
-              avatarUpload.value = '';
-              return;
-            }
-
-            handleAvatarUpload(file);
+          if (!allowedTypes.includes(file.type)) {
+            showMessage('Допустимые форматы: JPG, PNG, WebP', 'error');
+            avatarUpload.value = '';
+            return;
           }
+
+          if (file.size > maxSize) {
+            showMessage('Максимальный размер файла: 5MB', 'error');
+            avatarUpload.value = '';
+            return;
+          }
+
+          handleAvatarUpload(file);
         });
       }
 
       const renameBtn = document.getElementById('rename-btn');
       if (renameBtn) {
         renameBtn.addEventListener('click', async () => {
-          const initialValue = (user.name || nickname || '').trim();
+          const initialValue = String(user.name || getNickname(user.email) || '').trim();
           const nextName = prompt('Введите новый ник:', initialValue);
-          if (!nextName) {
-            return;
-          }
+          if (!nextName) return;
 
           const normalized = nextName.trim();
           if (normalized.length < 2 || normalized.length > 80) {
@@ -575,11 +616,12 @@
 
           try {
             await updateMyName(normalized);
-            const updatedUser = await getCurrentUser();
-            if (updatedUser) {
-              updateAuthStatus(updatedUser);
-              await renderProfile(updatedUser);
+            const refreshedUser = await getCurrentUser();
+            if (refreshedUser) {
+              currentUser = refreshedUser;
+              updateAuthStatus(currentUser);
             }
+            await loadOwnProfile();
             showMessage('Ник обновлен', 'success');
           } catch (error) {
             console.error('Rename error:', error);
@@ -587,8 +629,7 @@
           }
         });
       }
-      
-      // Setup logout button
+
       const logoutBtn = document.getElementById('logout-btn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
@@ -596,14 +637,70 @@
         });
       }
     }
-    
-    document.addEventListener('DOMContentLoaded', async () => {
-      const currentUser = await getCurrentUser();
-      updateAuthStatus(currentUser);
-      
-      if (currentUser) {
-        await renderProfile(currentUser);
+
+    async function loadOwnProfile() {
+      if (!currentUser) {
+        return;
       }
+
+      let stats = { registrationDate: null, reviewCount: 0, favoriteArtist: null };
+      let reviews = [];
+
+      try {
+        const statsData = await getUserStats(currentUser.id);
+        stats = statsData?.stats || stats;
+      } catch (error) {
+        console.error('Error loading own stats:', error);
+      }
+
+      try {
+        const reviewsData = await getUserReviews(currentUser.id);
+        reviews = reviewsData?.reviews || [];
+      } catch (error) {
+        console.error('Error loading own reviews:', error);
+      }
+
+      renderProfileView(currentUser, stats, reviews, true);
+      bindOwnProfileActions(currentUser);
+    }
+
+    async function loadPublicProfile(userId) {
+      const profileContent = document.getElementById('profile-content');
+      try {
+        const data = await getPublicUserProfile(userId);
+        const publicUser = data?.user;
+        if (!publicUser) {
+          throw new Error('Профиль не найден');
+        }
+
+        const stats = data?.stats || { registrationDate: publicUser.created_at, reviewCount: 0, favoriteArtist: null };
+        const reviews = Array.isArray(data?.reviews) ? data.reviews : [];
+
+        renderProfileView(publicUser, stats, reviews, false);
+      } catch (error) {
+        console.error('Error loading public profile:', error);
+        profileContent.innerHTML = '<div class="no-reviews">Профиль не найден или недоступен</div>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await getCurrentUser();
+      updateAuthStatus(currentUser);
+
+      const hasRequestedProfile = Number.isInteger(requestedProfileId) && requestedProfileId > 0;
+      const ownProfile = Boolean(currentUser && (!hasRequestedProfile || requestedProfileId === currentUser.id));
+
+      if (ownProfile) {
+        await loadOwnProfile();
+        return;
+      }
+
+      if (hasRequestedProfile) {
+        await loadPublicProfile(requestedProfileId);
+        return;
+      }
+
+      window.location.href = 'login.html';
     });
   </script>
 </body>

@@ -75,6 +75,10 @@
         
         <!-- Add Review Form (hidden by default) -->
         <div id="add-review-form-container" class="add-review-form-container" style="display: none;">
+          <div class="add-review-form-intro">
+            <h3>Добавьте вашу рецензию</h3>
+            <p>Оцените трек по 5 критериям и оставьте комментарий.</p>
+          </div>
           <form id="review-form">
             <div class="ratings-section">
               <div class="rating-group">
@@ -131,7 +135,7 @@
 
   <script src="js/nav-mobile.js" defer></script>
   <script type="module">
-    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview } from './js/api.js';
+    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveMediaUrl } from './js/api.js';
     import { initAuth } from './js/auth-refactored.js';
     import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './js/modal.js';
 
@@ -206,16 +210,7 @@
         }
 
         // Fix cover image path
-        let cover = track.cover || track.cover_path || '';
-        if (cover) {
-          if (!cover.startsWith('http://') && !cover.startsWith('https://') && !cover.startsWith('/')) {
-            if (!cover.startsWith('uploads/') && !cover.startsWith('traks/') && !cover.startsWith('svg/')) {
-              cover = `uploads/covers/${cover}`;
-            }
-          }
-        } else {
-          cover = 'svg/album.png';
-        }
+        const cover = resolveMediaUrl(track.cover || track.cover_path) || 'svg/album.png';
 
         document.getElementById('release-cover').src = cover;
         document.getElementById('release-title').textContent = track.title || 'Без названия';
@@ -249,13 +244,7 @@
         if (artistId) {
           artistLink.href = `artist.html?id=${artistId}`;
           if (artistImage) {
-            let artistImgPath = artistImage;
-            if (!artistImgPath.startsWith('http://') && !artistImgPath.startsWith('https://') && !artistImgPath.startsWith('/')) {
-              if (!artistImgPath.startsWith('uploads/')) {
-                artistImgPath = `uploads/artists/${artistImgPath}`;
-              }
-            }
-            artistAvatarEl.src = artistImgPath;
+            artistAvatarEl.src = resolveMediaUrl(artistImage);
           } else {
             artistAvatarEl.src = 'svg/person.png';
           }
@@ -340,13 +329,8 @@
         // Helper function to get avatar URL
         function getAvatarUrl(avatar) {
           if (!avatar) return 'svg/person.png';
-          if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
-            return avatar;
-          }
-          if (avatar.startsWith('uploads/')) {
-            return avatar;
-          }
-          return `uploads/avatars/${avatar}`;
+          if (avatar.startsWith('svg/')) return avatar;
+          return resolveMediaUrl(avatar);
         }
 
         function renderReviewCard(review) {
@@ -363,16 +347,31 @@
           <div class="review-card-track" data-review-id="${review.id}">
             <div class="review-header-track">
               <div class="review-author-track">
-                <div class="review-avatar-track">
-                  <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
-                </div>
-                <div class="review-author-info">
-                  <div class="review-author-name-track">
-                    ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
-                    ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
-                  </div>
-                  <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
-                </div>
+                ${review.user_id
+                  ? `<a href="profile.html?id=${review.user_id}" class="review-author-link-track">
+                      <div class="review-avatar-track">
+                        <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
+                      </div>
+                      <div class="review-author-info">
+                        <div class="review-author-name-track">
+                          ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
+                          ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
+                        </div>
+                        <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
+                      </div>
+                    </a>`
+                  : `<div class="review-author-link-track is-static">
+                      <div class="review-avatar-track">
+                        <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
+                      </div>
+                      <div class="review-author-info">
+                        <div class="review-author-name-track">
+                          ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
+                          ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
+                        </div>
+                        <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
+                      </div>
+                    </div>`}
               </div>
               <div class="review-score-track">${parseFloat(review.avg_score).toFixed(1)}</div>
             </div>

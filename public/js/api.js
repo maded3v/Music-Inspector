@@ -393,6 +393,15 @@ export async function updateMyName(name) {
   }
 }
 
+export async function getPublicUserProfile(userId) {
+  try {
+    return await apiRequest(`/api/public/users/${userId}`, {}, 'Failed to load public profile');
+  } catch (error) {
+    console.error('Get public profile error:', error);
+    throw error;
+  }
+}
+
 export async function searchArtists(query) {
   try {
     const data = await apiRequest(`/api/artists/search?q=${encodeURIComponent(query)}`, {}, 'Search failed');

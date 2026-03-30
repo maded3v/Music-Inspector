@@ -1,5 +1,6 @@
 const { query } = require('./db');
 const { requireAuth } = require('./middleware');
+const { columnExists } = require('./utils/dbHelpers');
 
 /**
  * Get user statistics
@@ -150,6 +151,106 @@ exports.getUserReleases = [
 ];
 
 /**
+ * Get public user profile (no auth required)
+ */
+exports.getPublicUserProfile = async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  try {
+    const hasIsBanned = await columnExists('users', 'is_banned');
+    const userResult = await query(
+      `SELECT
+        id,
+        name,
+        avatar,
+        created_at,
+        ${hasIsBanned ? 'COALESCE(is_banned, FALSE)' : 'FALSE'} AS is_banned
+       FROM users
+       WHERE id = $1`,
+      [userId]
+    );
+
+    if (userResult.rows.length === 0 || userResult.rows[0].is_banned) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const hasReviewStatus = await columnExists('reviews', 'status');
+    const reviewsResult = await query(
+      `SELECT
+        r.id,
+        r.track_id,
+        r.text,
+        r.avg_score,
+        r.created_at,
+        r.status,
+        r.score1,
+        r.score2,
+        r.score3,
+        r.score4,
+        r.score5,
+        t.title AS track_title,
+        t.artist AS track_artist,
+        t.cover AS track_cover
+       FROM reviews r
+       JOIN tracks t ON t.id = r.track_id
+       WHERE r.user_id = $1
+         AND t.status = 'approved'
+         ${hasReviewStatus ? "AND (r.status = 'approved' OR r.status IS NULL)" : ''}
+       ORDER BY r.created_at DESC
+       LIMIT 100`,
+      [userId]
+    );
+
+    const reviews = reviewsResult.rows || [];
+    const reviewCount = reviews.length;
+
+    let favoriteArtist = null;
+    if (reviewCount > 0) {
+      const countByArtist = new Map();
+      for (const review of reviews) {
+        const artistName = review.track_artist || '';
+        if (!artistName) continue;
+        countByArtist.set(artistName, (countByArtist.get(artistName) || 0) + 1);
+      }
+
+      const sortedArtists = Array.from(countByArtist.entries()).sort((a, b) => b[1] - a[1]);
+      if (sortedArtists.length === 1) {
+        favoriteArtist = sortedArtists[0][0];
+      } else if (sortedArtists.length > 1) {
+        favoriteArtist = sortedArtists[0][1] > sortedArtists[1][1]
+          ? sortedArtists[0][0]
+          : 'Несколько исполнителей';
+      }
+    }
+
+    return res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        created_at: user.created_at
+      },
+      stats: {
+        registrationDate: user.created_at,
+        reviewCount,
+        favoriteArtist
+      },
+      reviews
+    });
+  } catch (error) {
+    console.error('Error fetching public user profile:', error);
+    return res.status(500).json({
+      error: 'Server error',
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
  * Update current user's display name
  */
 exports.updateCurrentUserName = [
@@ -184,4 +285,3 @@ exports.updateCurrentUserName = [
     }
   }
 ];
-

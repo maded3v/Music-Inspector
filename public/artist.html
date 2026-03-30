@@ -47,21 +47,21 @@
           <h1 id="artist-name" class="artist-name-large">Загрузка...</h1>
           <div id="artist-bio" class="artist-bio"></div>
           <div class="artist-stats">
-            <div class="stat-item">
-              <div class="stat-value" id="overall-rating">—</div>
-              <div class="stat-label">Общий рейтинг</div>
+            <div class="stat-item stat-people">
+              <div class="stat-value" id="people-rating">—</div>
+              <div class="stat-label">Рейтинг пользователей</div>
             </div>
-            <div class="stat-item">
-              <div class="stat-value" id="my-rating" style="display: none;">—</div>
-              <div class="stat-label" id="my-rating-label" style="display: none;">Мой рейтинг</div>
+            <div class="stat-item stat-mi">
+              <div class="stat-value" id="mi-rating">—</div>
+              <div class="stat-label">MI рейтинг</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-item stat-releases">
               <div class="stat-value" id="releases-count">0</div>
-              <div class="stat-label">Релизов</div>
+              <div class="stat-label">Релизы</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-item stat-reviews">
               <div class="stat-value" id="reviews-count">0</div>
-              <div class="stat-label">Рецензий</div>
+              <div class="stat-label">Рецензии</div>
             </div>
           </div>
         </div>
@@ -82,7 +82,7 @@
 
   <script src="js/nav-mobile.js" defer></script>
   <script type="module">
-    import { getArtistWithStats } from './js/api.js';
+    import { getArtistWithStats, resolveMediaUrl } from './js/api.js';
     import { renderReleaseCardAll } from './js/releases.js';
     import { initAuthStatus } from './js/auth-status.js';
 
@@ -112,16 +112,12 @@
 
         // Set artist image
         let artistImage = artist.image_path || '';
-        if (artistImage) {
-          if (!artistImage.startsWith('http://') && !artistImage.startsWith('https://') && !artistImage.startsWith('/')) {
-            if (!artistImage.startsWith('uploads/')) {
-              artistImage = `uploads/artists/${artistImage}`;
-            }
+        if (artistImage && !artistImage.startsWith('http://') && !artistImage.startsWith('https://') && !artistImage.startsWith('/')) {
+          if (!artistImage.startsWith('uploads/')) {
+            artistImage = `uploads/artists/${artistImage}`;
           }
-          document.getElementById('artist-image').src = artistImage;
-        } else {
-          document.getElementById('artist-image').src = 'svg/person.png';
         }
+        document.getElementById('artist-image').src = resolveMediaUrl(artistImage) || 'svg/person.png';
 
         // Set bio
         if (artist.bio) {
@@ -132,16 +128,13 @@
         }
 
         // Set stats
-        if (stats.overallRating !== null) {
-          document.getElementById('overall-rating').textContent = stats.overallRating.toFixed(1);
-        }
-        
-        if (stats.myRating !== null) {
-          document.getElementById('my-rating').textContent = stats.myRating.toFixed(1);
-          document.getElementById('my-rating').style.display = 'block';
-          document.getElementById('my-rating-label').style.display = 'block';
-        }
+        const formatScore = (value) => {
+          const num = Number(value);
+          return Number.isFinite(num) ? num.toFixed(1) : '—';
+        };
 
+        document.getElementById('people-rating').textContent = formatScore(stats.peopleRating);
+        document.getElementById('mi-rating').textContent = formatScore(stats.miRating);
         document.getElementById('releases-count').textContent = stats.trackCount || 0;
         document.getElementById('reviews-count').textContent = stats.reviewCount || 0;
 

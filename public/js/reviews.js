@@ -1,15 +1,15 @@
-// Function to trim text, considering spaces and punctuation
+import { resolveMediaUrl } from './api.js';
+
 function trimText(text, maxLength = 220) {
   if (text.length <= maxLength) return text;
   let trimmed = text.substring(0, maxLength);
-  // Find the last space or punctuation to avoid cutting words
   const lastSpace = trimmed.lastIndexOf(' ');
   const lastPunct = Math.max(trimmed.lastIndexOf('.'), trimmed.lastIndexOf('!'), trimmed.lastIndexOf('?'));
   const cutIndex = Math.max(lastSpace, lastPunct);
-  if (cutIndex > maxLength * 0.8) { // Only cut if it's not too far back
+  if (cutIndex > maxLength * 0.8) {
     trimmed = trimmed.substring(0, cutIndex + 1);
   }
-  return trimmed + '...';
+  return `${trimmed}...`;
 }
 
 function escapeHtml(value) {
@@ -21,73 +21,56 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-// Function to get avatar URL
 function getAvatarUrl(avatar) {
   if (!avatar) return 'svg/person.png';
-  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/')) {
-    return avatar;
-  }
-  if (avatar.startsWith('uploads/')) {
-    return avatar;
-  }
-  return `uploads/avatars/${avatar}`;
+  if (avatar.startsWith('svg/')) return avatar;
+  return resolveMediaUrl(avatar);
 }
 
-// Function to render a single review card
 export function renderReviewCard(review) {
-  // Map API fields to expected format
   const reviewText = String(review.text || '');
   const trimmedText = trimText(reviewText);
   const encodedFullText = encodeURIComponent(reviewText);
-  
-  // Get subscores from API (score1-score5) or fallback to array
+
   const subscores = review.subscores || [
     review.score1 || 0,
     review.score2 || 0,
     review.score3 || 0,
     review.score4 || 0,
     review.score5 || 0
-  ].filter(s => s > 0);
+  ].filter(score => score > 0);
   const subscoresStr = subscores.length > 0 ? subscores.join(' ') : '';
-  
-  // Get score (avg_score from API or calculated)
-  const score = review.avg_score || review.score || (subscores.length > 0 
-    ? Math.round((subscores.reduce((a, b) => a + b, 0) / subscores.length) * 10) / 10 
+
+  const score = review.avg_score || review.score || (subscores.length > 0
+    ? Math.round((subscores.reduce((sum, item) => sum + item, 0) / subscores.length) * 10) / 10
     : 0);
-  
-  // Get author name
-  const author = review.author_name || review.author || 'РђРЅРѕРЅРёРјРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ';
-  
-  // Get author avatar
+
+  const author = review.author_name || review.author || 'Анонимный пользователь';
   const authorAvatar = getAvatarUrl(review.author_avatar);
-  
-  // Get cover image from track
-  const cover = review.track_cover || review.cover || 'svg/album.png';
-  
-  // Get title (use track title if no review title)
-  const title = review.title || `${review.track_title || 'Р РµС†РµРЅР·РёСЏ'} - ${review.track_artist || ''}`;
-  
-  // Check if MI review
-  const isMIReview = review.is_mi_review || review.miBadge || false;
-  
-  // Get track ID for clickable cover
+  const cover = resolveMediaUrl(review.track_cover || review.cover) || 'svg/album.png';
+  const title = review.title || `${review.track_title || 'Рецензия'} - ${review.track_artist || ''}`;
+  const isMIReview = Boolean(review.is_mi_review || review.miBadge);
   const trackId = review.track_id || null;
+
+  const authorProfileUrl = review.user_id ? `profile.html?id=${review.user_id}` : '';
+  const authorMarkup = review.user_id
+    ? `<a href="${authorProfileUrl}" class="review-author-link"><img src="${authorAvatar}" alt="avatar" class="review-avatar" onerror="this.src='svg/person.png'"><div class="review-author-name">${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}</div></a>`
+    : `<div class="review-author-link is-static"><img src="${authorAvatar}" alt="avatar" class="review-avatar" onerror="this.src='svg/person.png'"><div class="review-author-name">${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}</div></div>`;
 
   return `
     <div class="review-card" data-id="${review.id}" data-track-id="${trackId}" data-full-text="${encodedFullText}">
       <div class="review-top">
         <div class="review-author">
-          <img src="${authorAvatar}" alt="avatar" class="review-avatar" onerror="this.src='svg/person.png'">
-          <div class="review-author-name">
-            ${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}
-          </div>
+          ${authorMarkup}
         </div>
         <div class="review-right">
           <div class="review-scores">
             <div class="review-score">${Math.round(score * 10) / 10}</div>
             ${subscoresStr ? `<div class="review-subscores">${subscoresStr}</div>` : ''}
           </div>
-          ${trackId ? `<a href="track.html?id=${trackId}" class="review-cover-link"><img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'"></a>` : `<img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'">`}
+          ${trackId
+            ? `<a href="track.html?id=${trackId}" class="review-cover-link"><img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'"></a>`
+            : `<img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'">`}
         </div>
       </div>
       <div class="review-body">
@@ -95,7 +78,7 @@ export function renderReviewCard(review) {
         <div class="review-text">${escapeHtml(trimmedText)}</div>
       </div>
       <div class="review-footer">
-        <button class="review-btn expand">Р Р°Р·РІРµСЂРЅСѓС‚СЊ</button>
+        <button class="review-btn expand">Развернуть</button>
       </div>
     </div>
   `;
@@ -119,7 +102,7 @@ function syncReviewExpandButtons(container) {
     const trimmed = trimText(fullText);
     card.classList.remove('expanded');
     textEl.textContent = trimmed;
-    btn.textContent = 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ';
+    btn.textContent = 'Развернуть';
 
     const overflowByLength = trimmed !== fullText;
     const overflowByLayout = textEl.scrollHeight > textEl.clientHeight + 1;
@@ -131,7 +114,6 @@ function syncReviewExpandButtons(container) {
   });
 }
 
-// Function to render all review cards into the reviews-grid
 export function renderReviews(reviews, container) {
   const html = reviews.map(renderReviewCard).join('');
   container.innerHTML = html;
@@ -141,7 +123,6 @@ export function renderReviews(reviews, container) {
   });
 }
 
-// Function to handle expand/collapse with event delegation
 export function initReviewExpand(container) {
   if (!container || container.dataset.expandBound === '1') {
     return;
@@ -155,6 +136,7 @@ export function initReviewExpand(container) {
       const textEl = card.querySelector('.review-text');
       const btn = e.target;
       if (!textEl || !btn) return;
+
       let fullText = '';
       try {
         fullText = decodeURIComponent(card.dataset.fullText || '');
@@ -163,23 +145,18 @@ export function initReviewExpand(container) {
       }
 
       if (card.classList.contains('expanded')) {
-        // Collapse
         card.classList.remove('expanded');
-        btn.textContent = 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ';
-        // Reset to trimmed text
+        btn.textContent = 'Развернуть';
         textEl.textContent = trimText(fullText);
       } else {
-        // Expand
         card.classList.add('expanded');
-        btn.textContent = 'РЎРІРµСЂРЅСѓС‚СЊ';
-        // Show full text
+        btn.textContent = 'Свернуть';
         textEl.textContent = fullText;
       }
     }
   });
 }
 
-// Function to handle opening full review page
 export function initReviewOpen(container) {
   container.addEventListener('click', (e) => {
     if (e.target.classList.contains('open')) {

@@ -541,6 +541,12 @@ text-decoration: none;
   box-sizing: border-box;
 }
 
+.track-main-link {
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
 .track-card a,
 .track-card a:hover,
 .track-card a:visited,
@@ -552,6 +558,47 @@ text-decoration: none;
 .track-card:hover {
   transform: translateY(-8px);
   transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.track-card-home {
+  height: 292px;
+}
+
+.track-creator-link {
+  margin-top: 8px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #c7c7c7;
+  text-decoration: none;
+  border-top: 1px solid #292929;
+  padding-top: 8px;
+  transition: color 0.2s ease;
+}
+
+.track-creator-link:hover {
+  color: #f0f0f0;
+}
+
+.track-creator-link.is-static {
+  pointer-events: none;
+}
+
+.track-creator-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #3a3a3a;
+  flex-shrink: 0;
+}
+
+.track-creator-name {
+  font-size: 0.82rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .track-cover {
   width: 150px !important;
@@ -720,6 +767,22 @@ text-decoration: none;
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.review-author-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.review-author-link:hover .review-author-name {
+  color: #ffffff;
+}
+
+.review-author-link.is-static {
+  pointer-events: none;
 }
 
 .review-avatar {
@@ -2120,11 +2183,93 @@ text-decoration: none;
 
 /* Add Review Form */
 .add-review-form-container {
-  background: #1b1b1b;
-  border: 1px solid #444;
-  border-radius: 12px;
-  padding: 24px;
+  background: linear-gradient(180deg, #1f2536 0%, #161a24 100%);
+  border: 1px solid #33415f;
+  border-radius: 14px;
+  padding: 24px 22px;
   margin-bottom: 20px;
+  box-shadow: 0 12px 30px rgba(5, 8, 16, 0.35);
+}
+
+.add-review-form-intro {
+  background: rgba(10, 14, 24, 0.55);
+  border: 1px solid #2f3c59;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.add-review-form-intro h3 {
+  margin: 0 0 6px;
+  color: #f0f4ff;
+  font-size: 1.05rem;
+}
+
+.add-review-form-intro p {
+  margin: 0;
+  color: #aeb8d4;
+  font-size: 0.93rem;
+  line-height: 1.4;
+}
+
+.add-review-form-container .ratings-section {
+  margin-top: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.add-review-form-container .rating-group {
+  margin-bottom: 0;
+  background: rgba(17, 22, 34, 0.75);
+  border: 1px solid #2e3b56;
+  border-radius: 10px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 220px;
+}
+
+.add-review-form-container .rating-group label {
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  min-height: 34px;
+  color: #d7deef;
+}
+
+.add-review-form-container .slider-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.add-review-form-container .rating-slider {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 128px;
+  padding: 0;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  background: #2b3550;
+  border-radius: 8px;
+}
+
+.add-review-form-container .slider-value {
+  min-width: auto;
+  font-size: 1rem;
+  color: #f0f4ff;
+  background: #27324a;
+  border: 1px solid #3a4b6f;
+  border-radius: 7px;
+  padding: 2px 8px;
 }
 
 .review-scores-input {
@@ -2164,8 +2309,8 @@ text-decoration: none;
   width: 100%;
   min-height: 120px;
   padding: 12px;
-  background: #2a2a2a;
-  border: 1px solid #444;
+  background: #1a2130;
+  border: 1px solid #32405e;
   border-radius: 6px;
   color: #E6E6E6;
   font-size: 1rem;
@@ -2176,7 +2321,7 @@ text-decoration: none;
 
 .add-review-form-container textarea:focus {
   outline: none;
-  border-color: #666;
+  border-color: #5e78b4;
 }
 
 .form-actions {
@@ -2255,6 +2400,22 @@ text-decoration: none;
   align-items: center;
   gap: 12px;
   flex: 1;
+}
+
+.review-author-link-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.review-author-link-track:hover .review-author-name-track {
+  color: #ffffff;
+}
+
+.review-author-link-track.is-static {
+  pointer-events: none;
 }
 
 .review-avatar-track {
@@ -2444,6 +2605,24 @@ text-decoration: none;
   .review-scores-input {
     grid-template-columns: 1fr;
   }
+
+  .add-review-form-container .ratings-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .add-review-form-container .rating-group {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 520px) {
+  .add-review-form-container .ratings-section {
+    grid-template-columns: 1fr;
+  }
+
+  .add-review-form-container .rating-group {
+    min-height: 190px;
+  }
 }
 
 /* Release Artist Link in Cards */
@@ -2514,30 +2693,55 @@ text-decoration: none;
 }
 
 .artist-stats {
-  display: flex;
-  gap: 30px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 12px;
   margin-top: 20px;
-  flex-wrap: wrap;
 }
 
 .artist-stats .stat-item {
+  background: #1f1f1f;
+  border: 1px solid #353535;
+  border-radius: 12px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
 .artist-stats .stat-value {
-  font-size: 2rem;
+  font-size: 1.35rem;
   font-weight: bold;
   color: #E6E6E6;
 }
 
 .artist-stats .stat-label {
-  font-size: 0.9rem;
-  color: #969696;
+  font-size: 0.78rem;
+  color: #b2b2b2;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.65px;
+}
+
+.artist-stats .stat-item.stat-people {
+  border-color: #35558a;
+  background: linear-gradient(180deg, #1b2436 0%, #181f2b 100%);
+}
+
+.artist-stats .stat-item.stat-mi {
+  border-color: #b39a37;
+  background: linear-gradient(180deg, #2e2a19 0%, #242113 100%);
+}
+
+.artist-stats .stat-item.stat-releases {
+  border-color: #3e6f4d;
+  background: linear-gradient(180deg, #1a2a21 0%, #15211b 100%);
+}
+
+.artist-stats .stat-item.stat-reviews {
+  border-color: #6b476f;
+  background: linear-gradient(180deg, #2a1f30 0%, #201726 100%);
 }
 
 .artist-releases-section {
@@ -2591,7 +2795,8 @@ text-decoration: none;
   }
 
   .artist-stats {
-    justify-content: center;
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    width: 100%;
   }
 }
 

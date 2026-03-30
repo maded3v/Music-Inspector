@@ -168,7 +168,10 @@ exports.getLatestTracks = async (req, res) => {
     // Only show approved tracks to public
     // Include artist information if artist_id exists
     const result = await query(
-      `SELECT t.*, u.name as creator_name,
+      `SELECT t.*,
+              u.id as creator_id,
+              u.name as creator_name,
+              u.avatar as creator_avatar,
               a.id as artist_id, a.name as artist_name, a.image_path as artist_image
        FROM tracks t 
        LEFT JOIN users u ON t.user_id = u.id 

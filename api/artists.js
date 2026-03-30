@@ -268,6 +268,8 @@ exports.getArtistWithStats = [
     // Calculate overall rating from all reviews of artist's tracks
     let overallRating = null;
     let myRating = null;
+    let peopleRating = null;
+    let miRating = null;
     let reviewCount = 0;
 
     if (tracks.length > 0) {
@@ -280,14 +282,14 @@ exports.getArtistWithStats = [
       
       let reviewsQuery;
       if (statusColumnExists) {
-        reviewsQuery = `SELECT r.avg_score, r.user_id 
+        reviewsQuery = `SELECT r.avg_score, r.user_id, COALESCE(r.is_mi_review, FALSE) AS is_mi_review
                         FROM reviews r 
                         JOIN tracks t ON r.track_id = t.id
                         WHERE r.track_id IN (${placeholders}) 
                         AND t.status = 'approved'
                         AND (r.status = 'approved' OR r.status IS NULL)`;
       } else {
-        reviewsQuery = `SELECT r.avg_score, r.user_id 
+        reviewsQuery = `SELECT r.avg_score, r.user_id, COALESCE(r.is_mi_review, FALSE) AS is_mi_review
                         FROM reviews r 
                         JOIN tracks t ON r.track_id = t.id
                         WHERE r.track_id IN (${placeholders}) 
@@ -302,6 +304,19 @@ exports.getArtistWithStats = [
       if (reviews.length > 0) {
         const totalScore = reviews.reduce((sum, r) => sum + parseFloat(r.avg_score), 0);
         overallRating = totalScore / reviews.length;
+
+        const userReviews = reviews.filter(r => !r.is_mi_review);
+        const miReviews = reviews.filter(r => r.is_mi_review);
+
+        if (userReviews.length > 0) {
+          const userTotal = userReviews.reduce((sum, r) => sum + parseFloat(r.avg_score), 0);
+          peopleRating = userTotal / userReviews.length;
+        }
+
+        if (miReviews.length > 0) {
+          const miTotal = miReviews.reduce((sum, r) => sum + parseFloat(r.avg_score), 0);
+          miRating = miTotal / miReviews.length;
+        }
 
         // Find user's rating if logged in
         if (userId) {
@@ -322,6 +337,8 @@ exports.getArtistWithStats = [
       stats: {
         overallRating: overallRating ? Math.round(overallRating * 10) / 10 : null,
         myRating: myRating !== null ? Math.round(myRating * 10) / 10 : null,
+        peopleRating: peopleRating !== null ? Math.round(peopleRating * 10) / 10 : null,
+        miRating: miRating !== null ? Math.round(miRating * 10) / 10 : null,
         reviewCount,
         trackCount: tracks.length
       }
@@ -338,6 +355,5 @@ exports.getArtistWithStats = [
   }
   }
 ];
-
 
 
