@@ -2,6 +2,7 @@ const { query } = require('../db');
 
 // Cache for column existence checks
 const columnCache = new Map();
+const tableCache = new Map();
 
 /**
  * Check if a column exists in a table
@@ -29,6 +30,31 @@ async function columnExists(tableName, columnName) {
     console.error(`Error checking column ${tableName}.${columnName}:`, error);
     // On error, assume column doesn't exist (safer fallback)
     columnCache.set(cacheKey, false);
+    return false;
+  }
+}
+
+/**
+ * Check if a table exists in current schema
+ */
+async function tableExists(tableName) {
+  if (tableCache.has(tableName)) {
+    return tableCache.get(tableName);
+  }
+
+  try {
+    const result = await query(
+      `SELECT to_regclass($1) as regclass`,
+      [tableName]
+    );
+
+    const exists = Boolean(result.rows[0]?.regclass);
+    if (exists) {
+      tableCache.set(tableName, true);
+    }
+    return exists;
+  } catch (error) {
+    console.error(`Error checking table ${tableName}:`, error);
     return false;
   }
 }
@@ -97,6 +123,7 @@ async function buildReviewsQueryForTracks(baseQuery, trackIds, options = {}) {
 
 module.exports = {
   columnExists,
+  tableExists,
   buildReviewsQuery,
   buildReviewsQueryForTracks
 };

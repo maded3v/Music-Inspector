@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const { csrfProtection } = require('./utils/csrf');
+const { checkDatabaseHealth } = require('./db');
 
 const app = express();
 
@@ -33,6 +35,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(csrfProtection);
 
 // Routes
 const authRoutes = require('./auth');
@@ -58,6 +61,7 @@ app.get('/api/tracks/:id', trackRoutes.getTrack);
 
 // Review routes
 app.post('/api/reviews/add', reviewRoutes.addReview);
+app.post('/api/reviews/:id/vote', reviewRoutes.voteReview);
 app.get('/api/reviews/by-track/:id', reviewRoutes.getReviewsByTrack);
 app.get('/api/reviews/latest', reviewRoutes.getLatestReviews);
 app.post('/api/mi-review', reviewRoutes.generateMIReview);
@@ -101,8 +105,41 @@ app.post('/api/admin/users/:id/ban', adminRoutes.banUser);
 app.post('/api/admin/users/:id/unban', adminRoutes.unbanUser);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK' });
+app.get('/api/health', async (req, res) => {
+  try {
+    const dbHealth = await checkDatabaseHealth();
+
+    if (dbHealth.connected) {
+      return res.json({
+        status: 'OK',
+        database: {
+          connected: true,
+          database: dbHealth.database,
+          version: dbHealth.version
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return res.status(503).json({
+      status: 'SERVICE_UNAVAILABLE',
+      database: {
+        connected: false,
+        error: dbHealth.error,
+        errorCode: dbHealth.errorCode
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: 'SERVICE_UNAVAILABLE',
+      database: {
+        connected: false,
+        error: error.message
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 module.exports = app;

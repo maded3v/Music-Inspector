@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('./db');
 const { columnExists } = require('./utils/dbHelpers');
+const { issueCsrfCookie, clearCsrfCookie } = require('./utils/csrf');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -131,6 +132,7 @@ exports.register = async (req, res) => {
     );
 
     res.cookie('token', token, getCookieOptions(req));
+    issueCsrfCookie(req, res);
 
     res.json({ 
       success: true, 
@@ -209,6 +211,7 @@ exports.login = async (req, res) => {
     );
 
     res.cookie('token', token, getCookieOptions(req));
+    issueCsrfCookie(req, res);
 
     res.json({ 
       success: true, 
@@ -293,6 +296,7 @@ exports.getUser = [
 exports.logout = async (req, res) => {
   try {
     res.clearCookie('token', getCookieOptions(req, false));
+    clearCsrfCookie(req, res);
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error);

@@ -5,6 +5,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const { csrfProtection } = require('./api/utils/csrf');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(csrfProtection);
 
 // Load API routes
 const authRoutes = require('./api/auth');
@@ -57,6 +59,7 @@ app.get('/api/tracks/catalog', trackRoutes.getCatalog);
 app.get('/api/tracks/:id', trackRoutes.getTrack);
 
 app.post('/api/reviews/add', reviewRoutes.addReview);
+app.post('/api/reviews/:id/vote', reviewRoutes.voteReview);
 app.get('/api/reviews/by-track/:id', reviewRoutes.getReviewsByTrack);
 app.get('/api/reviews/latest', reviewRoutes.getLatestReviews);
 app.post('/api/mi-review', reviewRoutes.generateMIReview);

@@ -131,7 +131,7 @@
 
   <script src="js/nav-mobile.js" defer></script>
   <script type="module">
-    import { getTrack, getReviewsByTrack, addReview, generateMIReview } from './js/api.js';
+    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview } from './js/api.js';
     import { initAuth } from './js/auth-refactored.js';
     import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './js/modal.js';
 
@@ -303,6 +303,15 @@
       }
     }
 
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     // Load reviews (only approved)
     async function loadReviews() {
       try {
@@ -341,8 +350,17 @@
         }
 
         function renderReviewCard(review) {
+          const upvotes = Number(review.upvotes || 0);
+          const downvotes = Number(review.downvotes || 0);
+          const helpfulScore = Number(
+            review.helpful_score !== undefined
+              ? review.helpful_score
+              : (upvotes - downvotes)
+          );
+          const myVote = Number(review.my_vote || 0);
+
           return `
-          <div class="review-card-track">
+          <div class="review-card-track" data-review-id="${review.id}">
             <div class="review-header-track">
               <div class="review-author-track">
                 <div class="review-avatar-track">
@@ -350,7 +368,7 @@
                 </div>
                 <div class="review-author-info">
                   <div class="review-author-name-track">
-                    ${review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь')}
+                    ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
                     ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
                   </div>
                   <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
@@ -365,7 +383,21 @@
               <div class="score-item-track">Личность/харизма: ${review.score4 || 'N/A'}</div>
               <div class="score-item-track">Атмосфера/вайб: ${review.score5 || 'N/A'}</div>
             </div>
-            <div class="review-text-track">${review.text}</div>
+            <div class="review-text-track">${escapeHtml(review.text)}</div>
+            <div class="review-helpful-track" data-review-id="${review.id}" data-my-vote="${myVote}">
+              <div class="review-helpful-title">Полезно?</div>
+              <div class="review-helpful-actions">
+                <button type="button" class="helpful-vote-btn up ${myVote === 1 ? 'is-active' : ''}" data-review-id="${review.id}" data-vote="1">
+                  <span class="helpful-icon">+</span>
+                  <span class="helpful-count" data-role="upvotes">${upvotes}</span>
+                </button>
+                <button type="button" class="helpful-vote-btn down ${myVote === -1 ? 'is-active' : ''}" data-review-id="${review.id}" data-vote="-1">
+                  <span class="helpful-icon">-</span>
+                  <span class="helpful-count" data-role="downvotes">${downvotes}</span>
+                </button>
+                <span class="helpful-score-track" data-role="helpful-score">${helpfulScore}</span>
+              </div>
+            </div>
           </div>
           `;
         }
@@ -403,6 +435,78 @@
         
         document.getElementById('reviews-list').innerHTML = `<div class="no-reviews">${errorMessage}</div>`;
       }
+    }
+    const reviewsListEl = document.getElementById('reviews-list');
+    if (reviewsListEl) {
+      reviewsListEl.addEventListener('click', async (event) => {
+        const voteButton = event.target.closest('.helpful-vote-btn');
+        if (!voteButton) {
+          return;
+        }
+
+        if (!currentUser) {
+          showErrorModal(
+            'Требуется авторизация',
+            'Войдите, чтобы голосовать за рецензии.',
+            'Войти',
+            () => {
+              window.location.href = 'login.html';
+            }
+          );
+          return;
+        }
+
+        const reviewId = parseInt(voteButton.dataset.reviewId, 10);
+        const selectedVote = parseInt(voteButton.dataset.vote, 10);
+        if (!Number.isInteger(reviewId) || !Number.isInteger(selectedVote)) {
+          return;
+        }
+
+        const helpfulBlock = voteButton.closest('.review-helpful-track');
+        if (!helpfulBlock) {
+          return;
+        }
+
+        const currentVote = parseInt(helpfulBlock.dataset.myVote || '0', 10) || 0;
+        const nextVote = currentVote === selectedVote ? 0 : selectedVote;
+
+        const buttons = helpfulBlock.querySelectorAll('.helpful-vote-btn');
+        buttons.forEach((btn) => {
+          btn.disabled = true;
+        });
+
+        try {
+          const result = await voteReview(reviewId, nextVote);
+          const finalVote = Number(result.my_vote || 0);
+
+          helpfulBlock.dataset.myVote = String(finalVote);
+          const upvotesEl = helpfulBlock.querySelector('[data-role="upvotes"]');
+          const downvotesEl = helpfulBlock.querySelector('[data-role="downvotes"]');
+          const scoreEl = helpfulBlock.querySelector('[data-role="helpful-score"]');
+
+          if (upvotesEl) {
+            upvotesEl.textContent = String(Number(result.upvotes || 0));
+          }
+          if (downvotesEl) {
+            downvotesEl.textContent = String(Number(result.downvotes || 0));
+          }
+          if (scoreEl) {
+            scoreEl.textContent = String(Number(result.helpful_score || 0));
+          }
+
+          buttons.forEach((btn) => {
+            const voteValue = parseInt(btn.dataset.vote || '0', 10);
+            btn.classList.toggle('is-active', voteValue === finalVote);
+          });
+        } catch (error) {
+          console.error('Error voting review:', error);
+          showErrorModal('Ошибка', error.message || 'Не удалось отправить голос.');
+        } finally {
+          buttons.forEach((btn) => {
+            btn.disabled = false;
+          });
+        }
+      });
     }
 
     // Handle review form
@@ -492,6 +596,6 @@
     // Initialize
     loadTrack();
     loadReviews();
-  </script>
+</script>
 </body>
 </html>

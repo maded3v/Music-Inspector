@@ -43,6 +43,15 @@ export function withApiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
+export function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function isSafeMethod(method) {
+  return method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+}
+
 function getCacheKey(path) {
   return `${CACHE_PREFIX}${path}`;
 }
@@ -129,6 +138,16 @@ async function apiRequest(path, options = {}, fallbackMessage = 'Request failed'
     credentials: 'include',
     ...options
   };
+
+  const method = (requestOptions.method || 'GET').toUpperCase();
+  if (!isSafeMethod(method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      const headers = new Headers(requestOptions.headers || {});
+      headers.set('x-csrf-token', csrfToken);
+      requestOptions.headers = headers;
+    }
+  }
 
   const response = await fetch(withApiUrl(path), requestOptions);
 
@@ -237,6 +256,21 @@ export async function addReview(reviewData) {
     return result;
   } catch (error) {
     console.error('Error adding review:', error);
+    throw error;
+  }
+}
+
+export async function voteReview(reviewId, vote) {
+  try {
+    const result = await apiRequest(`/api/reviews/${reviewId}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vote })
+    }, 'Failed to submit vote');
+    clearPublicCache();
+    return result;
+  } catch (error) {
+    console.error('Vote review error:', error);
     throw error;
   }
 }
@@ -372,11 +406,13 @@ export async function logout() {
   try {
     const data = await apiRequest('/api/logout', { method: 'POST' }, 'Logout failed');
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     clearPublicCache();
     return data;
   } catch (error) {
     console.error('Logout error:', error);
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     clearPublicCache();
     throw error;
   }

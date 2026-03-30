@@ -123,47 +123,44 @@ exports.createTrack = [
 ];
 
 /**
- * Calculate ratings for a track
+ * Batch rating calculation to avoid N+1 queries.
  */
-async function calculateTrackRatings(trackId) {
-  const { columnExists } = require('./utils/dbHelpers');
+async function getTrackRatingsMap(trackIds) {
+  const uniqueTrackIds = Array.from(
+    new Set((trackIds || []).map(id => parseInt(id, 10)).filter(id => Number.isInteger(id) && id > 0))
+  );
+
+  const ratingsMap = new Map();
+  if (uniqueTrackIds.length === 0) {
+    return ratingsMap;
+  }
+
   const statusColumnExists = await columnExists('reviews', 'status');
-  
-  let reviewsQuery;
+
+  let queryText = `
+    SELECT
+      r.track_id,
+      ROUND(AVG(r.avg_score) FILTER (WHERE COALESCE(r.is_mi_review, FALSE) = FALSE)::numeric, 1) AS people_score,
+      ROUND(AVG(r.avg_score) FILTER (WHERE COALESCE(r.is_mi_review, FALSE) = TRUE)::numeric, 1) AS mi_score
+    FROM reviews r
+    WHERE r.track_id = ANY($1::int[])
+  `;
+
   if (statusColumnExists) {
-    reviewsQuery = `SELECT r.avg_score, r.is_mi_review
-                   FROM reviews r
-                   WHERE r.track_id = $1 AND (r.status = 'approved' OR r.status IS NULL)
-                   ORDER BY r.created_at DESC`;
-  } else {
-    reviewsQuery = `SELECT r.avg_score, r.is_mi_review
-                   FROM reviews r
-                   WHERE r.track_id = $1
-                   ORDER BY r.created_at DESC`;
+    queryText += ` AND (r.status = 'approved' OR r.status IS NULL)`;
   }
-  
-  const reviewsResult = await query(reviewsQuery, [trackId]);
-  const reviews = reviewsResult.rows;
-  
-  let peopleScore = null;
-  let miScore = null;
-  
-  if (reviews.length > 0) {
-    const peopleReviews = reviews.filter(r => !r.is_mi_review);
-    const miReviews = reviews.filter(r => r.is_mi_review);
-    
-    if (peopleReviews.length > 0) {
-      const sum = peopleReviews.reduce((acc, r) => acc + parseFloat(r.avg_score), 0);
-      peopleScore = Math.round((sum / peopleReviews.length) * 10) / 10;
-    }
-    
-    if (miReviews.length > 0) {
-      const sum = miReviews.reduce((acc, r) => acc + parseFloat(r.avg_score), 0);
-      miScore = Math.round((sum / miReviews.length) * 10) / 10;
-    }
+
+  queryText += ` GROUP BY r.track_id`;
+
+  const result = await query(queryText, [uniqueTrackIds]);
+  for (const row of result.rows) {
+    ratingsMap.set(row.track_id, {
+      peopleScore: row.people_score !== null ? parseFloat(row.people_score) : null,
+      miScore: row.mi_score !== null ? parseFloat(row.mi_score) : null
+    });
   }
-  
-  return { peopleScore, miScore };
+
+  return ratingsMap;
 }
 
 exports.getLatestTracks = async (req, res) => {
@@ -181,15 +178,15 @@ exports.getLatestTracks = async (req, res) => {
        LIMIT 50`
     );
     
-    // Calculate ratings for each track
-    const tracksWithRatings = await Promise.all(result.rows.map(async (track) => {
-      const { peopleScore, miScore } = await calculateTrackRatings(track.id);
+    const ratingsMap = await getTrackRatingsMap(result.rows.map(track => track.id));
+    const tracksWithRatings = result.rows.map((track) => {
+      const ratings = ratingsMap.get(track.id) || { peopleScore: null, miScore: null };
       return {
         ...track,
-        peopleScore,
-        miScore
+        peopleScore: ratings.peopleScore,
+        miScore: ratings.miScore
       };
-    }));
+    });
     
     res.json({ tracks: tracksWithRatings });
   } catch (error) {
@@ -229,9 +226,10 @@ exports.getMonthlyAlbums = async (req, res) => {
       [currentYear, currentMonth + 1] // PostgreSQL months are 1-12
     );
     
-    // Calculate ratings for each album
-    const albumsWithRatings = await Promise.all(result.rows.map(async (album) => {
-      const { peopleScore, miScore } = await calculateTrackRatings(album.id);
+    const ratingsMap = await getTrackRatingsMap(result.rows.map(album => album.id));
+    const albumsWithRatings = result.rows.map((album) => {
+      const ratings = ratingsMap.get(album.id) || { peopleScore: null, miScore: null };
+      const { peopleScore, miScore } = ratings;
       
       // Calculate total rating (average of peopleScore and miScore)
       let totalRating = null;
@@ -249,7 +247,7 @@ exports.getMonthlyAlbums = async (req, res) => {
         miScore,
         totalRating
       };
-    }));
+    });
     
     // Sort by highest total rating, then by newest if no rating
     const sortedAlbums = albumsWithRatings.sort((a, b) => {
@@ -352,8 +350,8 @@ exports.getTrack = async (req, res) => {
 
     const track = result.rows[0];
     
-    // Calculate ratings using helper function
-    const { peopleScore, miScore } = await calculateTrackRatings(id);
+    const ratingsMap = await getTrackRatingsMap([id]);
+    const { peopleScore, miScore } = ratingsMap.get(parseInt(id, 10)) || { peopleScore: null, miScore: null };
     
     // Add calculated scores to track
     track.peopleScore = peopleScore;

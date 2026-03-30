@@ -1,4 +1,4 @@
-import { getCurrentUser, withApiUrl } from './api.js';
+import { getCurrentUser, withApiUrl, getCsrfToken } from './api.js';
 import { initGlobalSearch } from './search.js';
 
 let currentUser = null;
@@ -10,10 +10,22 @@ let allUsersCache = []; // Cache for users filtering
 let currentEditTrackId = null;
 
 async function adminRequest(path, options = {}, fallbackMessage = 'Request failed') {
-  const response = await fetch(withApiUrl(path), {
+  const requestOptions = {
     credentials: 'include',
     ...options
-  });
+  };
+
+  const method = (requestOptions.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      const headers = new Headers(requestOptions.headers || {});
+      headers.set('x-csrf-token', csrfToken);
+      requestOptions.headers = headers;
+    }
+  }
+
+  const response = await fetch(withApiUrl(path), requestOptions);
 
   const contentType = response.headers.get('content-type') || '';
   const payload = contentType.includes('application/json')

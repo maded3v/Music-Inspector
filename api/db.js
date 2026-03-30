@@ -197,17 +197,12 @@ const queryWithTimeout = async (text, params, timeoutMs = 10000) => {
   }
   
   try {
-    const result = await Promise.race([
-      pool.query(text, params),
-      new Promise((_, reject) => 
-        setTimeout(() => {
-          const timeoutError = new Error(`Query timeout after ${timeoutMs}ms`);
-          timeoutError.code = 'ETIMEDOUT';
-          timeoutError.isConnectionError = true;
-          reject(timeoutError);
-        }, timeoutMs)
-      )
-    ]);
+    const result = await pool.query({
+      text,
+      values: params,
+      query_timeout: timeoutMs,
+      statement_timeout: timeoutMs
+    });
     
     // Update connection status on successful query
     dbConnectionStatus.connected = true;
@@ -217,7 +212,12 @@ const queryWithTimeout = async (text, params, timeoutMs = 10000) => {
     return result;
   } catch (error) {
     // Update connection status on error
-    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {
+    if (
+      error.code === 'ECONNREFUSED' ||
+      error.code === 'ENOTFOUND' ||
+      error.code === 'ETIMEDOUT' ||
+      error.code === '57014'
+    ) {
       dbConnectionStatus.connected = false;
       dbConnectionStatus.lastError = error.message;
       dbConnectionStatus.lastCheck = new Date();

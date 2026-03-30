@@ -1,6 +1,7 @@
 const { query } = require('./db');
 const jwt = require('jsonwebtoken');
 const { columnExists } = require('./utils/dbHelpers');
+const { ensureCsrfCookie, clearCsrfCookie } = require('./utils/csrf');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -81,6 +82,7 @@ exports.requireAuth = async (req, res, next) => {
 
     if (user.is_banned) {
       res.clearCookie('token', getCookieClearOptions(req));
+      clearCsrfCookie(req, res);
       return res.status(403).json({ error: 'Your account is banned' });
     }
 
@@ -124,16 +126,17 @@ exports.getCurrentUser = async (req, res) => {
 
     if (user.is_banned) {
       res.clearCookie('token', getCookieClearOptions(req));
+      clearCsrfCookie(req, res);
       return res.json({ user: null });
     }
-    
+
+    ensureCsrfCookie(req, res);
     res.json({ user });
   } catch (error) {
     console.error('getCurrentUser error:', error.message);
     res.json({ user: null });
   }
 };
-
 
 
 
