@@ -14,6 +14,7 @@ function resolveApiBase() {
 export const API_BASE = resolveApiBase();
 const CACHE_PREFIX = 'MI_CACHE_V2::';
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
+let csrfTokenCache = '';
 
 function migrateOldCacheNamespace() {
   try {
@@ -46,6 +47,38 @@ export function withApiUrl(path) {
 export function getCsrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : '';
+}
+
+async function fetchCsrfTokenFromApi() {
+  try {
+    const response = await fetch(withApiUrl('/api/csrf-token'), { credentials: 'include' });
+    if (!response.ok) {
+      return '';
+    }
+
+    const data = await response.json().catch(() => ({}));
+    const token = typeof data.csrfToken === 'string' ? data.csrfToken : '';
+    if (token) {
+      csrfTokenCache = token;
+    }
+    return token;
+  } catch {
+    return '';
+  }
+}
+
+async function resolveCsrfToken() {
+  const cookieToken = getCsrfToken();
+  if (cookieToken) {
+    csrfTokenCache = cookieToken;
+    return cookieToken;
+  }
+
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+
+  return fetchCsrfTokenFromApi();
 }
 
 function isSafeMethod(method) {
@@ -141,7 +174,7 @@ async function apiRequest(path, options = {}, fallbackMessage = 'Request failed'
 
   const method = (requestOptions.method || 'GET').toUpperCase();
   if (!isSafeMethod(method)) {
-    const csrfToken = getCsrfToken();
+    const csrfToken = await resolveCsrfToken();
     if (csrfToken) {
       const headers = new Headers(requestOptions.headers || {});
       headers.set('x-csrf-token', csrfToken);
@@ -407,12 +440,14 @@ export async function logout() {
     const data = await apiRequest('/api/logout', { method: 'POST' }, 'Logout failed');
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    csrfTokenCache = '';
     clearPublicCache();
     return data;
   } catch (error) {
     console.error('Logout error:', error);
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    csrfTokenCache = '';
     clearPublicCache();
     throw error;
   }

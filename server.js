@@ -5,7 +5,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const { csrfProtection } = require('./api/utils/csrf');
+const { csrfProtection, getOrIssueCsrfToken } = require('./api/utils/csrf');
 
 const app = express();
 
@@ -51,6 +51,10 @@ app.post('/api/login', authRoutes.login);
 app.post('/api/logout', authRoutes.logout);
 app.get('/api/user', authRoutes.getUser);
 app.get('/api/user/current', getCurrentUser);
+app.get('/api/csrf-token', (req, res) => {
+  const csrfToken = getOrIssueCsrfToken(req, res);
+  res.json({ csrfToken });
+});
 
 app.post('/api/tracks/create', trackRoutes.createTrack);
 app.get('/api/tracks/latest', trackRoutes.getLatestTracks);

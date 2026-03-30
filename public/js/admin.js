@@ -9,6 +9,27 @@ let allTracksCache = []; // Cache for search filtering
 let allUsersCache = []; // Cache for users filtering
 let currentEditTrackId = null;
 
+async function resolveAdminCsrfToken() {
+  const cookieToken = getCsrfToken();
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  try {
+    const response = await fetch(withApiUrl('/api/csrf-token'), {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      return '';
+    }
+
+    const data = await response.json().catch(() => ({}));
+    return typeof data.csrfToken === 'string' ? data.csrfToken : '';
+  } catch {
+    return '';
+  }
+}
+
 async function adminRequest(path, options = {}, fallbackMessage = 'Request failed') {
   const requestOptions = {
     credentials: 'include',
@@ -17,7 +38,7 @@ async function adminRequest(path, options = {}, fallbackMessage = 'Request faile
 
   const method = (requestOptions.method || 'GET').toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-    const csrfToken = getCsrfToken();
+    const csrfToken = await resolveAdminCsrfToken();
     if (csrfToken) {
       const headers = new Headers(requestOptions.headers || {});
       headers.set('x-csrf-token', csrfToken);

@@ -65,6 +65,19 @@ function clearCsrfCookie(req, res) {
   res.clearCookie(CSRF_COOKIE_NAME, getCookieOptions(req, false));
 }
 
+function getOrIssueCsrfToken(req, res) {
+  const existing = req.cookies?.[CSRF_COOKIE_NAME];
+  if (existing) {
+    return existing;
+  }
+
+  if (!hasValidAuthToken(req)) {
+    return null;
+  }
+
+  return issueCsrfCookie(req, res);
+}
+
 function hasValidAuthToken(req) {
   const token = req.cookies?.token;
   if (!token) {
@@ -111,5 +124,6 @@ module.exports = {
   issueCsrfCookie,
   ensureCsrfCookie,
   clearCsrfCookie,
+  getOrIssueCsrfToken,
   csrfProtection
 };
