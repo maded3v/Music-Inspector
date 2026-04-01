@@ -436,24 +436,25 @@
     function renderReviewCard(review) {
       const score = Number(review.avg_score);
       const displayScore = Number.isFinite(score) ? score.toFixed(1) : '—';
-      const statusColor = {
-        pending: '#ff9800',
-        approved: '#4CAF50',
-        rejected: '#f44336'
-      }[review.status] || '#4CAF50';
+      let scoreColor = '#8b8b8b';
+      if (Number.isFinite(score) && score >= 9) {
+        scoreColor = '#4CAF50';
+      } else if (Number.isFinite(score) && score >= 5) {
+        scoreColor = '#E3D323';
+      }
 
       const coverUrl = resolveMediaUrl(review.track_cover) || 'svg/album.png';
       const title = `${review.track_title || 'Трек'} - ${review.track_artist || 'Исполнитель'}`;
       const preview = review.text || 'Нет текста';
 
       return `
-        <a href="track.html?id=${review.track_id}" class="review-card-profile">
+        <a href="track.html?id=${review.track_id}&review=${review.id}" class="review-card-profile">
           <img src="${coverUrl}" alt="Cover" class="review-cover-small" onerror="this.onerror=null; this.src='svg/album.png';">
           <div class="review-info">
             <div class="review-track-title">${escapeHtml(title)}</div>
             <div class="review-text-preview">${escapeHtml(preview)}</div>
           </div>
-          <div class="review-score-large" style="color: ${statusColor};">${displayScore}</div>
+          <div class="review-score-large" style="color: ${scoreColor};">${displayScore}</div>
         </a>
       `;
     }
@@ -472,7 +473,7 @@
 
       const allReviewsMarkup = visibleReviews.length > 0
         ? `<div class="reviews-list">${visibleReviews.map(renderReviewCard).join('')}</div>`
-        : '<div class="no-reviews">Пока нет отзывов</div>';
+        : '<div class="no-reviews">Пока нет рецензий</div>';
 
       const pendingReviewsMarkup = ownProfile
         ? pendingReviews.length > 0
@@ -487,7 +488,7 @@
                 </div>
               `).join('')}
             </div>`
-          : '<div class="no-reviews" style="padding: 18px 0;">Нет отзывов на проверке</div>'
+          : '<div class="no-reviews" style="padding: 18px 0;">Нет рецензий на проверке</div>'
         : '';
 
       const statsFavorite = stats.favoriteArtist || '—';
@@ -507,7 +508,7 @@
                 </div>
                 <div class="stat-item">
                   <div class="stat-value">${Number(stats.reviewCount || 0)}</div>
-                  <div class="stat-label">Отзывы</div>
+                  <div class="stat-label">Рецензии</div>
                 </div>
                 <div class="stat-item">
                   <div class="stat-value" style="font-size: ${String(statsFavorite).length > 15 ? '1em' : '1.5em'};">${escapeHtml(statsFavorite)}</div>
@@ -518,13 +519,13 @@
 
             ${ownProfile ? `
               <div class="last-review-section">
-                <h3>Отзывы на проверке</h3>
+                <h3>Рецензии на проверке</h3>
                 ${pendingReviewsMarkup}
               </div>
             ` : ''}
 
             <div class="last-review-section">
-              <h3>Все отзывы пользователя</h3>
+              <h3>Все рецензии пользователя</h3>
               ${allReviewsMarkup}
             </div>
           </div>

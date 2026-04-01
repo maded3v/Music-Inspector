@@ -29,7 +29,7 @@ function formatBadgeScore(value) {
   return Number.isInteger(num) ? String(num) : num.toFixed(1);
 }
 
-export function renderReleaseCard(release, variant = 'default') {
+export function renderReleaseCard(release, variant = 'default', rankIndex = -1) {
   if (!release || typeof release !== 'object') return '';
 
   const releaseId = release.id || release.track_id;
@@ -60,7 +60,13 @@ export function renderReleaseCard(release, variant = 'default') {
   }
 
   const badgeIcon = getBadgeIcon(releaseType);
-  const cardClass = variant === 'monthly' ? 'release-card' : 'track-card';
+  const tier = variant === 'monthly'
+    ? (rankIndex === 0 ? 'gold' : rankIndex === 1 ? 'silver' : rankIndex === 2 ? 'bronze' : '')
+    : '';
+  const cardClass = variant === 'monthly'
+    ? `release-card${tier ? ` ${tier}` : ''}`
+    : 'track-card';
+  const tierAttr = variant === 'monthly' && tier ? ` data-tier="${tier}"` : '';
   const artistClass = variant === 'monthly' ? 'release-artist album-artist' : 'track-artist';
   const artistSection = `<div class="${artistClass}" data-artist-id="${artistId || ''}">${escapeHtml(artistName)}</div>`;
 
@@ -79,7 +85,7 @@ export function renderReleaseCard(release, variant = 'default') {
     return `<div class="track-card track-card-home" data-type="${releaseType}" data-id="${releaseId}"><a href="track.html?id=${releaseId}" class="track-main-link"><div class="track-cover-wrapper"><img src="${cover}" alt="Обложка" class="track-cover" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="track-badge">${badgeIcon}</div></div><div class="track-info"><div class="track-title">${escapeHtml(title)}</div>${artistSection}</div></a>${badgesSection}</div>`;
   }
 
-  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${escapeHtml(title)}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
+  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"${tierAttr}><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${escapeHtml(title)}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
 }
 
 export function renderReleaseCards(releases, variant = 'default') {
@@ -89,6 +95,6 @@ export function renderReleaseCards(releases, variant = 'default') {
 
   return releases
     .filter((release) => release && (release.id || release.track_id))
-    .map((release) => renderReleaseCard(release, variant))
+    .map((release, index) => renderReleaseCard(release, variant, index))
     .join('');
 }

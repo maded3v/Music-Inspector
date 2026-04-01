@@ -70,7 +70,14 @@
       <div class="release-reviews-section">
         <div class="reviews-header">
           <h2>Рецензии</h2>
-          <button id="add-review-btn" class="add-review-button" style="display: none;">Добавить рецензию</button>
+          <div class="reviews-header-controls">
+            <div id="review-sort-controls" class="review-sort-controls">
+              <button type="button" class="review-sort-btn is-active" data-sort="date">По дате</button>
+              <button type="button" class="review-sort-btn" data-sort="score">По оценке</button>
+              <button type="button" class="review-sort-btn" data-sort="likes">По лайкам</button>
+            </div>
+            <button id="add-review-btn" class="add-review-button" style="display: none;">+ Добавить рецензию</button>
+          </div>
         </div>
         
         <!-- Add Review Form (hidden by default) -->
@@ -141,6 +148,9 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const trackId = urlParams.get('id');
+    const targetReviewId = Number.parseInt(urlParams.get('review') || '', 10);
+    let currentReviewSort = 'date';
+    let loadedTrackReviews = [];
 
     if (!trackId) {
       window.location.href = 'index.html';
@@ -301,126 +311,164 @@
         .replace(/'/g, '&#39;');
     }
 
+    function getAvatarUrl(avatar) {
+      if (!avatar) return 'svg/person.png';
+      if (avatar.startsWith('svg/')) return avatar;
+      return resolveMediaUrl(avatar);
+    }
+
+    function getReviewScoreColor(score) {
+      if (!Number.isFinite(score)) return '#C8C8C8';
+      if (score >= 9) return '#4CAF50';
+      if (score >= 5) return '#E3D323';
+      return '#8b8b8b';
+    }
+
+    function sortTrackReviews(reviews) {
+      const sorted = [...reviews];
+
+      if (currentReviewSort === 'score') {
+        sorted.sort((a, b) => {
+          const aScore = Number(a.avg_score || 0);
+          const bScore = Number(b.avg_score || 0);
+          if (bScore !== aScore) return bScore - aScore;
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
+        return sorted;
+      }
+
+      if (currentReviewSort === 'likes') {
+        sorted.sort((a, b) => {
+          const aLikes = Number(a.helpful_score !== undefined ? a.helpful_score : (Number(a.upvotes || 0) - Number(a.downvotes || 0)));
+          const bLikes = Number(b.helpful_score !== undefined ? b.helpful_score : (Number(b.upvotes || 0) - Number(b.downvotes || 0)));
+          if (bLikes !== aLikes) return bLikes - aLikes;
+          const aScore = Number(a.avg_score || 0);
+          const bScore = Number(b.avg_score || 0);
+          if (bScore !== aScore) return bScore - aScore;
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
+        return sorted;
+      }
+
+      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return sorted;
+    }
+
+    function renderReviewCard(review) {
+      const upvotes = Number(review.upvotes || 0);
+      const downvotes = Number(review.downvotes || 0);
+      const helpfulScore = Number(
+        review.helpful_score !== undefined
+          ? review.helpful_score
+          : (upvotes - downvotes)
+      );
+      const myVote = Number(review.my_vote || 0);
+      const scoreValue = Number(review.avg_score || 0);
+      const scoreText = Number.isFinite(scoreValue) ? scoreValue.toFixed(1) : '0.0';
+
+      return `
+      <div class="review-card-track" data-review-id="${review.id}">
+        <div class="review-header-track">
+          <div class="review-author-track">
+            ${review.user_id
+              ? `<a href="profile.html?id=${review.user_id}" class="review-author-link-track">
+                  <div class="review-avatar-track">
+                    <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
+                  </div>
+                  <div class="review-author-info">
+                    <div class="review-author-name-track">
+                      ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
+                      ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
+                    </div>
+                    <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
+                  </div>
+                </a>`
+              : `<div class="review-author-link-track is-static">
+                  <div class="review-avatar-track">
+                    <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
+                  </div>
+                  <div class="review-author-info">
+                    <div class="review-author-name-track">
+                      ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
+                      ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
+                    </div>
+                    <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
+                  </div>
+                </div>`}
+          </div>
+          <div class="review-score-track" style="color:${getReviewScoreColor(scoreValue)}">${scoreText}</div>
+        </div>
+        <div class="review-scores-track">
+          <div class="score-item-track">Рифмы/образы: ${review.score1 || 'N/A'}</div>
+          <div class="score-item-track">Структура/ритм: ${review.score2 || 'N/A'}</div>
+          <div class="score-item-track">Реализация стиля: ${review.score3 || 'N/A'}</div>
+          <div class="score-item-track">Личность/харизма: ${review.score4 || 'N/A'}</div>
+          <div class="score-item-track">Атмосфера/вайб: ${review.score5 || 'N/A'}</div>
+        </div>
+        <div class="review-text-track">${escapeHtml(review.text)}</div>
+        <div class="review-helpful-track" data-review-id="${review.id}" data-my-vote="${myVote}">
+          <div class="review-helpful-title">Полезно?</div>
+          <div class="review-helpful-actions">
+            <button type="button" class="helpful-vote-btn up ${myVote === 1 ? 'is-active' : ''}" data-review-id="${review.id}" data-vote="1">
+              <span class="helpful-icon">+</span>
+              <span class="helpful-count" data-role="upvotes">${upvotes}</span>
+            </button>
+            <button type="button" class="helpful-vote-btn down ${myVote === -1 ? 'is-active' : ''}" data-review-id="${review.id}" data-vote="-1">
+              <span class="helpful-icon">-</span>
+              <span class="helpful-count" data-role="downvotes">${downvotes}</span>
+            </button>
+            <span class="helpful-score-track" data-role="helpful-score">${helpfulScore}</span>
+          </div>
+        </div>
+      </div>
+      `;
+    }
+
+    function scrollToRequestedReview() {
+      if (!Number.isInteger(targetReviewId) || targetReviewId <= 0) {
+        return;
+      }
+
+      const targetCard = document.querySelector(`.review-card-track[data-review-id="${targetReviewId}"]`);
+      if (!targetCard) {
+        return;
+      }
+
+      targetCard.classList.add('review-card-track--target');
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => targetCard.classList.remove('review-card-track--target'), 3200);
+    }
+
+    function renderTrackReviews() {
+      const reviewsList = document.getElementById('reviews-list');
+      if (!reviewsList) {
+        return;
+      }
+
+      if (!loadedTrackReviews.length) {
+        reviewsList.innerHTML = '<div class="no-reviews">Пока нет рецензий</div>';
+        return;
+      }
+
+      const sortedReviews = sortTrackReviews(loadedTrackReviews);
+      reviewsList.innerHTML = sortedReviews.map(renderReviewCard).join('');
+      scrollToRequestedReview();
+    }
+
     // Load reviews (only approved)
     async function loadReviews() {
       try {
         const response = await getReviewsByTrack(trackId);
         const reviews = response.reviews || [];
 
-        // Filter only approved reviews or reviews without status (legacy)
-        // Include reviews where status is undefined, null, or 'approved'
-        const approvedReviews = reviews.filter(r => 
+        loadedTrackReviews = reviews.filter((r) =>
           !r.status || r.status === 'approved' || r.status === null || r.status === undefined
         );
 
-        const reviewsList = document.getElementById('reviews-list');
-        
-        if (approvedReviews.length === 0) {
-          reviewsList.innerHTML = '<div class="no-reviews">Пока нет рецензий</div>';
-          return;
-        }
-
-        // Sort by date (newest first)
-        approvedReviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-        const miReviews = approvedReviews.filter(r => Boolean(r.is_mi_review));
-        const userReviews = approvedReviews.filter(r => !r.is_mi_review);
-
-        // Helper function to get avatar URL
-        function getAvatarUrl(avatar) {
-          if (!avatar) return 'svg/person.png';
-          if (avatar.startsWith('svg/')) return avatar;
-          return resolveMediaUrl(avatar);
-        }
-
-        function renderReviewCard(review) {
-          const upvotes = Number(review.upvotes || 0);
-          const downvotes = Number(review.downvotes || 0);
-          const helpfulScore = Number(
-            review.helpful_score !== undefined
-              ? review.helpful_score
-              : (upvotes - downvotes)
-          );
-          const myVote = Number(review.my_vote || 0);
-
-          return `
-          <div class="review-card-track" data-review-id="${review.id}">
-            <div class="review-header-track">
-              <div class="review-author-track">
-                ${review.user_id
-                  ? `<a href="profile.html?id=${review.user_id}" class="review-author-link-track">
-                      <div class="review-avatar-track">
-                        <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
-                      </div>
-                      <div class="review-author-info">
-                        <div class="review-author-name-track">
-                          ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
-                          ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
-                        </div>
-                        <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
-                      </div>
-                    </a>`
-                  : `<div class="review-author-link-track is-static">
-                      <div class="review-avatar-track">
-                        <img src="${getAvatarUrl(review.author_avatar)}" alt="avatar" onerror="this.onerror=null; this.src='svg/person.png';">
-                      </div>
-                      <div class="review-author-info">
-                        <div class="review-author-name-track">
-                          ${escapeHtml(review.author_name || (review.is_mi_review ? 'Music Inspector AI' : 'Пользователь'))}
-                          ${review.is_mi_review ? '<span class="mi-badge">MI</span>' : ''}
-                        </div>
-                        <div class="review-date-track">${new Date(review.created_at).toLocaleDateString('ru-RU')}</div>
-                      </div>
-                    </div>`}
-              </div>
-              <div class="review-score-track">${parseFloat(review.avg_score).toFixed(1)}</div>
-            </div>
-            <div class="review-scores-track">
-              <div class="score-item-track">Рифмы/образы: ${review.score1 || 'N/A'}</div>
-              <div class="score-item-track">Структура/ритм: ${review.score2 || 'N/A'}</div>
-              <div class="score-item-track">Реализация стиля: ${review.score3 || 'N/A'}</div>
-              <div class="score-item-track">Личность/харизма: ${review.score4 || 'N/A'}</div>
-              <div class="score-item-track">Атмосфера/вайб: ${review.score5 || 'N/A'}</div>
-            </div>
-            <div class="review-text-track">${escapeHtml(review.text)}</div>
-            <div class="review-helpful-track" data-review-id="${review.id}" data-my-vote="${myVote}">
-              <div class="review-helpful-title">Полезно?</div>
-              <div class="review-helpful-actions">
-                <button type="button" class="helpful-vote-btn up ${myVote === 1 ? 'is-active' : ''}" data-review-id="${review.id}" data-vote="1">
-                  <span class="helpful-icon">+</span>
-                  <span class="helpful-count" data-role="upvotes">${upvotes}</span>
-                </button>
-                <button type="button" class="helpful-vote-btn down ${myVote === -1 ? 'is-active' : ''}" data-review-id="${review.id}" data-vote="-1">
-                  <span class="helpful-icon">-</span>
-                  <span class="helpful-count" data-role="downvotes">${downvotes}</span>
-                </button>
-                <span class="helpful-score-track" data-role="helpful-score">${helpfulScore}</span>
-              </div>
-            </div>
-          </div>
-          `;
-        }
-
-        function renderSection(title, sectionReviews, emptyText) {
-          const isEmpty = sectionReviews.length === 0;
-          return `
-            <div class="reviews-subsection ${isEmpty ? 'empty' : ''}">
-              <div class="reviews-subsection-title">${title}</div>
-              ${isEmpty
-                ? `<div class="no-reviews">${emptyText}</div>`
-                : sectionReviews.map(renderReviewCard).join('')}
-            </div>
-          `;
-        }
-
-        reviewsList.innerHTML = `
-          ${renderSection('MI рецензии', miReviews, 'Пока нет MI-рецензий')}
-          ${renderSection('Рецензии пользователей', userReviews, 'Пока нет рецензий пользователей')}
-        `;
+        renderTrackReviews();
       } catch (error) {
         console.error('Error loading reviews:', error);
-        
-        // Show specific error message
+
         let errorMessage = 'Ошибка загрузки рецензий';
         if (error.status === 0) {
           errorMessage = 'Не удалось подключиться к серверу. Проверьте подключение к интернету.';
@@ -431,10 +479,32 @@
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
+
         document.getElementById('reviews-list').innerHTML = `<div class="no-reviews">${errorMessage}</div>`;
       }
     }
+    const reviewSortControls = document.getElementById('review-sort-controls');
+    if (reviewSortControls) {
+      reviewSortControls.addEventListener('click', (event) => {
+        const sortBtn = event.target.closest('.review-sort-btn');
+        if (!sortBtn) {
+          return;
+        }
+
+        const nextSort = sortBtn.dataset.sort;
+        if (!nextSort || nextSort === currentReviewSort) {
+          return;
+        }
+
+        currentReviewSort = nextSort;
+        reviewSortControls.querySelectorAll('.review-sort-btn').forEach((btn) => {
+          btn.classList.toggle('is-active', btn.dataset.sort === currentReviewSort);
+        });
+
+        renderTrackReviews();
+      });
+    }
+
     const reviewsListEl = document.getElementById('reviews-list');
     if (reviewsListEl) {
       reviewsListEl.addEventListener('click', async (event) => {

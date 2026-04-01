@@ -13,6 +13,7 @@
     "promote-admin": "node scripts/promote-admin.js",
     "reset-admins": "node scripts/reset-admins.js",
     "set-mi-reviewers": "node scripts/set-mi-reviewers.js",
+    "seed-high-reviews": "node scripts/seed-high-reviews.js",
     "vercel:start": "vercel start"
   },
   "dependencies": {
