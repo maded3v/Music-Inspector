@@ -48,6 +48,30 @@
       <button class="sort-btn" data-sort="date" data-label="Дата">Дата</button>
       <button class="sort-btn" data-sort="alphabet" data-label="А-Я">А-Я</button>
     </div>
+    <div class="rating-filters">
+      <label class="rating-filter">
+        <span class="rating-filter-label">Пользовательский</span>
+        <select id="people-rating-filter" class="rating-filter-select">
+          <option value="0">Все</option>
+          <option value="5">от 5</option>
+          <option value="6">от 6</option>
+          <option value="7">от 7</option>
+          <option value="8">от 8</option>
+          <option value="9">от 9</option>
+        </select>
+      </label>
+      <label class="rating-filter">
+        <span class="rating-filter-label">MI</span>
+        <select id="mi-rating-filter" class="rating-filter-select">
+          <option value="0">Все</option>
+          <option value="5">от 5</option>
+          <option value="6">от 6</option>
+          <option value="7">от 7</option>
+          <option value="8">от 8</option>
+          <option value="9">от 9</option>
+        </select>
+      </label>
+    </div>
     <div class="releases-grid">
       <!-- Releases will be loaded dynamically -->
     </div>
@@ -65,22 +89,52 @@ let allReleases = [];
 let currentSort = 'rating';
 let currentOrder = 'desc';
 let navSearchInput = null;
+let peopleRatingFilterSelect = null;
+let miRatingFilterSelect = null;
 
 function getSearchValue() {
   return (navSearchInput?.value || '').toLowerCase().trim();
 }
 
+function getMinRatingValue(selectElement) {
+  const value = Number(selectElement?.value || 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function getSafeNumeric(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
 function renderReleases(releases) {
   const grid = document.querySelector('.releases-grid');
   const searchValue = getSearchValue();
+  const minPeopleRating = getMinRatingValue(peopleRatingFilterSelect);
+  const minMiRating = getMinRatingValue(miRatingFilterSelect);
+
   const filtered = releases.filter((r) => {
     const title = (r.title || '').toLowerCase();
     const artist = (r.artist || '').toLowerCase();
-    return title.includes(searchValue) || artist.includes(searchValue);
+    if (!title.includes(searchValue) && !artist.includes(searchValue)) {
+      return false;
+    }
+
+    const peopleScore = getSafeNumeric(r.peopleScore);
+    const miScore = getSafeNumeric(r.miScore);
+
+    if (minPeopleRating > 0 && (peopleScore === null || peopleScore < minPeopleRating)) {
+      return false;
+    }
+
+    if (minMiRating > 0 && (miScore === null || miScore < minMiRating)) {
+      return false;
+    }
+
+    return true;
   });
 
   if (filtered.length === 0) {
-    grid.innerHTML = '<div class="releases-empty">Ничего не найдено. Попробуйте изменить поиск или сортировку.</div>';
+    grid.innerHTML = '<div class="releases-empty">Ничего не найдено. Измени поиск, сортировку или фильтры рейтинга.</div>';
     return;
   }
 
@@ -169,6 +223,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initAuthStatus();
 
   navSearchInput = document.querySelector('.search-bar .search-input');
+  peopleRatingFilterSelect = document.getElementById('people-rating-filter');
+  miRatingFilterSelect = document.getElementById('mi-rating-filter');
   
   allReleases = await getReleases();
   
@@ -187,6 +243,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderReleases(allReleases);
     });
   }
+
+  [peopleRatingFilterSelect, miRatingFilterSelect].forEach((select) => {
+    if (!select) {
+      return;
+    }
+
+    select.addEventListener('change', () => {
+      renderReleases(allReleases);
+    });
+  });
 
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {

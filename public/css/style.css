@@ -1080,8 +1080,48 @@ text-decoration: none;
   flex-wrap: wrap;
 }
 
+.rating-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.rating-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-filter-label {
+  color: #bdbdbd;
+  font-size: 0.9rem;
+}
+
+.rating-filter-select {
+  min-width: 110px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid #1e1e1e;
+  background-color: #282828;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s;
+}
+
+.rating-filter-select:hover,
+.rating-filter-select:focus {
+  background-color: #E1E1E1;
+  color: #969696;
+  border: #969696 1px solid;
+  outline: none;
+}
+
 .releases-headline,
 .sort-section,
+.rating-filters,
 .releases-grid {
   width: min(100%, var(--releases-grid-width));
   margin-left: auto;
@@ -2197,7 +2237,7 @@ text-decoration: none;
 }
 
 .review-sort-btn {
-  width: 132px;
+  width: 150px;
   height: 38px;
   padding: 0 10px;
   display: inline-flex;
@@ -2219,15 +2259,16 @@ text-decoration: none;
 }
 
 .add-review-button {
-  min-width: 182px;
+  width: 150px;
   height: 38px;
-  padding: 0 14px;
+  padding: 0 10px;
   background-color: #C8C8C8;
   border: #969696 1px solid;
   border-radius: 10px;
   color: #1E1E1E;
-  font-size: 1.02rem;
+  font-size: 0.88rem;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
   user-select: none;
   transition: color 0.3s, background-color 0.3s, border-color 0.3s;
@@ -2241,17 +2282,17 @@ text-decoration: none;
 
 /* Add Review Form */
 .add-review-form-container {
-  background: linear-gradient(180deg, #1f2536 0%, #161a24 100%);
-  border: 1px solid #33415f;
+  background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
+  border: 1px solid #3a3a3a;
   border-radius: 14px;
   padding: 24px 22px;
   margin-bottom: 20px;
-  box-shadow: 0 12px 30px rgba(5, 8, 16, 0.35);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
 }
 
 .add-review-form-intro {
-  background: rgba(10, 14, 24, 0.55);
-  border: 1px solid #2f3c59;
+  background: rgba(14, 14, 14, 0.45);
+  border: 1px solid #424242;
   border-radius: 10px;
   padding: 12px 14px;
   margin-bottom: 16px;
@@ -2259,13 +2300,13 @@ text-decoration: none;
 
 .add-review-form-intro h3 {
   margin: 0 0 6px;
-  color: #f0f4ff;
+  color: #f0f0f0;
   font-size: 1.05rem;
 }
 
 .add-review-form-intro p {
   margin: 0;
-  color: #aeb8d4;
+  color: #bebebe;
   font-size: 0.93rem;
   line-height: 1.4;
 }
@@ -2280,8 +2321,8 @@ text-decoration: none;
 
 .add-review-form-container .rating-group {
   margin-bottom: 0;
-  background: rgba(17, 22, 34, 0.75);
-  border: 1px solid #2e3b56;
+  background: rgba(20, 20, 20, 0.75);
+  border: 1px solid #3b3b3b;
   border-radius: 10px;
   padding: 10px 8px;
   display: flex;
@@ -2293,9 +2334,9 @@ text-decoration: none;
 .add-review-form-container .rating-group label {
   margin-bottom: 10px;
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   min-height: 34px;
-  color: #d7deef;
+  color: #e4e4e4;
 }
 
 .add-review-form-container .slider-container {
@@ -2316,16 +2357,16 @@ text-decoration: none;
   direction: rtl;
   -webkit-appearance: none;
   appearance: none;
-  background: #2b3550;
+  background: #303030;
   border-radius: 8px;
 }
 
 .add-review-form-container .slider-value {
   min-width: auto;
-  font-size: 1rem;
-  color: #f0f4ff;
-  background: #27324a;
-  border: 1px solid #3a4b6f;
+  font-size: 1.1rem;
+  color: #f0f0f0;
+  background: #292929;
+  border: 1px solid #4a4a4a;
   border-radius: 7px;
   padding: 2px 8px;
 }
@@ -2367,8 +2408,8 @@ text-decoration: none;
   width: 100%;
   min-height: 120px;
   padding: 12px;
-  background: #1a2130;
-  border: 1px solid #32405e;
+  background: #1e1e1e;
+  border: 1px solid #3e3e3e;
   border-radius: 6px;
   color: #E6E6E6;
   font-size: 1rem;
@@ -2379,7 +2420,7 @@ text-decoration: none;
 
 .add-review-form-container textarea:focus {
   outline: none;
-  border-color: #5e78b4;
+  border-color: #969696;
 }
 
 .form-actions {
