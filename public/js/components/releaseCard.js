@@ -1,19 +1,9 @@
-/**
- * Unified Release Card Component
- * Used across all sections: latest releases, monthly albums, artist pages.
- */
 import { resolveMediaUrl } from '../api.js';
 
 function normalizeCoverPath(cover) {
   if (!cover) return 'svg/album.png';
   if (cover.startsWith('svg/')) return cover;
   return resolveMediaUrl(cover);
-}
-
-function normalizeAvatarPath(avatar) {
-  if (!avatar) return 'svg/person.png';
-  if (avatar.startsWith('svg/')) return avatar;
-  return resolveMediaUrl(avatar);
 }
 
 function escapeHtml(value) {
@@ -27,16 +17,10 @@ function escapeHtml(value) {
 
 function getBadgeIcon(type) {
   if (type === 'single') {
-    return `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-      <path d="M406.3 48.2c-4.7.9-202 39.2-206.2 40-4.2.8-8.1 3.6-8.1 8v240.1c0 1.6-.1 7.2-2.4 11.7-3.1 5.9-8.5 10.2-16.1 12.7-3.3 1.1-7.8 2.1-13.1 3.3-24.1 5.4-64.4 14.6-64.4 51.8 0 31.1 22.4 45.1 41.7 47.5 2.1.3 4.5.7 7.1.7 6.7 0 36-3.3 51.2-13.2 11-7.2 24.1-21.4 24.1-47.8V190.5c0-3.8 2.7-7.1 6.4-7.8l152-30.7c5-1 9.6 2.8 9.6 7.8v130.9c0 4.1-.2 8.9-2.5 13.4-3.1 5.9-8.5 10.2-16.2 12.7-3.3 1.1-8.8 2.1-14.1 3.3-24.1 5.4-64.4 14.5-64.4 51.7 0 33.7 25.4 47.2 41.8 48.3 6.5.4 11.2.3 19.4-.9s23.5-5.5 36.5-13c17.9-10.3 27.5-26.8 27.5-48.2V55.9c-.1-4.4-3.8-8.9-9.8-7.7z"></path>
-    </svg>`;
+    return `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M406.3 48.2c-4.7.9-202 39.2-206.2 40-4.2.8-8.1 3.6-8.1 8v240.1c0 1.6-.1 7.2-2.4 11.7-3.1 5.9-8.5 10.2-16.1 12.7-3.3 1.1-7.8 2.1-13.1 3.3-24.1 5.4-64.4 14.6-64.4 51.8 0 31.1 22.4 45.1 41.7 47.5 2.1.3 4.5.7 7.1.7 6.7 0 36-3.3 51.2-13.2 11-7.2 24.1-21.4 24.1-47.8V190.5c0-3.8 2.7-7.1 6.4-7.8l152-30.7c5-1 9.6 2.8 9.6 7.8v130.9c0 4.1-.2 8.9-2.5 13.4-3.1 5.9-8.5 10.2-16.2 12.7-3.3 1.1-8.8 2.1-14.1 3.3-24.1 5.4-64.4 14.5-64.4 51.7 0 33.7 25.4 47.2 41.8 48.3 6.5.4 11.2.3 19.4-.9s23.5-5.5 36.5-13c17.9-10.3 27.5-26.8 27.5-48.2V55.9c-.1-4.4-3.8-8.9-9.8-7.7z"></path></svg>`;
   }
 
-  return `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="11.99" cy="11.99" r="2.01"></circle>
-    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
-    <path d="M12 6a6 6 0 0 0-6 6h2a4 4 0 0 1 4-4z"></path>
-  </svg>`;
+  return `<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11.99" cy="11.99" r="2.01"></circle><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6a6 6 0 0 0-6 6h2a4 4 0 0 1 4-4z"></path></svg>`;
 }
 
 function formatBadgeScore(value) {
@@ -55,9 +39,11 @@ export function renderReleaseCard(release, variant = 'default') {
   const title = release.title;
   if (!title || typeof title !== 'string' || title.trim() === '') return '';
 
-  const artistName = release.artist_name || release.artist || 'Неизвестный исполнитель';
+  const artistName = release.artist_name || release.artist || 'РќРµРёР·РІРµСЃС‚РЅС‹Р№ РёСЃРїРѕР»РЅРёС‚РµР»СЊ';
   const artistId = release.artist_id || null;
-  const cover = normalizeCoverPath(release.cover || release.cover_path);
+  const cover = normalizeCoverPath(
+    release.cover || release.cover_path || release.cover_original_path || release.artist_image
+  );
 
   const peopleRating = release.peopleScore !== null && release.peopleScore !== undefined ? release.peopleScore : null;
   const miRating = release.miScore !== null && release.miScore !== undefined ? release.miScore : null;
@@ -90,17 +76,10 @@ export function renderReleaseCard(release, variant = 'default') {
   }
 
   if (variant === 'home') {
-    const creatorId = release.creator_id || null;
-    const creatorName = release.creator_name || 'Пользователь';
-    const creatorAvatar = normalizeAvatarPath(release.creator_avatar || '');
-    const creatorMarkup = creatorId
-      ? `<a href="profile.html?id=${creatorId}" class="track-creator-link" title="Профиль ${escapeHtml(creatorName)}"><img src="${creatorAvatar}" alt="avatar" class="track-creator-avatar" onerror="this.onerror=null; this.src='svg/person.png';"><span class="track-creator-name">${escapeHtml(creatorName)}</span></a>`
-      : `<div class="track-creator-link is-static"><img src="${creatorAvatar}" alt="avatar" class="track-creator-avatar" onerror="this.onerror=null; this.src='svg/person.png';"><span class="track-creator-name">${escapeHtml(creatorName)}</span></div>`;
-
-    return `<div class="track-card track-card-home" data-type="${releaseType}" data-id="${releaseId}"><a href="track.html?id=${releaseId}" class="track-main-link"><div class="track-cover-wrapper"><img src="${cover}" alt="Обложка" class="track-cover" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="track-badge">${badgeIcon}</div></div><div class="track-info"><div class="track-title">${escapeHtml(title)}</div>${artistSection}</div></a>${badgesSection}${creatorMarkup}</div>`;
+    return `<div class="track-card track-card-home" data-type="${releaseType}" data-id="${releaseId}"><a href="track.html?id=${releaseId}" class="track-main-link"><div class="track-cover-wrapper"><img src="${cover}" alt="РћР±Р»РѕР¶РєР°" class="track-cover" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="track-badge">${badgeIcon}</div></div><div class="track-info"><div class="track-title">${escapeHtml(title)}</div>${artistSection}</div></a>${badgesSection}</div>`;
   }
 
-  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${escapeHtml(title)}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
+  return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="РћР±Р»РѕР¶РєР°" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${escapeHtml(title)}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;
 }
 
 export function renderReleaseCards(releases, variant = 'default') {
@@ -109,7 +88,7 @@ export function renderReleaseCards(releases, variant = 'default') {
   }
 
   return releases
-    .filter(release => release && (release.id || release.track_id))
-    .map(release => renderReleaseCard(release, variant))
+    .filter((release) => release && (release.id || release.track_id))
+    .map((release) => renderReleaseCard(release, variant))
     .join('');
 }

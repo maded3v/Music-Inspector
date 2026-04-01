@@ -49,7 +49,7 @@ export function resolveMediaUrl(path) {
     return '';
   }
 
-  const value = String(path).trim();
+  const value = String(path).trim().replace(/\\/g, '/');
   if (!value) {
     return '';
   }
@@ -487,6 +487,11 @@ export async function logout() {
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     csrfTokenCache = '';
+    try {
+      sessionStorage.removeItem('MI_LAST_USER');
+    } catch {
+      // Ignore storage errors silently
+    }
     clearPublicCache();
     return data;
   } catch (error) {
@@ -494,6 +499,11 @@ export async function logout() {
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     document.cookie = 'csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     csrfTokenCache = '';
+    try {
+      sessionStorage.removeItem('MI_LAST_USER');
+    } catch {
+      // Ignore storage errors silently
+    }
     clearPublicCache();
     throw error;
   }

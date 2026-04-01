@@ -210,24 +210,48 @@ exports.getLatestTracks = async (req, res) => {
 exports.getMonthlyAlbums = async (req, res) => {
   try {
     const now = new Date();
-    const currentMonth = now.getMonth();
+    const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
-    
-    // Get start and end of current month
-    // Use PostgreSQL date functions for reliable month filtering
-    const result = await query(
-      `SELECT t.*, u.name as creator_name,
-              a.id as artist_id, a.name as artist_name, a.image_path as artist_image
-       FROM tracks t 
-       LEFT JOIN users u ON t.user_id = u.id 
-       LEFT JOIN artists a ON t.artist_id = a.id
-       WHERE t.status = 'approved'
-         AND t.type = 'album'
-         AND EXTRACT(YEAR FROM t.created_at) = $1
-         AND EXTRACT(MONTH FROM t.created_at) = $2
-       ORDER BY t.created_at DESC`,
-      [currentYear, currentMonth + 1] // PostgreSQL months are 1-12
-    );
+    const hasReleaseDateColumn = await columnExists('tracks', 'release_date');
+    const dateExpr = hasReleaseDateColumn ? 'COALESCE(t.release_date, t.created_at)' : 't.created_at';
+
+    const loadAlbumsByMonth = async (year, month) => {
+      return query(
+        `SELECT t.*, u.name as creator_name,
+                a.id as artist_id, a.name as artist_name, a.image_path as artist_image
+         FROM tracks t
+         LEFT JOIN users u ON t.user_id = u.id
+         LEFT JOIN artists a ON t.artist_id = a.id
+         WHERE t.status = 'approved'
+           AND t.type = 'album'
+           AND EXTRACT(YEAR FROM ${dateExpr}) = $1
+           AND EXTRACT(MONTH FROM ${dateExpr}) = $2
+         ORDER BY ${dateExpr} DESC`,
+        [year, month]
+      );
+    };
+
+    let result = await loadAlbumsByMonth(currentYear, currentMonth);
+
+    // Fallback: if текущий месяц пустой, показываем последний месяц, где есть альбомы
+    if (!result.rows.length) {
+      const latestMonthResult = await query(
+        `SELECT
+           EXTRACT(YEAR FROM ${dateExpr})::int AS year,
+           EXTRACT(MONTH FROM ${dateExpr})::int AS month
+         FROM tracks t
+         WHERE t.status = 'approved'
+           AND t.type = 'album'
+         ORDER BY ${dateExpr} DESC
+         LIMIT 1`
+      );
+
+      if (latestMonthResult.rows.length) {
+        const fallbackYear = latestMonthResult.rows[0].year;
+        const fallbackMonth = latestMonthResult.rows[0].month;
+        result = await loadAlbumsByMonth(fallbackYear, fallbackMonth);
+      }
+    }
     
     const ratingsMap = await getTrackRatingsMap(result.rows.map(album => album.id));
     const albumsWithRatings = result.rows.map((album) => {

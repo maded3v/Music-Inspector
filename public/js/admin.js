@@ -257,6 +257,7 @@ window.openEditTrack = function(trackId) {
   document.getElementById('edit-artist').value = track.artist || '';
   document.getElementById('edit-type').value = track.type || 'single';
   document.getElementById('edit-link').value = track.link || '';
+  document.getElementById('edit-cover').value = track.cover || '';
   document.getElementById('edit-release-date').value = track.release_date ? String(track.release_date).slice(0, 10) : '';
 
   document.getElementById('edit-modal').style.display = 'flex';
@@ -284,6 +285,7 @@ function initEditModal() {
       artist: document.getElementById('edit-artist').value.trim(),
       type: document.getElementById('edit-type').value,
       link: document.getElementById('edit-link').value.trim(),
+      cover: document.getElementById('edit-cover').value.trim(),
       release_date: document.getElementById('edit-release-date').value || null
     };
 
@@ -375,6 +377,7 @@ function renderUsersList(users) {
         </div>
         <div class="user-actions">
           <button class="btn-neutral" onclick="renameUser(${user.id}, '${escapeJsString(user.name || '')}')">Переименовать</button>
+          <button class="btn-neutral" onclick="updateUserAvatar(${user.id}, '${escapeJsString(user.avatar || '')}')">Изм. аватар</button>
           <button class="btn-neutral" onclick="removeUserAvatar(${user.id})">Удалить аватар</button>
           ${user.is_banned
             ? `<button class="btn-neutral btn-ok" onclick="unbanUser(${user.id})">Разбанить</button>`
@@ -428,6 +431,27 @@ window.removeUserAvatar = async function(userId) {
     loadUsers();
   } catch (error) {
     console.error('Error removing avatar:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+};
+
+window.updateUserAvatar = async function(userId, currentAvatar) {
+  const nextAvatar = prompt('Введите URL/путь к аватару:', currentAvatar || '');
+  if (!nextAvatar) {
+    return;
+  }
+
+  try {
+    await adminRequest(`/api/admin/users/${userId}/avatar`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar: nextAvatar.trim() })
+    }, 'Failed to update avatar');
+
+    alert('Аватар обновлен');
+    loadUsers();
+  } catch (error) {
+    console.error('Error updating avatar:', error);
     alert(`Ошибка: ${error.message}`);
   }
 };

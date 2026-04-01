@@ -2,13 +2,16 @@ import { resolveMediaUrl } from './api.js';
 
 function trimText(text, maxLength = 220) {
   if (text.length <= maxLength) return text;
+
   let trimmed = text.substring(0, maxLength);
   const lastSpace = trimmed.lastIndexOf(' ');
   const lastPunct = Math.max(trimmed.lastIndexOf('.'), trimmed.lastIndexOf('!'), trimmed.lastIndexOf('?'));
   const cutIndex = Math.max(lastSpace, lastPunct);
+
   if (cutIndex > maxLength * 0.8) {
     trimmed = trimmed.substring(0, cutIndex + 1);
   }
+
   return `${trimmed}...`;
 }
 
@@ -27,6 +30,10 @@ function getAvatarUrl(avatar) {
   return resolveMediaUrl(avatar);
 }
 
+function getExpandIcon(isExpanded) {
+  return isExpanded ? 'вЊѓ' : 'вЊ„';
+}
+
 export function renderReviewCard(review) {
   const reviewText = String(review.text || '');
   const trimmedText = trimText(reviewText);
@@ -38,17 +45,20 @@ export function renderReviewCard(review) {
     review.score3 || 0,
     review.score4 || 0,
     review.score5 || 0
-  ].filter(score => score > 0);
+  ].filter((score) => score > 0);
+
   const subscoresStr = subscores.length > 0 ? subscores.join(' ') : '';
 
-  const score = review.avg_score || review.score || (subscores.length > 0
-    ? Math.round((subscores.reduce((sum, item) => sum + item, 0) / subscores.length) * 10) / 10
-    : 0);
+  const score = review.avg_score || review.score || (
+    subscores.length > 0
+      ? Math.round((subscores.reduce((sum, item) => sum + item, 0) / subscores.length) * 10) / 10
+      : 0
+  );
 
-  const author = review.author_name || review.author || 'Анонимный пользователь';
+  const author = review.author_name || review.author || 'РќРµРёР·РІРµСЃС‚РЅС‹Р№ Р°РІС‚РѕСЂ';
   const authorAvatar = getAvatarUrl(review.author_avatar);
   const cover = resolveMediaUrl(review.track_cover || review.cover) || 'svg/album.png';
-  const title = review.title || `${review.track_title || 'Рецензия'} - ${review.track_artist || ''}`;
+  const title = review.title || `${review.track_title || 'Р РµР»РёР·'} - ${review.track_artist || ''}`;
   const isMIReview = Boolean(review.is_mi_review || review.miBadge);
   const trackId = review.track_id || null;
 
@@ -60,9 +70,7 @@ export function renderReviewCard(review) {
   return `
     <div class="review-card" data-id="${review.id}" data-track-id="${trackId}" data-full-text="${encodedFullText}">
       <div class="review-top">
-        <div class="review-author">
-          ${authorMarkup}
-        </div>
+        <div class="review-author">${authorMarkup}</div>
         <div class="review-right">
           <div class="review-scores">
             <div class="review-score">${Math.round(score * 10) / 10}</div>
@@ -78,7 +86,7 @@ export function renderReviewCard(review) {
         <div class="review-text">${escapeHtml(trimmedText)}</div>
       </div>
       <div class="review-footer">
-        <button class="review-btn expand">Развернуть</button>
+        <button class="review-btn expand" aria-label="Р Р°Р·РІРµСЂРЅСѓС‚СЊ">${getExpandIcon(false)}</button>
       </div>
     </div>
   `;
@@ -102,7 +110,8 @@ function syncReviewExpandButtons(container) {
     const trimmed = trimText(fullText);
     card.classList.remove('expanded');
     textEl.textContent = trimmed;
-    btn.textContent = 'Развернуть';
+    btn.textContent = getExpandIcon(false);
+    btn.setAttribute('aria-label', 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ');
 
     const overflowByLength = trimmed !== fullText;
     const overflowByLayout = textEl.scrollHeight > textEl.clientHeight + 1;
@@ -115,8 +124,7 @@ function syncReviewExpandButtons(container) {
 }
 
 export function renderReviews(reviews, container) {
-  const html = reviews.map(renderReviewCard).join('');
-  container.innerHTML = html;
+  container.innerHTML = reviews.map(renderReviewCard).join('');
 
   requestAnimationFrame(() => {
     syncReviewExpandButtons(container);
@@ -127,42 +135,52 @@ export function initReviewExpand(container) {
   if (!container || container.dataset.expandBound === '1') {
     return;
   }
+
   container.dataset.expandBound = '1';
 
-  container.addEventListener('click', (e) => {
-    if (e.target.classList.contains('expand')) {
-      const card = e.target.closest('.review-card');
-      if (!card) return;
-      const textEl = card.querySelector('.review-text');
-      const btn = e.target;
-      if (!textEl || !btn) return;
+  container.addEventListener('click', (event) => {
+    if (!event.target.classList.contains('expand')) {
+      return;
+    }
 
-      let fullText = '';
-      try {
-        fullText = decodeURIComponent(card.dataset.fullText || '');
-      } catch {
-        fullText = card.dataset.fullText || '';
-      }
+    const card = event.target.closest('.review-card');
+    if (!card) return;
 
-      if (card.classList.contains('expanded')) {
-        card.classList.remove('expanded');
-        btn.textContent = 'Развернуть';
-        textEl.textContent = trimText(fullText);
-      } else {
-        card.classList.add('expanded');
-        btn.textContent = 'Свернуть';
-        textEl.textContent = fullText;
-      }
+    const textEl = card.querySelector('.review-text');
+    const btn = event.target;
+    if (!textEl || !btn) return;
+
+    let fullText = '';
+    try {
+      fullText = decodeURIComponent(card.dataset.fullText || '');
+    } catch {
+      fullText = card.dataset.fullText || '';
+    }
+
+    if (card.classList.contains('expanded')) {
+      card.classList.remove('expanded');
+      btn.textContent = getExpandIcon(false);
+      btn.setAttribute('aria-label', 'Р Р°Р·РІРµСЂРЅСѓС‚СЊ');
+      textEl.textContent = trimText(fullText);
+    } else {
+      card.classList.add('expanded');
+      btn.textContent = getExpandIcon(true);
+      btn.setAttribute('aria-label', 'РЎРІРµСЂРЅСѓС‚СЊ');
+      textEl.textContent = fullText;
     }
   });
 }
 
 export function initReviewOpen(container) {
-  container.addEventListener('click', (e) => {
-    if (e.target.classList.contains('open')) {
-      const card = e.target.closest('.review-card');
-      const reviewId = card.dataset.id;
-      window.location.href = `review.html?id=${reviewId}`;
+  container.addEventListener('click', (event) => {
+    if (!event.target.classList.contains('open')) {
+      return;
     }
+
+    const card = event.target.closest('.review-card');
+    const reviewId = card?.dataset.id;
+    if (!reviewId) return;
+
+    window.location.href = `review.html?id=${reviewId}`;
   });
 }

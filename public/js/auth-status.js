@@ -6,6 +6,8 @@
 import { getCurrentUser, resolveMediaUrl } from './api.js';
 import { initGlobalSearch } from './search.js';
 
+const USER_CACHE_KEY = 'MI_LAST_USER';
+
 // Generate random color for avatar background
 function generateAvatarColor(email) {
   let hash = 0;
@@ -53,9 +55,12 @@ export function updateAuthStatus(user) {
       
       // Set avatar
       if (profileAvatar) {
+        profileAvatar.innerHTML = '';
         if (user.avatar) {
           // Display user avatar if available
           const avatarPath = resolveMediaUrl(user.avatar);
+          profileAvatar.textContent = '';
+          profileAvatar.style.backgroundColor = 'transparent';
           profileAvatar.innerHTML = `<img src="${avatarPath}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${getFirstLetter(nickname)}'; this.parentElement.style.backgroundColor='${generateAvatarColor(user.email || user.name)}';">`;
         } else {
           // Fallback to generated avatar
@@ -80,7 +85,37 @@ export function updateAuthStatus(user) {
 // Initialize auth status on page load
 export async function initAuthStatus() {
   await initGlobalSearch();
-  const currentUser = await getCurrentUser();
+  let currentUser = await getCurrentUser();
+
+  if (!currentUser && window.location.hostname === 'music-inspector.vercel.app') {
+    try {
+      const override = window.localStorage.getItem('MI_API_BASE');
+      if (override && !override.includes('music-inspector.onrender.com')) {
+        window.localStorage.removeItem('MI_API_BASE');
+        currentUser = await getCurrentUser();
+      }
+    } catch {
+      // Ignore storage errors silently
+    }
+  }
+
+  if (currentUser) {
+    try {
+      sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(currentUser));
+    } catch {
+      // Ignore storage errors silently
+    }
+  } else {
+    try {
+      const cachedUser = sessionStorage.getItem(USER_CACHE_KEY);
+      if (cachedUser) {
+        currentUser = JSON.parse(cachedUser);
+      }
+    } catch {
+      // Ignore storage errors silently
+    }
+  }
+
   updateAuthStatus(currentUser);
   return currentUser;
 }

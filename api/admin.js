@@ -458,7 +458,7 @@ exports.updateRelease = [
   requireAdmin,
   async (req, res) => {
     const { id } = req.params;
-    const { title, artist, type, link, release_date } = req.body;
+    const { title, artist, type, link, release_date, cover } = req.body;
 
     try {
       const trackId = parseInt(id);
@@ -470,6 +470,7 @@ exports.updateRelease = [
       const sanitizedArtist = typeof artist === 'string' ? artist.trim() : '';
       const sanitizedType = typeof type === 'string' ? type.trim().toLowerCase() : '';
       const sanitizedLink = typeof link === 'string' && link.trim() ? link.trim() : null;
+      const sanitizedCover = typeof cover === 'string' && cover.trim() ? cover.trim() : null;
 
       if (!sanitizedTitle) {
         return res.status(400).json({ error: 'Title is required' });
@@ -505,10 +506,11 @@ exports.updateRelease = [
                artist = $2,
                type = $3,
                link = $4,
-               release_date = $5
-           WHERE id = $6
+               cover = $5,
+               release_date = $6
+           WHERE id = $7
            RETURNING *`,
-          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, normalizedReleaseDate, trackId]
+          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, sanitizedCover, normalizedReleaseDate, trackId]
         );
       } else {
         result = await query(
@@ -516,10 +518,11 @@ exports.updateRelease = [
            SET title = $1,
                artist = $2,
                type = $3,
-               link = $4
-           WHERE id = $5
+               link = $4,
+               cover = $5
+           WHERE id = $6
            RETURNING *`,
-          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, trackId]
+          [sanitizedTitle, sanitizedArtist, sanitizedType, sanitizedLink, sanitizedCover, trackId]
         );
       }
 
@@ -699,6 +702,53 @@ exports.removeUserAvatar = [
       }
 
       return handleServerError(res, error, 'removeUserAvatar');
+    }
+  }
+];
+
+/**
+ * Update user avatar path/url (admin only)
+ */
+exports.updateUserAvatar = [
+  requireAdmin,
+  async (req, res) => {
+    const userId = parseUserId(req.params.id);
+    const avatar = req.body && typeof req.body.avatar === 'string' ? req.body.avatar.trim() : '';
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    if (!avatar) {
+      return res.status(400).json({ error: 'Avatar URL/path is required' });
+    }
+
+    if (avatar.length > 1000) {
+      return res.status(400).json({ error: 'Avatar URL/path is too long' });
+    }
+
+    try {
+      const result = await query(
+        `UPDATE users
+         SET avatar = $1
+         WHERE id = $2
+         RETURNING id, name, email, role, avatar`,
+        [avatar, userId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({ success: true, user: result.rows[0] });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'updateUserAvatar');
     }
   }
 ];
