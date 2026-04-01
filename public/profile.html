@@ -469,7 +469,10 @@
       const visibleReviews = ownProfile
         ? reviews.filter((review) => review.status !== 'pending')
         : reviews;
-      const lastReview = visibleReviews.length > 0 ? visibleReviews[0] : null;
+
+      const allReviewsMarkup = visibleReviews.length > 0
+        ? `<div class="reviews-list">${visibleReviews.map(renderReviewCard).join('')}</div>`
+        : '<div class="no-reviews">Пока нет отзывов</div>';
 
       const pendingReviewsMarkup = ownProfile
         ? pendingReviews.length > 0
@@ -513,17 +516,17 @@
               </div>
             </div>
 
-            <div class="last-review-section">
-              <h3>Последний отзыв</h3>
-              ${lastReview ? renderReviewCard(lastReview) : '<div class="no-reviews">Пока нет отзывов</div>'}
-            </div>
-
             ${ownProfile ? `
               <div class="last-review-section">
                 <h3>Отзывы на проверке</h3>
                 ${pendingReviewsMarkup}
               </div>
             ` : ''}
+
+            <div class="last-review-section">
+              <h3>Все отзывы пользователя</h3>
+              ${allReviewsMarkup}
+            </div>
           </div>
 
           <div class="profile-right">

@@ -1,7 +1,7 @@
 import { getReviews, getReleases, getMonthlyAlbums } from './api.js';
-import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js';
+import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260401';
 import { renderMonthlyReleases } from './releases.js';
-import { renderReleaseCards } from './components/releaseCard.js';
+import { renderReleaseCards } from './components/releaseCard.js?v=20260401';
 import { initSearch } from './search.js';
 import { initTiltEffect } from './tilt-effect.js';
 import { initAuthStatus } from './auth-status.js';

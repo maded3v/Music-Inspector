@@ -570,6 +570,7 @@ text-decoration: none;
 }
 
 .track-creator-link {
+  display: none !important;
   margin-top: 8px;
   width: 100%;
   display: inline-flex;
@@ -587,6 +588,7 @@ text-decoration: none;
 }
 
 .track-creator-link.is-static {
+  display: none !important;
   pointer-events: none;
 }
 

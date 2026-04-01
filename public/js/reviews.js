@@ -31,7 +31,7 @@ function getAvatarUrl(avatar) {
 }
 
 function getExpandIcon(isExpanded) {
-  return isExpanded ? '⌃' : '⌄';
+  return isExpanded ? '-' : '+';
 }
 
 export function renderReviewCard(review) {
@@ -86,7 +86,7 @@ export function renderReviewCard(review) {
         <div class="review-text">${escapeHtml(trimmedText)}</div>
       </div>
       <div class="review-footer">
-        <button class="review-btn expand" aria-label="Развернуть">${getExpandIcon(false)}</button>
+        <button class="review-btn expand" aria-label="Expand">${getExpandIcon(false)}</button>
       </div>
     </div>
   `;
@@ -111,7 +111,7 @@ function syncReviewExpandButtons(container) {
     card.classList.remove('expanded');
     textEl.textContent = trimmed;
     btn.textContent = getExpandIcon(false);
-    btn.setAttribute('aria-label', 'Развернуть');
+    btn.setAttribute('aria-label', 'Expand');
 
     const overflowByLength = trimmed !== fullText;
     const overflowByLayout = textEl.scrollHeight > textEl.clientHeight + 1;
@@ -160,12 +160,12 @@ export function initReviewExpand(container) {
     if (card.classList.contains('expanded')) {
       card.classList.remove('expanded');
       btn.textContent = getExpandIcon(false);
-      btn.setAttribute('aria-label', 'Развернуть');
+      btn.setAttribute('aria-label', 'Expand');
       textEl.textContent = trimText(fullText);
     } else {
       card.classList.add('expanded');
       btn.textContent = getExpandIcon(true);
-      btn.setAttribute('aria-label', 'Свернуть');
+      btn.setAttribute('aria-label', 'Collapse');
       textEl.textContent = fullText;
     }
   });
