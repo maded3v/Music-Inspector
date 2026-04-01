@@ -473,11 +473,14 @@ text-decoration: none;
 .last-added-tracks-wrapper {
   width: 100%;
   overflow: hidden;
+  padding-right: 2px;
+  box-sizing: border-box;
 }
 
 .last-added-tracks {
   display: flex;
   gap: 16px;
+  padding-right: 16px;
   transition: transform 0.3s ease;
 }
 
@@ -2237,7 +2240,7 @@ text-decoration: none;
 }
 
 .review-sort-btn {
-  width: 150px;
+  width: 170px;
   height: 38px;
   padding: 0 10px;
   display: inline-flex;
@@ -2247,7 +2250,9 @@ text-decoration: none;
   border-radius: 10px;
   background: #282828;
   color: #fff;
+  font-family: inherit;
   font-size: 0.92rem;
+  font-weight: 500;
   cursor: pointer;
   transition: color 0.3s, background-color 0.3s, border-color 0.3s;
 }
@@ -2259,14 +2264,18 @@ text-decoration: none;
 }
 
 .add-review-button {
-  width: 150px;
+  width: 170px;
   height: 38px;
   padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-color: #C8C8C8;
   border: #969696 1px solid;
   border-radius: 10px;
   color: #1E1E1E;
-  font-size: 0.88rem;
+  font-family: inherit;
+  font-size: 0.92rem;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;

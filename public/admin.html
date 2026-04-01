@@ -414,6 +414,11 @@
         <label style="display: grid; gap: 6px;">
           <span>Обложка (URL или путь)</span>
           <input id="edit-cover" type="text" placeholder="uploads/covers/... или https://..." style="padding: 10px; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="upload-edit-cover-btn" style="padding: 8px 12px; background: #282828; color: white; border: 1px solid #1e1e1e; border-radius: 10px; cursor: pointer;">Загрузить файл</button>
+            <input id="upload-edit-cover-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" style="display: none;">
+            <span id="upload-edit-cover-status" style="color: #9f9f9f; font-size: 0.85rem;"></span>
+          </div>
         </label>
         <label style="display: grid; gap: 6px;">
           <span>Дата релиза</span>
@@ -443,7 +448,7 @@
   </div>
 
   <script src="js/nav-mobile.js" defer></script>
-  <script type="module" src="js/admin.js?v=20260401-ui"></script>
+  <script type="module" src="js/admin.js?v=20260405-ui"></script>
 </body>
 </html>
 

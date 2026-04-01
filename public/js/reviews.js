@@ -64,8 +64,8 @@ export function renderReviewCard(review) {
 
   const authorProfileUrl = review.user_id ? `profile.html?id=${review.user_id}` : '';
   const authorMarkup = review.user_id
-    ? `<a href="${authorProfileUrl}" class="review-author-link"><img src="${authorAvatar}" alt="avatar" class="review-avatar" onerror="this.src='svg/person.png'"><div class="review-author-name">${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}</div></a>`
-    : `<div class="review-author-link is-static"><img src="${authorAvatar}" alt="avatar" class="review-avatar" onerror="this.src='svg/person.png'"><div class="review-author-name">${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}</div></div>`;
+    ? `<a href="${authorProfileUrl}" class="review-author-link"><img src="${authorAvatar}" alt="avatar" class="review-avatar" referrerpolicy="no-referrer" onerror="this.src='svg/person.png'"><div class="review-author-name">${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}</div></a>`
+    : `<div class="review-author-link is-static"><img src="${authorAvatar}" alt="avatar" class="review-avatar" referrerpolicy="no-referrer" onerror="this.src='svg/person.png'"><div class="review-author-name">${escapeHtml(author)} ${isMIReview ? '<span class="mi-badge">MI</span>' : ''}</div></div>`;
 
   return `
     <div class="review-card" data-id="${review.id}" data-track-id="${trackId}" data-full-text="${encodedFullText}">
@@ -77,8 +77,8 @@ export function renderReviewCard(review) {
             ${subscoresStr ? `<div class="review-subscores">${subscoresStr}</div>` : ''}
           </div>
           ${trackId
-            ? `<a href="track.html?id=${trackId}" class="review-cover-link"><img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'"></a>`
-            : `<img src="${cover}" class="review-cover" alt="cover" onerror="this.src='svg/album.png'">`}
+            ? `<a href="track.html?id=${trackId}" class="review-cover-link"><img src="${cover}" class="review-cover" alt="cover" referrerpolicy="no-referrer" onerror="this.src='svg/album.png'"></a>`
+            : `<img src="${cover}" class="review-cover" alt="cover" referrerpolicy="no-referrer" onerror="this.src='svg/album.png'">`}
         </div>
       </div>
       <div class="review-body">

@@ -1,7 +1,7 @@
-import { getReviews, getReleases, getTopReleases } from './api.js?v=20260404';
-import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260403';
-import { renderMonthlyReleases } from './releases.js?v=20260403';
-import { renderReleaseCards } from './components/releaseCard.js?v=20260403';
+import { getReviews, getReleases, getTopReleases } from './api.js?v=20260405';
+import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260405';
+import { renderMonthlyReleases } from './releases.js?v=20260405';
+import { renderReleaseCards } from './components/releaseCard.js?v=20260405';
 import { initSearch } from './search.js';
 import { initTiltEffect } from './tilt-effect.js';
 import { initAuthStatus } from './auth-status.js?v=20260404';
@@ -114,12 +114,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       return cardWidth + gap;
     };
 
-    const getMaxOffset = () => Math.max(0, trackWrapper.scrollWidth - wrapper.clientWidth);
+    const getMaxOffset = () => {
+      const raw = trackWrapper.scrollWidth - wrapper.clientWidth;
+      return Math.max(0, Math.ceil(raw));
+    };
 
     const updateCarousel = () => {
       const maxOffset = getMaxOffset();
       currentOffset = Math.min(Math.max(0, currentOffset), maxOffset);
-      trackWrapper.style.transform = `translateX(-${currentOffset}px)`;
+      trackWrapper.style.transform = `translate3d(-${currentOffset}px, 0, 0)`;
 
       const atStart = currentOffset <= 0;
       const atEnd = currentOffset >= maxOffset - 1;
@@ -141,6 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     window.addEventListener('resize', updateCarousel, { passive: true });
+    window.addEventListener('load', updateCarousel, { passive: true });
     updateCarousel();
   }
 

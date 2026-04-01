@@ -75,6 +75,10 @@ export function resolveMediaUrl(path) {
     value.startsWith('blob:') ||
     value.startsWith('//')
   ) {
+    if (value.includes('api.dicebear.com') && value.includes('/svg')) {
+      return value.replace('/svg', '/png');
+    }
+
     return value;
   }
 
@@ -170,6 +174,10 @@ async function apiRequest(path, options = {}, fallbackMessage = 'Request failed'
   };
 
   const method = (requestOptions.method || 'GET').toUpperCase();
+  if ((method === 'GET' || method === 'HEAD') && !requestOptions.cache) {
+    requestOptions.cache = 'no-store';
+  }
+
   if (!isSafeMethod(method)) {
     const csrfToken = await resolveCsrfToken();
     if (csrfToken) {

@@ -60,6 +60,23 @@ async function adminRequest(path, options = {}, fallbackMessage = 'Request faile
   return payload;
 }
 
+async function uploadImageFile(file) {
+  const formData = new FormData();
+  formData.append('cover', file);
+
+  const data = await adminRequest('/api/upload/cover', {
+    method: 'POST',
+    body: formData
+  }, 'Failed to upload image');
+
+  const path = data.imagePath || data.coverPath || data.avatarPath || '';
+  if (!path) {
+    throw new Error('Upload succeeded but image path is empty');
+  }
+
+  return path;
+}
+
 // Check admin access on page load
 document.addEventListener('DOMContentLoaded', async () => {
   await initGlobalSearch();
@@ -260,6 +277,16 @@ window.openEditTrack = function(trackId) {
   document.getElementById('edit-cover').value = track.cover || '';
   document.getElementById('edit-release-date').value = track.release_date ? String(track.release_date).slice(0, 10) : '';
 
+  const uploadStatus = document.getElementById('upload-edit-cover-status');
+  if (uploadStatus) {
+    uploadStatus.textContent = '';
+  }
+
+  const uploadInput = document.getElementById('upload-edit-cover-input');
+  if (uploadInput) {
+    uploadInput.value = '';
+  }
+
   document.getElementById('edit-modal').style.display = 'flex';
 };
 
@@ -267,6 +294,9 @@ function initEditModal() {
   const modal = document.getElementById('edit-modal');
   const cancelBtn = document.getElementById('cancel-edit');
   const saveBtn = document.getElementById('confirm-edit');
+  const uploadCoverBtn = document.getElementById('upload-edit-cover-btn');
+  const uploadCoverInput = document.getElementById('upload-edit-cover-input');
+  const uploadCoverStatus = document.getElementById('upload-edit-cover-status');
 
   if (!modal || !cancelBtn || !saveBtn) return;
 
@@ -276,6 +306,40 @@ function initEditModal() {
   };
 
   cancelBtn.addEventListener('click', closeModal);
+
+  if (uploadCoverBtn && uploadCoverInput) {
+    uploadCoverBtn.addEventListener('click', () => {
+      uploadCoverInput.click();
+    });
+
+    uploadCoverInput.addEventListener('change', async () => {
+      const file = uploadCoverInput.files && uploadCoverInput.files[0];
+      if (!file) {
+        return;
+      }
+
+      try {
+        if (uploadCoverStatus) {
+          uploadCoverStatus.textContent = 'Загрузка...';
+        }
+
+        const uploadedPath = await uploadImageFile(file);
+        document.getElementById('edit-cover').value = uploadedPath;
+
+        if (uploadCoverStatus) {
+          uploadCoverStatus.textContent = 'Файл загружен';
+        }
+      } catch (error) {
+        console.error('Error uploading release cover:', error);
+        if (uploadCoverStatus) {
+          uploadCoverStatus.textContent = 'Ошибка загрузки';
+        }
+        alert(`Ошибка загрузки: ${error.message}`);
+      } finally {
+        uploadCoverInput.value = '';
+      }
+    });
+  }
 
   saveBtn.addEventListener('click', async () => {
     if (!currentEditTrackId) return;
@@ -377,6 +441,7 @@ function renderUsersList(users) {
         </div>
         <div class="user-actions">
           <button class="btn-neutral" onclick="renameUser(${user.id}, '${escapeJsString(user.name || '')}')">Переименовать</button>
+          <button class="btn-neutral" onclick="uploadUserAvatarFile(${user.id})">Загрузить аватар</button>
           <button class="btn-neutral" onclick="updateUserAvatar(${user.id}, '${escapeJsString(user.avatar || '')}')">Изм. аватар</button>
           <button class="btn-neutral" onclick="removeUserAvatar(${user.id})">Удалить аватар</button>
           ${user.is_banned
@@ -454,6 +519,36 @@ window.updateUserAvatar = async function(userId, currentAvatar) {
     console.error('Error updating avatar:', error);
     alert(`Ошибка: ${error.message}`);
   }
+};
+
+window.uploadUserAvatarFile = async function(userId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+
+  input.addEventListener('change', async () => {
+    const file = input.files && input.files[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const uploadedPath = await uploadImageFile(file);
+      await adminRequest(`/api/admin/users/${userId}/avatar`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: uploadedPath })
+      }, 'Failed to update avatar');
+
+      alert('Аватар загружен и обновлен');
+      loadUsers();
+    } catch (error) {
+      console.error('Error uploading avatar file:', error);
+      alert(`Ошибка загрузки: ${error.message}`);
+    }
+  });
+
+  input.click();
 };
 
 window.banUser = async function(userId) {
