@@ -497,14 +497,12 @@ text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 156px;
-  height: 38px;
-  padding: 0 14px;
+  padding: 8px 10px;
   background-color: #C8C8C8;
   border: #969696 1px solid;
   border-radius: 10px;
   color: #1E1E1E;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
@@ -1091,7 +1089,12 @@ text-decoration: none;
 }
 
 .sort-btn {
-  padding: 9px 12px;
+  min-width: 132px;
+  height: 38px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-color: #282828;
   border: 1px solid #1e1e1e;
   border-radius: 10px;
@@ -2194,7 +2197,12 @@ text-decoration: none;
 }
 
 .review-sort-btn {
-  padding: 8px 10px;
+  width: 132px;
+  height: 38px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #1e1e1e;
   border-radius: 10px;
   background: #282828;
@@ -2204,8 +2212,7 @@ text-decoration: none;
   transition: color 0.3s, background-color 0.3s, border-color 0.3s;
 }
 
-.review-sort-btn:hover,
-.review-sort-btn.is-active {
+.review-sort-btn:hover {
   background-color: #E1E1E1;
   color: #969696;
   border: #969696 1px solid;
@@ -2437,11 +2444,6 @@ text-decoration: none;
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.review-card-track--target {
-  border-color: #E3D323;
-  box-shadow: 0 0 0 2px rgba(227, 211, 35, 0.35);
 }
 
 .review-header-track {

@@ -6,8 +6,6 @@
 import { getCurrentUser, resolveMediaUrl } from './api.js';
 import { initGlobalSearch } from './search.js';
 
-const USER_CACHE_KEY = 'MI_LAST_USER';
-
 // Generate random color for avatar background
 function generateAvatarColor(email) {
   let hash = 0;
@@ -21,9 +19,16 @@ function generateAvatarColor(email) {
 }
 
 // Get nickname from email (email without domain)
-function getNickname(email) {
-  if (!email) return '';
-  return email.split('@')[0];
+function getNickname(name, email) {
+  if (name && String(name).trim()) {
+    return String(name).trim();
+  }
+
+  if (email) {
+    return String(email).split('@')[0];
+  }
+
+  return '';
 }
 
 // Get first letter of username for avatar
@@ -48,7 +53,7 @@ export function updateAuthStatus(user) {
       profileSection.style.display = 'flex';
       
       // Set nickname
-      const nickname = getNickname(user.email || user.name);
+      const nickname = getNickname(user.name, user.email);
       if (profileNickname) {
         profileNickname.textContent = nickname;
       }
@@ -93,23 +98,6 @@ export async function initAuthStatus() {
       if (override && !override.includes('music-inspector.onrender.com')) {
         window.localStorage.removeItem('MI_API_BASE');
         currentUser = await getCurrentUser();
-      }
-    } catch {
-      // Ignore storage errors silently
-    }
-  }
-
-  if (currentUser) {
-    try {
-      sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(currentUser));
-    } catch {
-      // Ignore storage errors silently
-    }
-  } else {
-    try {
-      const cachedUser = sessionStorage.getItem(USER_CACHE_KEY);
-      if (cachedUser) {
-        currentUser = JSON.parse(cachedUser);
       }
     } catch {
       // Ignore storage errors silently

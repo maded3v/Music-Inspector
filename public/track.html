@@ -72,7 +72,7 @@
           <h2>Рецензии</h2>
           <div class="reviews-header-controls">
             <div id="review-sort-controls" class="review-sort-controls">
-              <button type="button" class="review-sort-btn is-active" data-sort="date">По дате</button>
+              <button type="button" class="review-sort-btn" data-sort="date">По дате</button>
               <button type="button" class="review-sort-btn" data-sort="score">По оценке</button>
               <button type="button" class="review-sort-btn" data-sort="likes">По лайкам</button>
             </div>
@@ -142,7 +142,7 @@
 
   <script src="js/nav-mobile.js" defer></script>
   <script type="module">
-    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveMediaUrl } from './js/api.js';
+    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveMediaUrl } from './js/api.js?v=20260404';
     import { initAuth } from './js/auth-refactored.js';
     import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './js/modal.js';
 
@@ -150,7 +150,29 @@
     const trackId = urlParams.get('id');
     const targetReviewId = Number.parseInt(urlParams.get('review') || '', 10);
     let currentReviewSort = 'date';
+    let currentReviewOrder = 'desc';
     let loadedTrackReviews = [];
+    let hasScrolledToTargetReview = false;
+
+    const REVIEW_SORT_LABELS = {
+      date: 'По дате',
+      score: 'По оценке',
+      likes: 'По лайкам'
+    };
+
+    function updateSortButtonsLabels() {
+      const controls = document.getElementById('review-sort-controls');
+      if (!controls) {
+        return;
+      }
+
+      const direction = currentReviewOrder === 'asc' ? '↑' : '↓';
+      controls.querySelectorAll('.review-sort-btn').forEach((btn) => {
+        const key = btn.dataset.sort;
+        const label = REVIEW_SORT_LABELS[key] || btn.textContent;
+        btn.textContent = key === currentReviewSort ? `${label} ${direction}` : label;
+      });
+    }
 
     if (!trackId) {
       window.location.href = 'index.html';
@@ -327,12 +349,14 @@
     function sortTrackReviews(reviews) {
       const sorted = [...reviews];
 
+      const applyOrder = (value) => currentReviewOrder === 'asc' ? value : -value;
+
       if (currentReviewSort === 'score') {
         sorted.sort((a, b) => {
           const aScore = Number(a.avg_score || 0);
           const bScore = Number(b.avg_score || 0);
-          if (bScore !== aScore) return bScore - aScore;
-          return new Date(b.created_at) - new Date(a.created_at);
+          if (aScore !== bScore) return applyOrder(aScore - bScore);
+          return applyOrder(new Date(a.created_at) - new Date(b.created_at));
         });
         return sorted;
       }
@@ -341,16 +365,16 @@
         sorted.sort((a, b) => {
           const aLikes = Number(a.helpful_score !== undefined ? a.helpful_score : (Number(a.upvotes || 0) - Number(a.downvotes || 0)));
           const bLikes = Number(b.helpful_score !== undefined ? b.helpful_score : (Number(b.upvotes || 0) - Number(b.downvotes || 0)));
-          if (bLikes !== aLikes) return bLikes - aLikes;
+          if (aLikes !== bLikes) return applyOrder(aLikes - bLikes);
           const aScore = Number(a.avg_score || 0);
           const bScore = Number(b.avg_score || 0);
-          if (bScore !== aScore) return bScore - aScore;
-          return new Date(b.created_at) - new Date(a.created_at);
+          if (aScore !== bScore) return applyOrder(aScore - bScore);
+          return applyOrder(new Date(a.created_at) - new Date(b.created_at));
         });
         return sorted;
       }
 
-      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      sorted.sort((a, b) => applyOrder(new Date(a.created_at) - new Date(b.created_at)));
       return sorted;
     }
 
@@ -426,17 +450,16 @@
 
     function scrollToRequestedReview() {
       if (!Number.isInteger(targetReviewId) || targetReviewId <= 0) {
-        return;
+        return false;
       }
 
       const targetCard = document.querySelector(`.review-card-track[data-review-id="${targetReviewId}"]`);
       if (!targetCard) {
-        return;
+        return false;
       }
 
-      targetCard.classList.add('review-card-track--target');
       targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => targetCard.classList.remove('review-card-track--target'), 3200);
+      return true;
     }
 
     function renderTrackReviews() {
@@ -452,7 +475,10 @@
 
       const sortedReviews = sortTrackReviews(loadedTrackReviews);
       reviewsList.innerHTML = sortedReviews.map(renderReviewCard).join('');
-      scrollToRequestedReview();
+
+      if (!hasScrolledToTargetReview) {
+        hasScrolledToTargetReview = scrollToRequestedReview();
+      }
     }
 
     // Load reviews (only approved)
@@ -485,6 +511,8 @@
     }
     const reviewSortControls = document.getElementById('review-sort-controls');
     if (reviewSortControls) {
+      updateSortButtonsLabels();
+
       reviewSortControls.addEventListener('click', (event) => {
         const sortBtn = event.target.closest('.review-sort-btn');
         if (!sortBtn) {
@@ -492,14 +520,18 @@
         }
 
         const nextSort = sortBtn.dataset.sort;
-        if (!nextSort || nextSort === currentReviewSort) {
+        if (!nextSort) {
           return;
         }
 
-        currentReviewSort = nextSort;
-        reviewSortControls.querySelectorAll('.review-sort-btn').forEach((btn) => {
-          btn.classList.toggle('is-active', btn.dataset.sort === currentReviewSort);
-        });
+        if (nextSort === currentReviewSort) {
+          currentReviewOrder = currentReviewOrder === 'desc' ? 'asc' : 'desc';
+        } else {
+          currentReviewSort = nextSort;
+          currentReviewOrder = 'desc';
+        }
+
+        updateSortButtonsLabels();
 
         renderTrackReviews();
       });

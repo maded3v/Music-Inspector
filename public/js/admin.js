@@ -366,7 +366,7 @@ function renderUsersList(users) {
     const roleLabel = user.role === 'admin' ? 'Админ' : 'Пользователь';
     const banBadge = user.is_banned
       ? `<span class="user-badge banned">Забанен</span>`
-      : '<span class="user-badge">Активен</span>';
+      : '<span class="user-badge active">Активен</span>';
 
     return `
       <div class="user-row" data-id="${user.id}">

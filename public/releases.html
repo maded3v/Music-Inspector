@@ -44,9 +44,9 @@
   <div class="main-content">
     <div class="releases-headline">Все релизы</div>
     <div class="sort-section">
-      <button class="sort-btn" data-sort="rating">Сортировка по рейтингу</button>
-      <button class="sort-btn" data-sort="date">Сортировка по дате</button>
-      <button class="sort-btn" data-sort="alphabet">Сортировка по алфавиту</button>
+      <button class="sort-btn" data-sort="rating" data-label="Рейтинг">Рейтинг</button>
+      <button class="sort-btn" data-sort="date" data-label="Дата">Дата</button>
+      <button class="sort-btn" data-sort="alphabet" data-label="А-Я">А-Я</button>
     </div>
     <div class="releases-grid">
       <!-- Releases will be loaded dynamically -->
@@ -57,9 +57,9 @@
 
 <script src="js/nav-mobile.js" defer></script>
 <script type="module">
-import { getReleases } from './js/api.js';
+import { getReleases } from './js/api.js?v=20260404';
 import { renderReleaseCardAll } from './js/releases.js?v=20260403';
-import { initAuthStatus } from './js/auth-status.js';
+import { initAuthStatus } from './js/auth-status.js?v=20260404';
 
 let allReleases = [];
 let currentSort = 'rating';
@@ -98,6 +98,26 @@ function getReleaseDateValue(release) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+function getReleaseRatingValue(release) {
+  const people = Number(release.peopleScore);
+  const mi = Number(release.miScore);
+
+  if (Number.isFinite(people) && Number.isFinite(mi)) {
+    return (people + mi) / 2;
+  }
+
+  if (Number.isFinite(people)) {
+    return people;
+  }
+
+  if (Number.isFinite(mi)) {
+    return mi;
+  }
+
+  const legacy = Number(release.score);
+  return Number.isFinite(legacy) ? legacy : 0;
+}
+
 function sortReleases(releases, sortBy, order) {
   return [...releases].sort((a, b) => {
     let valA;
@@ -105,8 +125,8 @@ function sortReleases(releases, sortBy, order) {
 
     switch (sortBy) {
       case 'rating':
-        valA = a.score || 0;
-        valB = b.score || 0;
+        valA = getReleaseRatingValue(a);
+        valB = getReleaseRatingValue(b);
         break;
       case 'date':
         valA = getReleaseDateValue(a);
@@ -138,8 +158,9 @@ function updateSortButtonState() {
   document.querySelectorAll('.sort-btn').forEach((btn) => {
     const isActive = btn.dataset.sort === currentSort;
     btn.classList.toggle('is-active', isActive);
+    const baseLabel = btn.dataset.label || btn.textContent.replace(/\s[↑↓]$/, '');
     const orderLabel = isActive ? (currentOrder === 'asc' ? ' ↑' : ' ↓') : '';
-    btn.textContent = btn.textContent.replace(/\s[↑↓]$/, '') + orderLabel;
+    btn.textContent = baseLabel + orderLabel;
   });
 }
 

