@@ -205,60 +205,29 @@ exports.getLatestTracks = async (req, res) => {
 };
 
 /**
- * Get monthly albums - exactly 6 highest-rated albums from current month
+ * Get top releases (6 cards) by combined rating
+ * Kept on legacy route name for compatibility with existing frontend.
  */
 exports.getMonthlyAlbums = async (req, res) => {
   try {
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
     const hasReleaseDateColumn = await columnExists('tracks', 'release_date');
-    const dateExpr = hasReleaseDateColumn ? 'COALESCE(t.release_date, t.created_at)' : 't.created_at';
+    const dateSortExpr = hasReleaseDateColumn ? 'COALESCE(t.release_date, t.created_at)' : 't.created_at';
 
-    const loadAlbumsByMonth = async (year, month) => {
-      return query(
-        `SELECT t.*, u.name as creator_name,
-                a.id as artist_id, a.name as artist_name, a.image_path as artist_image
-         FROM tracks t
-         LEFT JOIN users u ON t.user_id = u.id
-         LEFT JOIN artists a ON t.artist_id = a.id
-         WHERE t.status = 'approved'
-           AND t.type = 'album'
-           AND EXTRACT(YEAR FROM ${dateExpr}) = $1
-           AND EXTRACT(MONTH FROM ${dateExpr}) = $2
-         ORDER BY ${dateExpr} DESC`,
-        [year, month]
-      );
-    };
+    const result = await query(
+      `SELECT t.*, u.name as creator_name,
+              a.id as artist_id, a.name as artist_name, a.image_path as artist_image
+       FROM tracks t
+       LEFT JOIN users u ON t.user_id = u.id
+       LEFT JOIN artists a ON t.artist_id = a.id
+       WHERE t.status = 'approved'
+       ORDER BY ${dateSortExpr} DESC`
+    );
 
-    let result = await loadAlbumsByMonth(currentYear, currentMonth);
-
-    // Fallback: if текущий месяц пустой, показываем последний месяц, где есть альбомы
-    if (!result.rows.length) {
-      const latestMonthResult = await query(
-        `SELECT
-           EXTRACT(YEAR FROM ${dateExpr})::int AS year,
-           EXTRACT(MONTH FROM ${dateExpr})::int AS month
-         FROM tracks t
-         WHERE t.status = 'approved'
-           AND t.type = 'album'
-         ORDER BY ${dateExpr} DESC
-         LIMIT 1`
-      );
-
-      if (latestMonthResult.rows.length) {
-        const fallbackYear = latestMonthResult.rows[0].year;
-        const fallbackMonth = latestMonthResult.rows[0].month;
-        result = await loadAlbumsByMonth(fallbackYear, fallbackMonth);
-      }
-    }
-    
-    const ratingsMap = await getTrackRatingsMap(result.rows.map(album => album.id));
-    const albumsWithRatings = result.rows.map((album) => {
-      const ratings = ratingsMap.get(album.id) || { peopleScore: null, miScore: null };
+    const ratingsMap = await getTrackRatingsMap(result.rows.map((release) => release.id));
+    const releasesWithRatings = result.rows.map((release) => {
+      const ratings = ratingsMap.get(release.id) || { peopleScore: null, miScore: null };
       const { peopleScore, miScore } = ratings;
-      
-      // Calculate total rating (average of peopleScore and miScore)
+
       let totalRating = null;
       if (peopleScore !== null && miScore !== null) {
         totalRating = (peopleScore + miScore) / 2;
@@ -267,32 +236,38 @@ exports.getMonthlyAlbums = async (req, res) => {
       } else if (miScore !== null) {
         totalRating = miScore;
       }
-      
+
       return {
-        ...album,
+        ...release,
         peopleScore,
         miScore,
         totalRating
       };
     });
-    
-    // Sort by highest total rating, then by newest if no rating
-    const sortedAlbums = albumsWithRatings.sort((a, b) => {
+
+    const sortedReleases = releasesWithRatings.sort((a, b) => {
       if (a.totalRating !== null && b.totalRating !== null) {
         return b.totalRating - a.totalRating;
-      } else if (a.totalRating !== null) {
-        return -1;
-      } else if (b.totalRating !== null) {
-        return 1;
-      } else {
-        return new Date(b.created_at) - new Date(a.created_at);
       }
+
+      if (a.totalRating !== null) {
+        return -1;
+      }
+
+      if (b.totalRating !== null) {
+        return 1;
+      }
+
+      const aDate = new Date(a.release_date || a.created_at || 0).getTime();
+      const bDate = new Date(b.release_date || b.created_at || 0).getTime();
+      return bDate - aDate;
     });
-    
-    // Take exactly 6 highest-rated albums
-    const topAlbums = sortedAlbums.slice(0, 6);
-    
-    res.json({ albums: topAlbums });
+
+    const topReleases = sortedReleases.slice(0, 6);
+
+    // Keep `albums` key for backward compatibility with existing frontend,
+    // and provide `releases` for newer clients.
+    res.json({ albums: topReleases, releases: topReleases });
   } catch (error) {
     const { handleDatabaseError, handleServerError } = require('./utils/errors');
     

@@ -571,16 +571,6 @@ text-decoration: none;
 
 .track-creator-link {
   display: none !important;
-  margin-top: 8px;
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #c7c7c7;
-  text-decoration: none;
-  border-top: 1px solid #292929;
-  padding-top: 8px;
-  transition: color 0.2s ease;
 }
 
 .track-creator-link:hover {
@@ -589,7 +579,6 @@ text-decoration: none;
 
 .track-creator-link.is-static {
   display: none !important;
-  pointer-events: none;
 }
 
 .track-creator-avatar {

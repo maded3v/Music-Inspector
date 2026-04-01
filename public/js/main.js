@@ -1,7 +1,7 @@
-import { getReviews, getReleases, getMonthlyAlbums } from './api.js';
-import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260401';
-import { renderMonthlyReleases } from './releases.js';
-import { renderReleaseCards } from './components/releaseCard.js?v=20260401';
+import { getReviews, getReleases, getTopReleases } from './api.js';
+import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260402';
+import { renderMonthlyReleases } from './releases.js?v=20260402';
+import { renderReleaseCards } from './components/releaseCard.js?v=20260402';
 import { initSearch } from './search.js';
 import { initTiltEffect } from './tilt-effect.js';
 import { initAuthStatus } from './auth-status.js';
@@ -28,11 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     addReleaseBtn.classList.remove('is-hidden');
   }
   // Load data in parallel
-  const [reviews, releases, monthlyAlbums] = await Promise.all([
+  const [reviews, releases, topReleases] = await Promise.all([
     getReviews(),
     getReleases(),
-    getMonthlyAlbums().catch((error) => {
-      console.error('Error loading monthly albums:', error);
+    getTopReleases().catch((error) => {
+      console.error('Error loading top releases:', error);
       return [];
     })
   ]);
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderLastAddedReleases(allReleases, lastAddedTracksContainer);
   }
 
-  // Load and render monthly albums (exactly 6 highest-rated from current month)
+  // Load and render top releases (6 highest-rated cards)
   const releasesContainer = document.querySelector('.main-content');
   if (releasesContainer) {
     const releasesSection = document.createElement('div');
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     releasesContainer.appendChild(releasesSection);
     
     try {
-      renderMonthlyReleases(monthlyAlbums, releasesSection);
+      renderMonthlyReleases(topReleases, releasesSection);
 
       // Initialize tilt effect after cards are rendered
       requestAnimationFrame(() => {
@@ -74,9 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
       releasesSection.innerHTML = `
         <div class="monthly-releases">
-          <div class="monthly-releases-title">Альбомы месяца</div>
+          <div class="monthly-releases-title">Лучшие релизы</div>
           <div class="no-releases" style="text-align: center; padding: 40px; color: #969696;">
-            Ошибка загрузки альбомов месяца
+            Ошибка загрузки лучших релизов
           </div>
         </div>
       `;

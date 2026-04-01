@@ -1,10 +1,32 @@
 const DEFAULT_RENDER_API_BASE = 'https://music-inspector.onrender.com';
 
+function isAllowedApiOverride(urlString) {
+  try {
+    const parsed = new URL(urlString);
+    const host = parsed.hostname.toLowerCase();
+    return host === 'localhost' || host === '127.0.0.1' || host.endsWith('onrender.com');
+  } catch {
+    return false;
+  }
+}
+
 function resolveApiBase() {
   const host = window.location.hostname;
   const override = window.localStorage.getItem('MI_API_BASE');
 
-  if (override) return override.replace(/\/$/, '');
+  if (override) {
+    const normalizedOverride = override.replace(/\/$/, '');
+    if (isAllowedApiOverride(normalizedOverride)) {
+      return normalizedOverride;
+    }
+
+    try {
+      window.localStorage.removeItem('MI_API_BASE');
+    } catch {
+      // Ignore storage errors silently
+    }
+  }
+
   if (host === 'localhost' || host === '127.0.0.1') return '';
   if (host.endsWith('onrender.com')) return '';
 
@@ -12,13 +34,13 @@ function resolveApiBase() {
 }
 
 export const API_BASE = resolveApiBase();
-const CACHE_PREFIX = 'MI_CACHE_V2::';
+const CACHE_PREFIX = 'MI_CACHE_V3::';
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
 let csrfTokenCache = '';
 
 function migrateOldCacheNamespace() {
   try {
-    const migrationKey = 'MI_CACHE_NAMESPACE_V2_MIGRATED';
+    const migrationKey = 'MI_CACHE_NAMESPACE_V3_MIGRATED';
     if (localStorage.getItem(migrationKey) === '1') {
       return;
     }
@@ -26,7 +48,7 @@ function migrateOldCacheNamespace() {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i += 1) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('MI_CACHE::')) {
+      if (key && (key.startsWith('MI_CACHE::') || key.startsWith('MI_CACHE_V2::'))) {
         keysToRemove.push(key);
       }
     }
@@ -239,14 +261,26 @@ async function apiCachedRequest(path, fallbackMessage, ttlMs = DEFAULT_CACHE_TTL
   }
 }
 
-export async function getMonthlyAlbums() {
+export async function getTopReleases() {
   try {
-    const data = await apiCachedRequest('/api/tracks/monthly-albums', 'Failed to fetch monthly albums');
-    return data.albums || [];
+    const data = await apiCachedRequest('/api/tracks/top-releases', 'Failed to fetch top releases');
+    return data.releases || data.albums || [];
   } catch (error) {
-    console.error('Error fetching monthly albums:', error);
-    return [];
+    console.error('Error fetching top releases:', error);
+
+    // Backward compatibility fallback for older backend deployments
+    try {
+      const fallbackData = await apiCachedRequest('/api/tracks/monthly-albums', 'Failed to fetch monthly albums');
+      return fallbackData.releases || fallbackData.albums || [];
+    } catch (fallbackError) {
+      console.error('Fallback top releases fetch failed:', fallbackError);
+      return [];
+    }
   }
+}
+
+export async function getMonthlyAlbums() {
+  return getTopReleases();
 }
 
 export async function getReleases() {
@@ -382,11 +416,14 @@ export async function getCurrentUser() {
 
 export async function updateMyName(name) {
   try {
-    return await apiRequest('/api/user/name', {
+    const result = await apiRequest('/api/user/name', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name })
     }, 'Failed to update name');
+
+    clearPublicCache();
+    return result;
   } catch (error) {
     console.error('Update name error:', error);
     throw error;

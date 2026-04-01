@@ -1,5 +1,5 @@
 // Import unified release card component
-import { renderReleaseCard, renderReleaseCards } from './components/releaseCard.js?v=20260401';
+import { renderReleaseCard, renderReleaseCards } from './components/releaseCard.js?v=20260402';
 
 // Re-export for backward compatibility
 export { renderReleaseCard, renderReleaseCards };
@@ -10,27 +10,24 @@ export function renderReleaseCardAll(release) {
   return renderReleaseCard(release, 'default');
 }
 
-// Function to render the monthly releases section
-// CRITICAL: Only albums, exactly 6, single row, current month, highest rating
-// Albums are already filtered and sorted by backend
+// Function to render top releases section (6 cards)
 export function renderMonthlyReleases(albums, container) {
   if (!albums || albums.length === 0) {
     container.innerHTML = `
       <div class="monthly-releases">
-        <div class="monthly-releases-title">Альбомы месяца</div>
+        <div class="monthly-releases-title">Лучшие релизы</div>
         <div class="no-releases" style="text-align: center; padding: 40px; color: #969696;">
-          Пока нет альбомов в этом месяце
+          Пока нет релизов
         </div>
       </div>
     `;
     return;
   }
 
-  // Render using unified component with 'monthly' variant
-  // Backend already returns exactly 6 albums, sorted by rating
+  // Render using unified component with 'monthly' variant style
   const html = `
     <div class="monthly-releases">
-      <div class="monthly-releases-title">Альбомы месяца</div>
+      <div class="monthly-releases-title">Лучшие релизы</div>
       <div class="monthly-releases-grid">
         ${renderReleaseCards(albums, 'monthly')}
       </div>

@@ -69,6 +69,7 @@ app.get('/api/csrf-token', (req, res) => {
 app.post('/api/tracks/create', trackRoutes.createTrack);
 app.get('/api/tracks/latest', trackRoutes.getLatestTracks);
 app.get('/api/tracks/monthly-albums', trackRoutes.getMonthlyAlbums);
+app.get('/api/tracks/top-releases', trackRoutes.getMonthlyAlbums);
 app.get('/api/tracks/catalog', trackRoutes.getCatalog);
 app.get('/api/tracks/:id', trackRoutes.getTrack);
 
