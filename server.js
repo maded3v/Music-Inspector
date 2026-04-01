@@ -13,11 +13,21 @@ const allowedOrigins = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
-  'http://127.0.0.1:5173'
+  'http://127.0.0.1:5173',
+  'https://music-inspector.vercel.app',
+  'https://music-inspector.onrender.com'
 ]);
 
 if (process.env.FRONTEND_URL) {
   allowedOrigins.add(process.env.FRONTEND_URL);
+}
+
+if (process.env.VERCEL_URL) {
+  allowedOrigins.add(`https://${process.env.VERCEL_URL}`);
+}
+
+if (process.env.RENDER_EXTERNAL_URL) {
+  allowedOrigins.add(process.env.RENDER_EXTERNAL_URL);
 }
 
 // Middleware (must be before routes)
@@ -28,7 +38,7 @@ app.use(cors({
       return;
     }
 
-    callback(new Error('Not allowed by CORS'));
+    callback(null, false);
   },
   credentials: true
 }));

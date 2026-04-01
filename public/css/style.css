@@ -1918,8 +1918,10 @@ text-decoration: none;
 }
 
 .ratings-mixer .mixer-slider {
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: none;
+  appearance: none;
   width: 24px;
   height: 130px;
   padding: 0;
@@ -2256,8 +2258,8 @@ text-decoration: none;
   padding: 0;
   writing-mode: vertical-lr;
   direction: rtl;
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
+  -webkit-appearance: none;
+  appearance: none;
   background: #2b3550;
   border-radius: 8px;
 }
