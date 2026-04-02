@@ -1083,7 +1083,29 @@ text-decoration: none;
   flex-wrap: wrap;
 }
 
+.releases-search-section {
+  margin-bottom: 12px;
+}
+
+.releases-search-input {
+  width: 100%;
+  height: 38px;
+  box-sizing: border-box;
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  background: #222;
+  color: #e1e1e1;
+  font-size: 0.95rem;
+  padding: 0 12px;
+}
+
+.releases-search-input:focus {
+  outline: none;
+  border-color: #5a5a5a;
+}
+
 .releases-headline,
+.releases-search-section,
 .sort-section,
 .releases-grid {
   width: min(100%, var(--releases-grid-width));
@@ -1249,30 +1271,6 @@ text-decoration: none;
 }
 
 /* Tier badges for releases */
-.release-card.gold::before {
-  content: "🥇";
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 1.5rem;
-}
-
-.release-card.silver::before {
-  content: "🥈";
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 1.5rem;
-}
-
-.release-card.bronze::before {
-  content: "🥉";
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 1.5rem;
-}
-
 /* Auth forms */
 .auth-form {
   max-width: 500px;
@@ -3001,12 +2999,11 @@ text-decoration: none;
   }
 
   .home-page .last-added-tracks-main {
-    width: calc(100% + 24px);
+    width: calc(100% + 12px);
     max-width: none;
-    margin-left: -12px;
+    margin-left: 0;
     margin-right: -12px;
-    border-radius: 0;
-    border-left: none;
+    border-radius: 14px 0 0 14px;
     border-right: none;
   }
 
@@ -3050,7 +3047,7 @@ text-decoration: none;
   }
 
   .home-page .last-added-tracks {
-    padding: 0 16px 6px 0;
+    padding: 0 16px 6px 14px;
     width: max-content;
     min-width: 100%;
     transition: none;

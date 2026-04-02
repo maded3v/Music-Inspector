@@ -43,6 +43,14 @@
  <div class="container">
   <div class="main-content">
     <div class="releases-headline">Все релизы</div>
+    <div class="releases-search-section">
+      <input
+        id="releases-search-input"
+        class="releases-search-input"
+        type="text"
+        placeholder="Поиск по релизам..."
+      >
+    </div>
     <div class="sort-section">
       <button class="sort-btn" data-sort="people-rating" data-label="Рейтинг Пользовательский">Рейтинг Пользовательский</button>
       <button class="sort-btn" data-sort="mi-rating" data-label="Рейтинг MI">Рейтинг MI</button>
@@ -66,9 +74,20 @@ let allReleases = [];
 let currentSort = 'people-rating';
 let currentOrder = 'desc';
 let navSearchInput = null;
+let pageSearchInput = null;
 
 function getSearchValue() {
-  return (navSearchInput?.value || '').toLowerCase().trim();
+  return (pageSearchInput?.value || navSearchInput?.value || '').toLowerCase().trim();
+}
+
+function syncSearchValue(value, source) {
+  if (source !== 'nav' && navSearchInput && navSearchInput.value !== value) {
+    navSearchInput.value = value;
+  }
+
+  if (source !== 'page' && pageSearchInput && pageSearchInput.value !== value) {
+    pageSearchInput.value = value;
+  }
 }
 
 function renderReleases(releases) {
@@ -203,14 +222,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initAuthStatus();
 
   navSearchInput = document.querySelector('.search-bar .search-input');
+  pageSearchInput = document.getElementById('releases-search-input');
   
   allReleases = await getReleases();
   
   // Check for search parameter in URL
   const urlParams = new URLSearchParams(window.location.search);
   const searchQuery = urlParams.get('search');
-  if (searchQuery && navSearchInput) {
-    navSearchInput.value = searchQuery;
+  if (searchQuery) {
+    syncSearchValue(searchQuery, 'init');
   }
   
   updateSortButtonState();
@@ -218,6 +238,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (navSearchInput) {
     navSearchInput.addEventListener('input', () => {
+      syncSearchValue(navSearchInput.value, 'nav');
+      renderReleases(allReleases);
+    });
+  }
+
+  if (pageSearchInput) {
+    pageSearchInput.addEventListener('input', () => {
+      syncSearchValue(pageSearchInput.value, 'page');
       renderReleases(allReleases);
     });
   }
