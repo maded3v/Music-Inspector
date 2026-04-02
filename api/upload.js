@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const sharp = require('sharp');
-const { requireAuth } = require('./middleware');
+const { requireAuth, requireAdmin } = require('./middleware');
 const { 
   processImage, 
   generateThumbnail, 
@@ -44,6 +44,68 @@ function uploadSingle(fieldName) {
       return res.status(400).json({ error: error.message || 'Upload failed' });
     });
   };
+}
+
+async function saveAvatarForUser(file, targetUserId) {
+  const { query } = require('./db');
+
+  const validation = validateImage(file);
+  if (!validation.valid) {
+    const error = new Error(validation.error);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const processedImage = await sharp(file.buffer)
+    .resize(400, 400, {
+      fit: 'cover',
+      position: 'center'
+    })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  const filename = generateUniqueFilename(file.originalname);
+  const relativePath = `uploads/avatars/${filename}`;
+  const fullPath = path.join(__dirname, '..', 'public', relativePath);
+  const savedAvatarPath = await saveImage(processedImage, fullPath);
+
+  try {
+    const updateResult = await query(
+      'UPDATE users SET avatar = $1 WHERE id = $2 RETURNING id',
+      [savedAvatarPath, targetUserId]
+    );
+
+    if (updateResult.rows.length === 0) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      throw error;
+    }
+  } catch (dbError) {
+    if (dbError.message && dbError.message.includes('column "avatar"')) {
+      console.warn('Avatar column not found in users table');
+    } else {
+      throw dbError;
+    }
+  }
+
+  return savedAvatarPath;
+}
+
+function sendAvatarUploadError(res, error) {
+  if (error && error.statusCode) {
+    return res.status(error.statusCode).json({ error: error.message });
+  }
+
+  if (error && error.code === 'BLOB_STORAGE_NOT_CONFIGURED') {
+    return res.status(503).json({
+      error: 'Image storage is not configured. Upload is temporarily unavailable.'
+    });
+  }
+
+  return res.status(500).json({
+    error: 'Failed to upload avatar',
+    message: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
 }
 
 /**
@@ -165,87 +227,45 @@ exports.uploadAvatar = [
   uploadSingle('avatar'),
   async (req, res) => {
     try {
-      const { query } = require('./db');
-
-      const rawTargetUserId = typeof req.query.userId === 'string'
-        ? req.query.userId.trim()
-        : '';
-
-      let targetUserId = req.user.id;
-      if (rawTargetUserId) {
-        const parsedTargetUserId = Number.parseInt(rawTargetUserId, 10);
-        if (!Number.isInteger(parsedTargetUserId) || parsedTargetUserId <= 0) {
-          return res.status(400).json({ error: 'Invalid target user ID' });
-        }
-
-        if (req.user.role !== 'admin') {
-          return res.status(403).json({ error: 'Admin access required to update other users avatar' });
-        }
-
-        targetUserId = parsedTargetUserId;
-      }
-      
-      // Validate file
-      const validation = validateImage(req.file);
-      if (!validation.valid) {
-        return res.status(400).json({ error: validation.error });
-      }
-
-      // Process image (square crop for avatars)
-      const processedImage = await sharp(req.file.buffer)
-        .resize(400, 400, {
-          fit: 'cover',
-          position: 'center'
-        })
-        .webp({ quality: 85 })
-        .toBuffer();
-
-      // Generate unique filename
-      const filename = generateUniqueFilename(req.file.originalname);
-      const relativePath = `uploads/avatars/${filename}`;
-      const fullPath = path.join(__dirname, '..', 'public', relativePath);
-
-      // Save processed image
-      const savedAvatarPath = await saveImage(processedImage, fullPath);
-
-      // Update user's avatar in database (handle missing column gracefully)
-      try {
-        const updateResult = await query(
-          'UPDATE users SET avatar = $1 WHERE id = $2 RETURNING id',
-          [savedAvatarPath, targetUserId]
-        );
-
-        if (updateResult.rows.length === 0) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-      } catch (dbError) {
-        // If avatar column doesn't exist, log warning but don't fail
-        if (dbError.message && dbError.message.includes('column "avatar"')) {
-          console.warn('Avatar column not found in users table');
-        } else {
-          throw dbError;
-        }
-      }
+      const savedAvatarPath = await saveAvatarForUser(req.file, req.user.id);
 
       res.json({
+        success: true,
+        avatarPath: savedAvatarPath,
+        userId: req.user.id,
+        message: 'Avatar uploaded successfully'
+      });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      return sendAvatarUploadError(res, error);
+    }
+  }
+];
+
+/**
+ * Upload avatar for a specific user (admin only)
+ */
+exports.uploadAvatarForAdminUser = [
+  requireAdmin,
+  uploadSingle('avatar'),
+  async (req, res) => {
+    const targetUserId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+      return res.status(400).json({ error: 'Invalid target user ID' });
+    }
+
+    try {
+      const savedAvatarPath = await saveAvatarForUser(req.file, targetUserId);
+
+      return res.json({
         success: true,
         avatarPath: savedAvatarPath,
         userId: targetUserId,
         message: 'Avatar uploaded successfully'
       });
     } catch (error) {
-      console.error('Avatar upload error:', error);
-
-      if (error && error.code === 'BLOB_STORAGE_NOT_CONFIGURED') {
-        return res.status(503).json({
-          error: 'Image storage is not configured. Upload is temporarily unavailable.'
-        });
-      }
-
-      res.status(500).json({ 
-        error: 'Failed to upload avatar',
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
+      console.error('Admin avatar upload error:', error);
+      return sendAvatarUploadError(res, error);
     }
   }
 ];

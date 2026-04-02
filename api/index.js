@@ -91,6 +91,7 @@ const uploadRoutes = require('./upload');
 app.post('/api/upload/cover', uploadRoutes.uploadCover);
 app.post('/api/upload/artist', uploadRoutes.uploadArtistImage);
 app.post('/api/upload/avatar', uploadRoutes.uploadAvatar);
+app.post('/api/admin/users/:id/avatar/upload', uploadRoutes.uploadAvatarForAdminUser);
 app.get('/api/media', mediaRoutes.proxyBlobMedia);
 
 // User routes

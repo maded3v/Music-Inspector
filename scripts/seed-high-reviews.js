@@ -61,16 +61,27 @@ async function ensureDemoUsers(hasAvatarColumn) {
 
   for (const reviewer of DEMO_REVIEWERS) {
     const existing = await query(
-      'SELECT id, name FROM users WHERE email = $1 LIMIT 1',
+      'SELECT id, name, avatar FROM users WHERE email = $1 LIMIT 1',
       [reviewer.email]
     );
 
     if (existing.rows.length > 0) {
       const userId = existing.rows[0].id;
-      if (hasAvatarColumn) {
+      const existingAvatar = typeof existing.rows[0].avatar === 'string'
+        ? existing.rows[0].avatar.trim()
+        : '';
+
+      // Keep manually set avatars intact across deploys.
+      // Seed default avatar only when user has no avatar.
+      if (hasAvatarColumn && !existingAvatar) {
         await query('UPDATE users SET avatar = $1 WHERE id = $2', [reviewer.avatar, userId]);
       }
-      createdUsers.push({ ...reviewer, id: userId });
+
+      createdUsers.push({
+        ...reviewer,
+        id: userId,
+        avatar: existingAvatar || reviewer.avatar
+      });
       continue;
     }
 

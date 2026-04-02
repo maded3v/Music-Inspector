@@ -1,4 +1,4 @@
-import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260415';
+import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260416';
 import { initGlobalSearch } from './search.js';
 
 let currentUser = null;
@@ -66,9 +66,13 @@ async function uploadImageFile(file, kind = 'cover', targetUserId = null) {
   const isAvatar = kind === 'avatar';
   formData.append(isAvatar ? 'avatar' : 'cover', file);
 
-  const uploadPath = isAvatar && targetUserId
-    ? `/api/upload/avatar?userId=${encodeURIComponent(String(targetUserId))}`
-    : (isAvatar ? '/api/upload/avatar' : '/api/upload/cover');
+  let uploadPath = '/api/upload/cover';
+  if (isAvatar) {
+    if (!targetUserId) {
+      throw new Error('Target user ID is required for avatar upload');
+    }
+    uploadPath = `/api/admin/users/${encodeURIComponent(String(targetUserId))}/avatar/upload`;
+  }
 
   const data = await adminRequest(uploadPath, {
     method: 'POST',
