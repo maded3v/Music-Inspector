@@ -2930,13 +2930,13 @@ text-decoration: none;
   }
 
   .nav-bar.nav-mobile-ready .name-logo::after {
-    content: "MI Music Inspector";
+    content: "Music Inspector";
     display: block;
-    max-width: calc(100vw - 130px);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: calc(100vw - 108px);
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
-    font-size: 1rem;
+    font-size: clamp(0.72rem, 3vw, 1rem);
     color: #e6e6e6;
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -2989,6 +2989,11 @@ text-decoration: none;
     padding-right: 12px;
   }
 
+  .home-page .main-content {
+    padding-left: 8px;
+    padding-right: 0;
+  }
+
   .home-page .text-h1,
   .text-h1 {
     font-size: 1.8rem;
@@ -3006,12 +3011,32 @@ text-decoration: none;
   }
 
   .home-page .last-added-tracks-main {
-    width: calc(100% + 12px);
+    position: relative;
+    width: calc(100% + 8px);
     max-width: none;
     margin-left: 0;
-    margin-right: -12px;
+    margin-right: -8px;
     border-radius: 14px 0 0 14px;
     border-right: none;
+    overflow: visible;
+  }
+
+  .home-page .last-added-tracks-main::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: 100%;
+    width: 100vw;
+    background: linear-gradient(180deg, #2b2b2b, #252525);
+    border-top: 1px solid #3a3a3a;
+    border-bottom: 1px solid #3a3a3a;
+    pointer-events: none;
+  }
+
+  .home-page .last-added-tracks-main > * {
+    position: relative;
+    z-index: 1;
   }
 
   .home-page .last-added-tracks-main .nav-last-added-text {
@@ -3040,9 +3065,10 @@ text-decoration: none;
   .home-page .last-added-tracks-wrapper {
     overflow-x: auto;
     overflow-y: hidden;
-    padding-right: 0;
+    padding-right: 8px;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -3053,10 +3079,14 @@ text-decoration: none;
 
   .home-page .last-added-tracks {
     display: inline-flex;
-    padding: 0 16px 6px 14px;
+    padding: 0 24px 6px 14px;
     width: auto;
     min-width: max-content;
     transition: none;
+  }
+
+  .home-page .last-added-tracks > * {
+    scroll-snap-align: start;
   }
 
   .home-page .last-added-tracks .track-info {
