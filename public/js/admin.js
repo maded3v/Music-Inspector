@@ -1,4 +1,4 @@
-import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260414';
+import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260415';
 import { initGlobalSearch } from './search.js';
 
 let currentUser = null;
@@ -61,12 +61,16 @@ async function adminRequest(path, options = {}, fallbackMessage = 'Request faile
   return payload;
 }
 
-async function uploadImageFile(file, kind = 'cover') {
+async function uploadImageFile(file, kind = 'cover', targetUserId = null) {
   const formData = new FormData();
   const isAvatar = kind === 'avatar';
   formData.append(isAvatar ? 'avatar' : 'cover', file);
 
-  const data = await adminRequest(isAvatar ? '/api/upload/avatar' : '/api/upload/cover', {
+  const uploadPath = isAvatar && targetUserId
+    ? `/api/upload/avatar?userId=${encodeURIComponent(String(targetUserId))}`
+    : (isAvatar ? '/api/upload/avatar' : '/api/upload/cover');
+
+  const data = await adminRequest(uploadPath, {
     method: 'POST',
     body: formData
   }, 'Failed to upload image');
@@ -547,12 +551,7 @@ window.uploadUserAvatarFile = async function(userId) {
     }
 
     try {
-      const uploadedPath = await uploadImageFile(file, 'avatar');
-      await adminRequest(`/api/admin/users/${userId}/avatar`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar: uploadedPath })
-      }, 'Failed to update avatar');
+      await uploadImageFile(file, 'avatar', userId);
 
       alert('Аватар загружен и обновлен');
       loadUsers();

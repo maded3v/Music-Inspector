@@ -35,6 +35,40 @@ function parseUserId(rawId) {
   return Number.isInteger(userId) && userId > 0 ? userId : null;
 }
 
+function parseUrlLenient(urlString) {
+  try {
+    return new URL(String(urlString || '').trim());
+  } catch {
+    try {
+      return new URL(String(urlString || '').trim(), 'https://placeholder.local');
+    } catch {
+      return null;
+    }
+  }
+}
+
+function unwrapMediaProxyUrl(input) {
+  let current = String(input || '').trim();
+
+  for (let depth = 0; depth < 4 && current; depth += 1) {
+    const parsed = parseUrlLenient(current);
+    if (!parsed) {
+      break;
+    }
+
+    const nestedUrl = parsed.searchParams.get('url');
+    const isMediaProxyPath = parsed.pathname === '/api/media' || parsed.pathname.endsWith('/api/media');
+    if (isMediaProxyPath && nestedUrl) {
+      current = nestedUrl.trim();
+      continue;
+    }
+
+    break;
+  }
+
+  return current;
+}
+
 /**
  * Get moderation queue - pending releases
  */
@@ -715,16 +749,17 @@ exports.updateUserAvatar = [
   async (req, res) => {
     const userId = parseUserId(req.params.id);
     const avatar = req.body && typeof req.body.avatar === 'string' ? req.body.avatar.trim() : '';
+    const normalizedAvatar = unwrapMediaProxyUrl(avatar);
 
     if (!userId) {
       return res.status(400).json({ error: 'Invalid user ID' });
     }
 
-    if (!avatar) {
+    if (!normalizedAvatar) {
       return res.status(400).json({ error: 'Avatar URL/path is required' });
     }
 
-    if (avatar.length > 1000) {
+    if (normalizedAvatar.length > 1000) {
       return res.status(400).json({ error: 'Avatar URL/path is too long' });
     }
 
@@ -734,7 +769,7 @@ exports.updateUserAvatar = [
          SET avatar = $1
          WHERE id = $2
          RETURNING id, name, email, role, avatar`,
-        [avatar, userId]
+        [normalizedAvatar, userId]
       );
 
       if (result.rows.length === 0) {

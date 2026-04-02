@@ -472,36 +472,16 @@ text-decoration: none;
 
 .last-added-tracks-wrapper {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-right: 0;
+  overflow: hidden;
+  padding-right: 2px;
   box-sizing: border-box;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  scroll-snap-type: x proximity;
-}
-
-.last-added-tracks-wrapper::-webkit-scrollbar {
-  display: none;
 }
 
 .last-added-tracks {
   display: flex;
   gap: 16px;
-  padding: 0 16px 4px 0;
-  width: max-content;
-  min-width: 100%;
-}
-
-.last-added-tracks > * {
-  scroll-snap-align: start;
-}
-
-.last-added-tracks .track-info {
-  text-align: center;
-  padding-left: 0;
-  align-items: center;
+  padding-right: 16px;
+  transition: transform 0.3s ease;
 }
 
 .but-last-added-all{
@@ -1219,7 +1199,7 @@ text-decoration: none;
   display: grid;
   grid-template-columns: repeat(var(--releases-columns), var(--release-card-width));
   gap: var(--releases-gap);
-  justify-content: center;
+  justify-content: start;
   align-items: start;
 }
 
@@ -2891,12 +2871,13 @@ text-decoration: none;
 
 @media (max-width: 900px) {
   .nav-bar.nav-mobile-ready {
-    height: auto;
+    position: relative;
+    height: 65px;
     min-height: 65px;
     justify-content: flex-start;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
-    padding: 8px 10px;
+    padding: 0 10px;
   }
 
   .nav-bar.nav-mobile-ready .nav-toggle {
@@ -2907,14 +2888,22 @@ text-decoration: none;
 
   .nav-bar.nav-mobile-ready .nav-mobile-panel {
     display: none;
-    width: 100%;
-    flex-basis: 100%;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 10px;
+    right: 10px;
+    width: auto;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
+    background: #181818;
+    border: 1px solid #333;
+    border-radius: 12px;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
     gap: 8px;
-    padding-top: 8px;
+    padding: 10px;
+    z-index: 50;
   }
 
   .nav-bar.nav-mobile-ready.mobile-open .nav-mobile-panel {
@@ -2975,6 +2964,15 @@ text-decoration: none;
     margin-left: 0;
     width: auto;
     justify-content: center;
+    flex-wrap: nowrap;
+    max-width: 100%;
+  }
+
+  .nav-bar.nav-mobile-ready .nav-mobile-panel .profile-nickname {
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .main-content,
@@ -3002,29 +3000,121 @@ text-decoration: none;
     padding: 14px;
   }
 
-  .last-added-tracks-main .nav-last-added-text {
-    justify-content: center;
-    text-align: center;
+  .home-page .last-added-tracks-main {
+    width: calc(100% + 24px);
+    max-width: none;
+    margin-left: -12px;
+    margin-right: -12px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
 
-  .last-added-tracks-main .nav-controls {
+  .home-page .last-added-tracks-main .nav-last-added-text {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    background: #2b2b2b;
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+    margin-top: 0;
+  }
+
+  .home-page .last-added-tracks-main .nav-controls {
     margin-left: 0;
-    justify-content: center;
+    justify-content: flex-end;
+  }
+
+  .home-page .last-added-tracks-main .but-prev-last-added-tracks,
+  .home-page .last-added-tracks-main .but-next-last-added-tracks {
+    display: none;
+  }
+
+  .home-page .last-added-tracks-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-right: 0;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .home-page .last-added-tracks-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-page .last-added-tracks {
+    padding: 0 16px 6px 0;
+    width: max-content;
+    min-width: 100%;
+    transition: none;
+  }
+
+  .home-page .last-added-tracks .track-info {
+    text-align: center;
+    padding-left: 0;
+    align-items: center;
   }
 
   .monthly-releases-title {
     text-align: center;
   }
 
-  .monthly-releases-grid {
+  .home-page .monthly-releases-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(140px, 166px));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     justify-content: center;
-    gap: 12px;
+    gap: 8px;
+  }
+
+  .home-page .monthly-releases-grid .release-card-link,
+  .home-page .monthly-releases-grid .release-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .home-page .monthly-releases-grid .release-card {
+    min-height: 0;
+    padding: 4px;
+  }
+
+  .home-page .monthly-releases-grid .release-cover-wrapper {
+    width: 100%;
+    max-width: 110px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+  }
+
+  .home-page .monthly-releases-grid .release-title,
+  .home-page .monthly-releases-grid .album-title,
+  .home-page .monthly-releases-grid .release-artist,
+  .home-page .monthly-releases-grid .album-artist {
+    font-size: 0.78rem;
+  }
+
+  .home-page .monthly-releases-grid .monthly-release-score,
+  .home-page .monthly-releases-grid .album-score {
+    font-size: 0.92rem;
+    padding: 4px 8px;
   }
 
   .release-header-block {
     align-items: center;
+  }
+
+  .release-artist-section {
+    justify-content: center;
+  }
+
+  .release-artist-section .artist-link {
+    justify-content: center;
   }
 
   .release-reviews-section .reviews-header {
@@ -3067,6 +3157,10 @@ text-decoration: none;
   .releases-headline,
   .sort-section {
     text-align: center;
+    justify-content: center;
+  }
+
+  .releases-page .releases-grid {
     justify-content: center;
   }
 
@@ -3133,19 +3227,6 @@ text-decoration: none;
     font-size: 0.85rem;
     padding: 7px 9px;
     flex-basis: calc(50% - 8px);
-  }
-
-  .monthly-releases-grid {
-    grid-template-columns: minmax(140px, 166px);
-  }
-
-  .review-sort-controls {
-    width: 100%;
-  }
-
-  .review-sort-btn,
-  .add-review-button {
-    width: 100%;
   }
 
   .release-cover-large {

@@ -166,6 +166,24 @@ exports.uploadAvatar = [
   async (req, res) => {
     try {
       const { query } = require('./db');
+
+      const rawTargetUserId = typeof req.query.userId === 'string'
+        ? req.query.userId.trim()
+        : '';
+
+      let targetUserId = req.user.id;
+      if (rawTargetUserId) {
+        const parsedTargetUserId = Number.parseInt(rawTargetUserId, 10);
+        if (!Number.isInteger(parsedTargetUserId) || parsedTargetUserId <= 0) {
+          return res.status(400).json({ error: 'Invalid target user ID' });
+        }
+
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({ error: 'Admin access required to update other users avatar' });
+        }
+
+        targetUserId = parsedTargetUserId;
+      }
       
       // Validate file
       const validation = validateImage(req.file);
@@ -192,10 +210,14 @@ exports.uploadAvatar = [
 
       // Update user's avatar in database (handle missing column gracefully)
       try {
-        await query(
-          'UPDATE users SET avatar = $1 WHERE id = $2',
-          [savedAvatarPath, req.user.id]
+        const updateResult = await query(
+          'UPDATE users SET avatar = $1 WHERE id = $2 RETURNING id',
+          [savedAvatarPath, targetUserId]
         );
+
+        if (updateResult.rows.length === 0) {
+          return res.status(404).json({ error: 'User not found' });
+        }
       } catch (dbError) {
         // If avatar column doesn't exist, log warning but don't fail
         if (dbError.message && dbError.message.includes('column "avatar"')) {
@@ -208,6 +230,7 @@ exports.uploadAvatar = [
       res.json({
         success: true,
         avatarPath: savedAvatarPath,
+        userId: targetUserId,
         message: 'Avatar uploaded successfully'
       });
     } catch (error) {
