@@ -1,4 +1,4 @@
-import { withApiUrl } from './api.js';
+import { withApiUrl, resolveArtistUrl, resolveCoverUrl } from './api.js?v=20260409';
 
 let initialized = false;
 let dataLoaded = false;
@@ -21,11 +21,14 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function normalizeImagePath(path, fallback) {
+function normalizeImagePath(path, fallback, kind) {
   if (!path) return fallback;
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) return path;
-  if (path.startsWith('uploads/') || path.startsWith('svg/')) return path;
-  return fallback;
+
+  const resolved = kind === 'artist'
+    ? resolveArtistUrl(path)
+    : resolveCoverUrl(path);
+
+  return resolved || fallback;
 }
 
 function getSearchDataItems() {
@@ -34,7 +37,7 @@ function getSearchDataItems() {
     label: release.title || 'Без названия',
     subtitle: release.artist || '',
     href: `track.html?id=${release.id}`,
-    icon: normalizeImagePath(release.cover, 'svg/album.png')
+    icon: normalizeImagePath(release.cover, 'svg/album.png', 'cover')
   }));
 
   const artistItems = searchState.artists.map((artist) => ({
@@ -42,7 +45,7 @@ function getSearchDataItems() {
     label: artist.name,
     subtitle: 'Исполнитель',
     href: artist.id ? `artist.html?id=${artist.id}` : `releases.html?search=${encodeURIComponent(artist.name)}`,
-    icon: normalizeImagePath(artist.image, 'svg/person.png')
+    icon: normalizeImagePath(artist.image, 'svg/person.png', 'artist')
   }));
 
   return [...releaseItems, ...artistItems];

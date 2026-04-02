@@ -1,9 +1,9 @@
-import { resolveMediaUrl } from '../api.js';
+import { resolveCoverUrl } from '../api.js?v=20260409';
 
 function normalizeCoverPath(cover) {
   if (!cover) return 'svg/album.png';
   if (cover.startsWith('svg/')) return cover;
-  return resolveMediaUrl(cover);
+  return resolveCoverUrl(cover);
 }
 
 function escapeHtml(value) {

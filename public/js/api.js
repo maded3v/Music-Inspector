@@ -58,23 +58,114 @@ export function withApiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
-export function resolveMediaUrl(path) {
-  if (!path) {
-    return '';
-  }
-
-  const value = String(path).trim().replace(/\\/g, '/');
-  if (!value) {
-    return '';
-  }
-
-  if (
+function isAbsoluteMediaUrl(value) {
+  return (
     value.startsWith('http://') ||
     value.startsWith('https://') ||
     value.startsWith('data:') ||
     value.startsWith('blob:') ||
     value.startsWith('//')
-  ) {
+  );
+}
+
+function normalizeStoredMediaPath(path) {
+  const raw = String(path || '').trim().replace(/\\/g, '/');
+  if (!raw) {
+    return '';
+  }
+
+  const marker = '/public/';
+  const lowered = raw.toLowerCase();
+  const markerIndex = lowered.lastIndexOf(marker);
+  if (markerIndex >= 0) {
+    return raw.slice(markerIndex + marker.length);
+  }
+
+  if (lowered.startsWith('/public/')) {
+    return raw.slice('/public/'.length);
+  }
+
+  if (lowered.startsWith('public/')) {
+    return raw.slice('public/'.length);
+  }
+
+  return raw.replace(/^\.\//, '');
+}
+
+function rewriteLegacyUploadPrefix(value) {
+  if (!value) {
+    return '';
+  }
+
+  if (value.startsWith('/api/uploads/')) {
+    return `/uploads/${value.slice('/api/uploads/'.length)}`;
+  }
+
+  if (value.startsWith('api/uploads/')) {
+    return `uploads/${value.slice('api/uploads/'.length)}`;
+  }
+
+  if (value.startsWith('/public/uploads/')) {
+    return `/uploads/${value.slice('/public/uploads/'.length)}`;
+  }
+
+  if (value.startsWith('public/uploads/')) {
+    return `uploads/${value.slice('public/uploads/'.length)}`;
+  }
+
+  return value;
+}
+
+function normalizeLegacyUploadPath(path, folderName) {
+  const normalized = rewriteLegacyUploadPrefix(normalizeStoredMediaPath(path));
+  if (!normalized || isAbsoluteMediaUrl(normalized)) {
+    return normalized;
+  }
+
+  const value = normalized.replace(/^\/+/, '');
+  if (!value) {
+    return '';
+  }
+
+  if (value.startsWith('uploads/')) {
+    return value;
+  }
+
+  if (value.startsWith(`${folderName}/`)) {
+    return `uploads/${value}`;
+  }
+
+  if (!value.includes('/')) {
+    return `uploads/${folderName}/${value}`;
+  }
+
+  return value;
+}
+
+export function resolveMediaUrl(path) {
+  if (!path) {
+    return '';
+  }
+
+  const value = rewriteLegacyUploadPrefix(normalizeStoredMediaPath(path));
+  if (!value) {
+    return '';
+  }
+
+  if (isAbsoluteMediaUrl(value)) {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      try {
+        const parsed = new URL(value);
+        const rewrittenPath = rewriteLegacyUploadPrefix(parsed.pathname);
+        if (rewrittenPath !== parsed.pathname) {
+          parsed.pathname = rewrittenPath;
+          return parsed.toString();
+        }
+      } catch {
+        // Ignore URL parsing errors and fallback to original value
+      }
+    }
+
     if (value.includes('api.dicebear.com') && value.includes('/svg')) {
       return value.replace('/svg', '/png');
     }
@@ -82,8 +173,29 @@ export function resolveMediaUrl(path) {
     return value;
   }
 
+  if (
+    value.startsWith('svg/') ||
+    value.startsWith('logos/') ||
+    value.startsWith('people/') ||
+    value.startsWith('traks/')
+  ) {
+    return value;
+  }
+
   const normalized = value.startsWith('/') ? value : `/${value}`;
   return withApiUrl(normalized);
+}
+
+export function resolveCoverUrl(path) {
+  return resolveMediaUrl(normalizeLegacyUploadPath(path, 'covers'));
+}
+
+export function resolveAvatarUrl(path) {
+  return resolveMediaUrl(normalizeLegacyUploadPath(path, 'avatars'));
+}
+
+export function resolveArtistUrl(path) {
+  return resolveMediaUrl(normalizeLegacyUploadPath(path, 'artists'));
 }
 
 export function getCsrfToken() {

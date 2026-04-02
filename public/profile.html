@@ -308,11 +308,12 @@
       uploadAvatar,
       getUserReviews,
       getUserStats,
-      resolveMediaUrl,
+      resolveAvatarUrl,
+      resolveCoverUrl,
       updateMyName,
       getPublicUserProfile
-    } from './js/api.js';
-    import { handleLogout } from './js/auth-refactored.js';
+    } from './js/api.js?v=20260409';
+    import { handleLogout } from './js/auth-refactored.js?v=20260409';
     import { initGlobalSearch } from './js/search.js';
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -358,13 +359,7 @@
       if (!avatar) return '';
       const normalized = String(avatar).trim();
       if (!normalized) return '';
-      if (normalized.startsWith('http://') || normalized.startsWith('https://') || normalized.startsWith('/')) {
-        return resolveMediaUrl(normalized);
-      }
-      if (normalized.startsWith('uploads/')) {
-        return resolveMediaUrl(normalized);
-      }
-      return resolveMediaUrl(`uploads/avatars/${normalized}`);
+      return resolveAvatarUrl(normalized);
     }
 
     function formatDate(dateStr) {
@@ -446,7 +441,7 @@
         scoreColor = '#E3D323';
       }
 
-      const coverUrl = resolveMediaUrl(review.track_cover) || 'svg/album.png';
+      const coverUrl = resolveCoverUrl(review.track_cover || review.cover) || 'svg/album.png';
       const title = `${review.track_title || 'Трек'} - ${review.track_artist || 'Исполнитель'}`;
       const preview = review.text || 'Нет текста';
 

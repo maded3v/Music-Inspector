@@ -142,8 +142,8 @@
 
   <script src="js/nav-mobile.js?v=20260408" defer></script>
   <script type="module">
-    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveMediaUrl } from './js/api.js?v=20260406';
-    import { initAuth } from './js/auth-refactored.js';
+    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveArtistUrl, resolveAvatarUrl, resolveCoverUrl } from './js/api.js?v=20260409';
+    import { initAuth } from './js/auth-refactored.js?v=20260409';
     import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './js/modal.js';
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -242,7 +242,7 @@
         }
 
         // Fix cover image path
-        const cover = resolveMediaUrl(track.cover || track.cover_path) || 'svg/album.png';
+        const cover = resolveCoverUrl(track.cover || track.cover_path || track.cover_original_path) || 'svg/album.png';
 
         document.getElementById('release-cover').src = cover;
         document.getElementById('release-title').textContent = track.title || 'Без названия';
@@ -276,7 +276,7 @@
         if (artistId) {
           artistLink.href = `artist.html?id=${artistId}`;
           if (artistImage) {
-            artistAvatarEl.src = resolveMediaUrl(artistImage);
+            artistAvatarEl.src = resolveArtistUrl(artistImage);
           } else {
             artistAvatarEl.src = 'svg/person.png';
           }
@@ -336,7 +336,7 @@
     function getAvatarUrl(avatar) {
       if (!avatar) return 'svg/person.png';
       if (avatar.startsWith('svg/')) return avatar;
-      return resolveMediaUrl(avatar);
+      return resolveAvatarUrl(avatar);
     }
 
     function getReviewScoreColor(score) {

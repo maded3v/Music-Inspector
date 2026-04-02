@@ -50,8 +50,8 @@
 
 <script src="js/nav-mobile.js?v=20260408" defer></script>
 <script type="module">
-import { getReview } from './js/api.js';
-import { initAuthStatus } from './js/auth-status.js';
+import { getReview, resolveCoverUrl } from './js/api.js?v=20260409';
+import { initAuthStatus } from './js/auth-status.js?v=20260409';
 
 // Initialize auth status
 initAuthStatus();
@@ -72,7 +72,7 @@ if (reviewId) {
             <span class="review-score">Оценка: ${review.score}</span>
             <span class="review-date">Дата: ${new Date(review.publishedAt).toLocaleDateString()}</span>
           </div>
-          <img src="${review.cover}" alt="Обложка" class="review-cover-full">
+          <img src="${resolveCoverUrl(review.track_cover || review.cover) || 'svg/album.png'}" alt="Обложка" class="review-cover-full" onerror="this.onerror=null; this.src='svg/album.png';">
           <div class="review-text-full">${review.text}</div>
         </div>
       `;

@@ -1,4 +1,4 @@
-import { resolveMediaUrl } from './api.js';
+import { resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260409';
 
 function trimText(text, maxLength = 220) {
   if (text.length <= maxLength) return text;
@@ -27,7 +27,7 @@ function escapeHtml(value) {
 function getAvatarUrl(avatar) {
   if (!avatar) return 'svg/person.png';
   if (avatar.startsWith('svg/')) return avatar;
-  return resolveMediaUrl(avatar);
+  return resolveAvatarUrl(avatar);
 }
 
 function getExpandIcon(isExpanded) {
@@ -57,7 +57,7 @@ export function renderReviewCard(review) {
 
   const author = review.author_name || review.author || 'Неизвестный автор';
   const authorAvatar = getAvatarUrl(review.author_avatar);
-  const cover = resolveMediaUrl(review.track_cover || review.cover) || 'svg/album.png';
+  const cover = resolveCoverUrl(review.track_cover || review.cover) || 'svg/album.png';
   const title = review.title || `${review.track_title || 'Релиз'} - ${review.track_artist || ''}`;
   const isMIReview = Boolean(review.is_mi_review || review.miBadge);
   const trackId = review.track_id || null;

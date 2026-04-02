@@ -1,4 +1,4 @@
-import { getCurrentUser, searchArtists, createArtist, uploadCover, uploadArtistImage, addReview, getTrack, resolveMediaUrl } from './api.js';
+import { getCurrentUser, searchArtists, createArtist, uploadCover, uploadArtistImage, addReview, getTrack, resolveAvatarUrl } from './api.js?v=20260409';
 import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './modal.js';
 import { initGlobalSearch } from './search.js';
 
@@ -48,7 +48,7 @@ function updateAuthStatus(user) {
       }
       if (profileAvatar) {
         if (user.avatar) {
-          const avatarPath = resolveMediaUrl(user.avatar);
+          const avatarPath = resolveAvatarUrl(user.avatar);
           profileAvatar.textContent = '';
           profileAvatar.style.backgroundColor = 'transparent';
           profileAvatar.innerHTML = `<img src="${avatarPath}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${getFirstLetter(nickname)}'; this.parentElement.style.backgroundColor='${generateAvatarColor(user.email || user.name)}';">`;
@@ -401,7 +401,7 @@ function initForm() {
       };
 
       // Import createTrack function
-      const { createTrack } = await import('./api.js');
+      const { createTrack } = await import('./api.js?v=20260409');
       const result = await createTrack(formData);
 
       // Create review for the track
