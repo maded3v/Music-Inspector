@@ -10,3 +10,6 @@ db.env
 # Logs/system
 *.log
 .DS_Store
+
+# Local assistant/project notes
+.agent/

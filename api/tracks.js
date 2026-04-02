@@ -227,15 +227,9 @@ exports.getMonthlyAlbums = async (req, res) => {
     const releasesWithRatings = result.rows.map((release) => {
       const ratings = ratingsMap.get(release.id) || { peopleScore: null, miScore: null };
       const { peopleScore, miScore } = ratings;
-
-      let totalRating = null;
-      if (peopleScore !== null && miScore !== null) {
-        totalRating = (peopleScore + miScore) / 2;
-      } else if (peopleScore !== null) {
-        totalRating = peopleScore;
-      } else if (miScore !== null) {
-        totalRating = miScore;
-      }
+      const totalRating = peopleScore !== null && miScore !== null
+        ? (peopleScore + miScore) / 2
+        : null;
 
       return {
         ...release,
