@@ -3,6 +3,19 @@ const fs = require('fs').promises;
 const path = require('path');
 const { put } = require('@vercel/blob');
 
+function requiresBlobStorage() {
+  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') {
+    return true;
+  }
+
+  return Boolean(
+    process.env.RENDER ||
+    process.env.RENDER_EXTERNAL_URL ||
+    process.env.VERCEL ||
+    process.env.VERCEL_URL
+  );
+}
+
 /**
  * Process and compress image
  * @param {Buffer} imageBuffer - Original image buffer
@@ -64,6 +77,12 @@ async function generateThumbnail(imageBuffer, size = 300) {
  */
 async function saveImage(imageBuffer, filePath) {
   const blobTokenConfigured = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+
+  if (!blobTokenConfigured && requiresBlobStorage()) {
+    const error = new Error('Blob storage is not configured in production runtime');
+    error.code = 'BLOB_STORAGE_NOT_CONFIGURED';
+    throw error;
+  }
 
   if (blobTokenConfigured) {
     try {

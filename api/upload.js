@@ -89,6 +89,13 @@ exports.uploadCover = [
       });
     } catch (error) {
       console.error('Cover upload error:', error);
+
+      if (error && error.code === 'BLOB_STORAGE_NOT_CONFIGURED') {
+        return res.status(503).json({
+          error: 'Image storage is not configured. Upload is temporarily unavailable.'
+        });
+      }
+
       res.status(500).json({ 
         error: 'Failed to upload cover image',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -135,6 +142,13 @@ exports.uploadArtistImage = [
       });
     } catch (error) {
       console.error('Artist image upload error:', error);
+
+      if (error && error.code === 'BLOB_STORAGE_NOT_CONFIGURED') {
+        return res.status(503).json({
+          error: 'Image storage is not configured. Upload is temporarily unavailable.'
+        });
+      }
+
       res.status(500).json({ 
         error: 'Failed to upload artist image',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -198,6 +212,13 @@ exports.uploadAvatar = [
       });
     } catch (error) {
       console.error('Avatar upload error:', error);
+
+      if (error && error.code === 'BLOB_STORAGE_NOT_CONFIGURED') {
+        return res.status(503).json({
+          error: 'Image storage is not configured. Upload is temporarily unavailable.'
+        });
+      }
+
       res.status(500).json({ 
         error: 'Failed to upload avatar',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined

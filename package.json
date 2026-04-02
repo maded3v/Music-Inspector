@@ -14,6 +14,7 @@
     "reset-admins": "node scripts/reset-admins.js",
     "set-mi-reviewers": "node scripts/set-mi-reviewers.js",
     "seed-high-reviews": "node scripts/seed-high-reviews.js",
+    "migrate-images-to-blob": "node scripts/migrate-existing-images-to-blob.js",
     "vercel:start": "vercel start"
   },
   "dependencies": {

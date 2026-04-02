@@ -1,5 +1,40 @@
 (function () {
   const BREAKPOINT = 900;
+  const ANALYTICS_SCRIPT_ID = 'mi-vercel-insights';
+
+  function shouldInjectAnalytics() {
+    const host = String(window.location.hostname || '').toLowerCase();
+    if (
+      !host ||
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      window.location.protocol === 'file:'
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function injectVercelAnalytics() {
+    if (!shouldInjectAnalytics()) {
+      return;
+    }
+
+    if (document.getElementById(ANALYTICS_SCRIPT_ID)) {
+      return;
+    }
+
+    window.va = window.va || function () {
+      (window.vaq = window.vaq || []).push(arguments);
+    };
+
+    const analyticsScript = document.createElement('script');
+    analyticsScript.id = ANALYTICS_SCRIPT_ID;
+    analyticsScript.defer = true;
+    analyticsScript.src = '/_vercel/insights/script.js';
+    document.head.appendChild(analyticsScript);
+  }
 
   function setupMobileNav(nav) {
     if (!nav || nav.dataset.mobileNavReady === '1') {
@@ -67,6 +102,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    injectVercelAnalytics();
     document.querySelectorAll('.nav-bar').forEach(setupMobileNav);
   });
 })();

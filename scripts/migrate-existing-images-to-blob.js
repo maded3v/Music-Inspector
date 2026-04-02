@@ -6,18 +6,24 @@ const dotenv = require('dotenv');
 const { Pool } = require('pg');
 const { put } = require('@vercel/blob');
 
-dotenv.config({ path: path.join(__dirname, '..', '.env.vercel') });
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '.env.vercel'), override: true });
 
 const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+const sourceBaseUrl = String(
+  process.env.IMAGE_SOURCE_BASE_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  'https://music-inspector.onrender.com'
+).replace(/\/$/, '');
 
 if (!connectionString) {
-  console.error('Missing DATABASE_URL/POSTGRES_URL in .env.vercel');
+  console.error('Missing DATABASE_URL/POSTGRES_URL environment variable');
   process.exit(1);
 }
 
 if (!blobToken) {
-  console.error('Missing BLOB_READ_WRITE_TOKEN in .env.vercel');
+  console.error('Missing BLOB_READ_WRITE_TOKEN environment variable');
   process.exit(1);
 }
 
@@ -30,14 +36,51 @@ function isRelativeUploadPath(value) {
   return typeof value === 'string' && value.startsWith('uploads/');
 }
 
-async function uploadLocalFileToBlob(relativePath) {
-  const absolutePath = path.join(__dirname, '..', 'public', relativePath);
-  const fileBuffer = await fs.readFile(absolutePath);
-  const uploaded = await put(relativePath, fileBuffer, {
+function normalizeRelativePath(relativePath) {
+  return String(relativePath || '').replace(/^\/+/, '');
+}
+
+function detectContentType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
+  return 'application/octet-stream';
+}
+
+async function readImageBuffer(relativePath) {
+  const normalizedPath = normalizeRelativePath(relativePath);
+  const absolutePath = path.join(__dirname, '..', 'public', normalizedPath);
+
+  try {
+    return await fs.readFile(absolutePath);
+  } catch {
+    if (typeof fetch !== 'function') {
+      throw new Error('Global fetch is not available. Use Node.js 18+ to run this script.');
+    }
+
+    const remoteUrl = `${sourceBaseUrl}/${normalizedPath}`;
+    const response = await fetch(remoteUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch source image: ${response.status} ${remoteUrl}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+}
+
+async function uploadFileToBlob(relativePath) {
+  const normalizedPath = normalizeRelativePath(relativePath);
+  const fileBuffer = await readImageBuffer(normalizedPath);
+  const uploaded = await put(normalizedPath, fileBuffer, {
     access: 'public',
     addRandomSuffix: false,
-    token: blobToken
+    token: blobToken,
+    contentType: detectContentType(normalizedPath)
   });
+
   return uploaded.url;
 }
 
@@ -57,7 +100,7 @@ async function migrateColumn({ table, idColumn, valueColumn }) {
     }
 
     try {
-      const blobUrl = await uploadLocalFileToBlob(currentValue);
+      const blobUrl = await uploadFileToBlob(currentValue);
       const updateSql = `UPDATE ${table} SET ${valueColumn} = $1 WHERE ${idColumn} = $2`;
       await pool.query(updateSql, [blobUrl, row.id]);
       updated += 1;
