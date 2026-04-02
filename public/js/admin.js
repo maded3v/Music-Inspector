@@ -1,4 +1,4 @@
-import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260409';
+import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260410';
 import { initGlobalSearch } from './search.js';
 
 let currentUser = null;

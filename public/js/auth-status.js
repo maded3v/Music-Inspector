@@ -3,7 +3,7 @@
  * Updates nav-bar auth buttons on all pages
  */
 
-import { getCurrentUser, resolveAvatarUrl } from './api.js?v=20260409';
+import { getCurrentUser, resolveAvatarUrl } from './api.js?v=20260410';
 import { initGlobalSearch } from './search.js';
 
 // Generate random color for avatar background

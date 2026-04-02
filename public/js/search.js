@@ -1,4 +1,4 @@
-import { withApiUrl, resolveArtistUrl, resolveCoverUrl } from './api.js?v=20260409';
+import { withApiUrl, resolveArtistUrl, resolveCoverUrl } from './api.js?v=20260410';
 
 let initialized = false;
 let dataLoaded = false;

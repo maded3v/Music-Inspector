@@ -13,6 +13,22 @@ function isAllowedApiOverride(urlString) {
 function resolveApiBase() {
   const host = window.location.hostname;
   const override = window.localStorage.getItem('MI_API_BASE');
+  const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+
+  // API override is allowed only in local development.
+  // In production, stale overrides can break media URLs and auth.
+  if (!isLocalHost) {
+    if (override) {
+      try {
+        window.localStorage.removeItem('MI_API_BASE');
+      } catch {
+        // Ignore storage errors silently
+      }
+    }
+
+    if (host.endsWith('onrender.com')) return '';
+    return DEFAULT_RENDER_API_BASE;
+  }
 
   if (override) {
     const normalizedOverride = override.replace(/\/$/, '');
@@ -27,10 +43,7 @@ function resolveApiBase() {
     }
   }
 
-  if (host === 'localhost' || host === '127.0.0.1') return '';
-  if (host.endsWith('onrender.com')) return '';
-
-  return DEFAULT_RENDER_API_BASE;
+  return '';
 }
 
 export const API_BASE = resolveApiBase();
