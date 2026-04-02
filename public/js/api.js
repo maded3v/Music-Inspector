@@ -14,6 +14,10 @@ function resolveApiBase() {
   const host = window.location.hostname;
   const override = window.localStorage.getItem('MI_API_BASE');
   const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+  const isSameOriginApiHost =
+    host.endsWith('onrender.com') ||
+    host.endsWith('vercel.app') ||
+    host.endsWith('vercel.com');
 
   // API override is allowed only in local development.
   // In production, stale overrides can break media URLs and auth.
@@ -26,7 +30,7 @@ function resolveApiBase() {
       }
     }
 
-    if (host.endsWith('onrender.com')) return '';
+    if (isSameOriginApiHost) return '';
     return DEFAULT_RENDER_API_BASE;
   }
 

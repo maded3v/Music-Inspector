@@ -49,7 +49,7 @@ export async function handleLogin(formData) {
   }
   
   try {
-    const result = await import('./api.js?v=20260410').then(m => m.login({ email, password }));
+    const result = await import('./api.js?v=20260411').then(m => m.login({ email, password }));
     if (result.success) {
       // Show success message briefly
       if (submitButton) {
@@ -92,7 +92,7 @@ export async function handleRegister(formData) {
   }
   
   try {
-    const result = await import('./api.js?v=20260410').then(m => m.register({ name, email, password }));
+    const result = await import('./api.js?v=20260411').then(m => m.register({ name, email, password }));
     if (result.success) {
       // Show success message briefly
       if (submitButton) {

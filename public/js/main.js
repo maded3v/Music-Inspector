@@ -1,10 +1,10 @@
-import { getReviews, getReleases, getTopReleases } from './api.js?v=20260410';
-import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260410';
-import { renderMonthlyReleases } from './releases.js?v=20260410';
-import { renderReleaseCards } from './components/releaseCard.js?v=20260410';
+import { getReviews, getReleases, getTopReleases } from './api.js?v=20260411';
+import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260411';
+import { renderMonthlyReleases } from './releases.js?v=20260411';
+import { renderReleaseCards } from './components/releaseCard.js?v=20260411';
 import { initSearch } from './search.js';
 import { initTiltEffect } from './tilt-effect.js';
-import { initAuthStatus } from './auth-status.js?v=20260410';
+import { initAuthStatus } from './auth-status.js?v=20260411';
 
 // Function to render last added releases (both tracks and albums)
 function renderLastAddedReleases(releases, container) {

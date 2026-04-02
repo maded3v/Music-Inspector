@@ -1,4 +1,4 @@
-import { resolveCoverUrl } from '../api.js?v=20260410';
+import { resolveCoverUrl } from '../api.js?v=20260411';
 
 function normalizeCoverPath(cover) {
   if (!cover) return 'svg/album.png';
