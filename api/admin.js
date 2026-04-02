@@ -1,6 +1,7 @@
 const { query } = require('./db');
 const { requireAdmin } = require('./middleware');
 const { columnExists } = require('./utils/dbHelpers');
+const PROTECTED_SUPER_ADMIN_EMAILS = new Set(['quwewe@gmail.com']);
 
 function parseReleaseDate(value) {
   if (value === null || value === undefined || value === '') {
@@ -749,6 +750,60 @@ exports.updateUserAvatar = [
       }
 
       return handleServerError(res, error, 'updateUserAvatar');
+    }
+  }
+];
+
+/**
+ * Demote admin to regular user by email
+ */
+exports.demoteAdmin = [
+  requireAdmin,
+  async (req, res) => {
+    const { email } = req.body;
+
+    if (!email || email.trim().length === 0) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (PROTECTED_SUPER_ADMIN_EMAILS.has(normalizedEmail)) {
+      return res.status(400).json({ error: 'Cannot demote protected super-admin account' });
+    }
+
+    try {
+      const userCheck = await query('SELECT id, email, role FROM users WHERE email = $1', [normalizedEmail]);
+      if (userCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found with this email' });
+      }
+
+      const user = userCheck.rows[0];
+      if (user.role !== 'admin') {
+        return res.status(400).json({ error: 'User is not an admin' });
+      }
+
+      if (req.user && user.id === req.user.id) {
+        return res.status(400).json({ error: 'You cannot remove your own admin rights' });
+      }
+
+      const result = await query(
+        `UPDATE users SET role = 'user' WHERE id = $1 RETURNING id, email, name, role`,
+        [user.id]
+      );
+
+      return res.json({
+        success: true,
+        user: result.rows[0],
+        message: `Admin rights removed from ${normalizedEmail}`
+      });
+    } catch (error) {
+      const { handleDatabaseError, handleServerError } = require('./utils/errors');
+
+      if (error.code || error.isConnectionError) {
+        return handleDatabaseError(res, error);
+      }
+
+      return handleServerError(res, error, 'demoteAdmin');
     }
   }
 ];

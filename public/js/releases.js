@@ -1,5 +1,5 @@
 // Import unified release card component
-import { renderReleaseCard, renderReleaseCards } from './components/releaseCard.js?v=20260405';
+import { renderReleaseCard, renderReleaseCards } from './components/releaseCard.js?v=20260407';
 
 // Re-export for backward compatibility
 export { renderReleaseCard, renderReleaseCards };

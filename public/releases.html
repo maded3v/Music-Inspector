@@ -44,33 +44,10 @@
   <div class="main-content">
     <div class="releases-headline">Все релизы</div>
     <div class="sort-section">
-      <button class="sort-btn" data-sort="rating" data-label="Рейтинг">Рейтинг</button>
+      <button class="sort-btn" data-sort="people-rating" data-label="Рейтинг Пользовательский">Рейтинг Пользовательский</button>
+      <button class="sort-btn" data-sort="mi-rating" data-label="Рейтинг MI">Рейтинг MI</button>
       <button class="sort-btn" data-sort="date" data-label="Дата">Дата</button>
       <button class="sort-btn" data-sort="alphabet" data-label="А-Я">А-Я</button>
-    </div>
-    <div class="rating-filters">
-      <label class="rating-filter">
-        <span class="rating-filter-label">Пользовательский</span>
-        <select id="people-rating-filter" class="rating-filter-select">
-          <option value="0">Все</option>
-          <option value="5">от 5</option>
-          <option value="6">от 6</option>
-          <option value="7">от 7</option>
-          <option value="8">от 8</option>
-          <option value="9">от 9</option>
-        </select>
-      </label>
-      <label class="rating-filter">
-        <span class="rating-filter-label">MI</span>
-        <select id="mi-rating-filter" class="rating-filter-select">
-          <option value="0">Все</option>
-          <option value="5">от 5</option>
-          <option value="6">от 6</option>
-          <option value="7">от 7</option>
-          <option value="8">от 8</option>
-          <option value="9">от 9</option>
-        </select>
-      </label>
     </div>
     <div class="releases-grid">
       <!-- Releases will be loaded dynamically -->
@@ -81,60 +58,31 @@
 
 <script src="js/nav-mobile.js" defer></script>
 <script type="module">
-import { getReleases } from './js/api.js?v=20260405';
-import { renderReleaseCardAll } from './js/releases.js?v=20260405';
+import { getReleases } from './js/api.js?v=20260406';
+import { renderReleaseCardAll } from './js/releases.js?v=20260407';
 import { initAuthStatus } from './js/auth-status.js?v=20260404';
 
 let allReleases = [];
-let currentSort = 'rating';
+let currentSort = 'people-rating';
 let currentOrder = 'desc';
 let navSearchInput = null;
-let peopleRatingFilterSelect = null;
-let miRatingFilterSelect = null;
 
 function getSearchValue() {
   return (navSearchInput?.value || '').toLowerCase().trim();
 }
 
-function getMinRatingValue(selectElement) {
-  const value = Number(selectElement?.value || 0);
-  return Number.isFinite(value) && value > 0 ? value : 0;
-}
-
-function getSafeNumeric(value) {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
-}
-
 function renderReleases(releases) {
   const grid = document.querySelector('.releases-grid');
   const searchValue = getSearchValue();
-  const minPeopleRating = getMinRatingValue(peopleRatingFilterSelect);
-  const minMiRating = getMinRatingValue(miRatingFilterSelect);
 
   const filtered = releases.filter((r) => {
     const title = (r.title || '').toLowerCase();
     const artist = (r.artist || '').toLowerCase();
-    if (!title.includes(searchValue) && !artist.includes(searchValue)) {
-      return false;
-    }
-
-    const peopleScore = getSafeNumeric(r.peopleScore);
-    const miScore = getSafeNumeric(r.miScore);
-
-    if (minPeopleRating > 0 && (peopleScore === null || peopleScore < minPeopleRating)) {
-      return false;
-    }
-
-    if (minMiRating > 0 && (miScore === null || miScore < minMiRating)) {
-      return false;
-    }
-
-    return true;
+    return title.includes(searchValue) || artist.includes(searchValue);
   });
 
   if (filtered.length === 0) {
-    grid.innerHTML = '<div class="releases-empty">Ничего не найдено. Измени поиск, сортировку или фильтры рейтинга.</div>';
+    grid.innerHTML = '<div class="releases-empty">Ничего не найдено. Попробуйте изменить поиск или сортировку.</div>';
     return;
   }
 
@@ -172,12 +120,40 @@ function getReleaseRatingValue(release) {
   return Number.isFinite(legacy) ? legacy : 0;
 }
 
+function getPeopleRatingValue(release) {
+  const people = Number(release.peopleScore);
+  if (Number.isFinite(people)) {
+    return people;
+  }
+
+  const combined = getReleaseRatingValue(release);
+  return Number.isFinite(combined) ? combined : 0;
+}
+
+function getMiRatingValue(release) {
+  const mi = Number(release.miScore);
+  if (Number.isFinite(mi)) {
+    return mi;
+  }
+
+  const combined = getReleaseRatingValue(release);
+  return Number.isFinite(combined) ? combined : 0;
+}
+
 function sortReleases(releases, sortBy, order) {
   return [...releases].sort((a, b) => {
     let valA;
     let valB;
 
     switch (sortBy) {
+      case 'people-rating':
+        valA = getPeopleRatingValue(a);
+        valB = getPeopleRatingValue(b);
+        break;
+      case 'mi-rating':
+        valA = getMiRatingValue(a);
+        valB = getMiRatingValue(b);
+        break;
       case 'rating':
         valA = getReleaseRatingValue(a);
         valB = getReleaseRatingValue(b);
@@ -200,11 +176,15 @@ function sortReleases(releases, sortBy, order) {
         : valB.localeCompare(valA, 'ru', { sensitivity: 'base' });
     }
 
+    if (valA === valB) {
+      return 0;
+    }
+
     if (order === 'asc') {
       return valA > valB ? 1 : -1;
-    } else {
-      return valA < valB ? 1 : -1;
     }
+
+    return valA < valB ? 1 : -1;
   });
 }
 
@@ -223,8 +203,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initAuthStatus();
 
   navSearchInput = document.querySelector('.search-bar .search-input');
-  peopleRatingFilterSelect = document.getElementById('people-rating-filter');
-  miRatingFilterSelect = document.getElementById('mi-rating-filter');
   
   allReleases = await getReleases();
   
@@ -243,16 +221,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderReleases(allReleases);
     });
   }
-
-  [peopleRatingFilterSelect, miRatingFilterSelect].forEach((select) => {
-    if (!select) {
-      return;
-    }
-
-    select.addEventListener('change', () => {
-      renderReleases(allReleases);
-    });
-  });
 
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {

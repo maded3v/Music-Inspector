@@ -1,7 +1,7 @@
-import { getReviews, getReleases, getTopReleases } from './api.js?v=20260405';
-import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260405';
-import { renderMonthlyReleases } from './releases.js?v=20260405';
-import { renderReleaseCards } from './components/releaseCard.js?v=20260405';
+import { getReviews, getReleases, getTopReleases } from './api.js?v=20260406';
+import { renderReviews, initReviewExpand, initReviewOpen } from './reviews.js?v=20260406';
+import { renderMonthlyReleases } from './releases.js?v=20260407';
+import { renderReleaseCards } from './components/releaseCard.js?v=20260407';
 import { initSearch } from './search.js';
 import { initTiltEffect } from './tilt-effect.js';
 import { initAuthStatus } from './auth-status.js?v=20260404';

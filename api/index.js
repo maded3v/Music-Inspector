@@ -111,6 +111,7 @@ app.post('/api/admin/reviews/:id/approve', adminRoutes.approveReview);
 app.post('/api/admin/reviews/:id/reject', adminRoutes.rejectReview);
 app.delete('/api/admin/reviews/:id', adminRoutes.deleteReview);
 app.post('/api/admin/promote', adminRoutes.promoteToAdmin);
+app.post('/api/admin/demote', adminRoutes.demoteAdmin);
 app.get('/api/admin/users', adminRoutes.getAllUsers);
 app.patch('/api/admin/users/:id/name', adminRoutes.updateUserName);
 app.delete('/api/admin/users/:id/avatar', adminRoutes.removeUserAvatar);

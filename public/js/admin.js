@@ -8,6 +8,7 @@ let currentRejectType = 'track'; // 'track' or 'review'
 let allTracksCache = []; // Cache for search filtering
 let allUsersCache = []; // Cache for users filtering
 let currentEditTrackId = null;
+const PROTECTED_SUPER_ADMIN_EMAIL = 'quwewe@gmail.com';
 
 async function resolveAdminCsrfToken() {
   const cookieToken = getCsrfToken();
@@ -431,19 +432,28 @@ function renderUsersList(users) {
     const banBadge = user.is_banned
       ? `<span class="user-badge banned">Забанен</span>`
       : '<span class="user-badge active">Активен</span>';
+    const avatarPath = resolveMediaUrl(user.avatar) || 'svg/person.png';
+    const normalizedEmail = String(user.email || '').toLowerCase();
+    const canDemoteAdmin = user.role === 'admin' && normalizedEmail !== PROTECTED_SUPER_ADMIN_EMAIL;
 
     return `
       <div class="user-row" data-id="${user.id}">
         <div class="user-main">
-          <div class="user-name">${user.name || 'Без имени'} (${roleLabel})</div>
-          <div class="user-meta">${user.email || 'N/A'} · Релизов: ${user.release_count || 0} · Отзывов: ${user.review_count || 0} · С ${joined}</div>
-          ${banBadge}
+          <div class="user-head">
+            <img src="${avatarPath}" class="user-avatar-mini" alt="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='svg/person.png';">
+            <div>
+              <div class="user-name">${user.name || 'Без имени'} (${roleLabel})</div>
+              <div class="user-meta">${user.email || 'N/A'} · Релизов: ${user.release_count || 0} · Отзывов: ${user.review_count || 0} · С ${joined}</div>
+              ${banBadge}
+            </div>
+          </div>
         </div>
         <div class="user-actions">
           <button class="btn-neutral" onclick="renameUser(${user.id}, '${escapeJsString(user.name || '')}')">Переименовать</button>
           <button class="btn-neutral" onclick="uploadUserAvatarFile(${user.id})">Загрузить аватар</button>
           <button class="btn-neutral" onclick="updateUserAvatar(${user.id}, '${escapeJsString(user.avatar || '')}')">Изм. аватар</button>
           <button class="btn-neutral" onclick="removeUserAvatar(${user.id})">Удалить аватар</button>
+          ${canDemoteAdmin ? `<button class="btn-neutral btn-warn" onclick="demoteAdminByUser('${escapeJsString(user.email || '')}')">Снять админку</button>` : ''}
           ${user.is_banned
             ? `<button class="btn-neutral btn-ok" onclick="unbanUser(${user.id})">Разбанить</button>`
             : `<button class="btn-neutral btn-warn" onclick="banUser(${user.id})">Забанить</button>`}
@@ -586,6 +596,30 @@ window.unbanUser = async function(userId) {
     loadUsers();
   } catch (error) {
     console.error('Error unbanning user:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+};
+
+window.demoteAdminByUser = async function(email) {
+  if (!email) {
+    return;
+  }
+
+  if (!confirm(`Снять админку у ${email}?`)) {
+    return;
+  }
+
+  try {
+    await adminRequest('/api/admin/demote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    }, 'Failed to demote admin');
+
+    alert('Админка снята');
+    loadUsers();
+  } catch (error) {
+    console.error('Error demoting admin:', error);
     alert(`Ошибка: ${error.message}`);
   }
 };
@@ -880,6 +914,33 @@ function initTestDataForms() {
         promoteForm.reset();
       } catch (error) {
         console.error('Error promoting user:', error);
+        resultDiv.innerHTML = `<p style="color: #f44336;">✗ Ошибка: ${error.message}</p>`;
+      }
+    });
+  }
+
+  // Admin Demotion Form
+  const demoteForm = document.getElementById('demote-admin-form');
+  if (demoteForm) {
+    demoteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('demote-email').value.trim();
+      const resultDiv = document.getElementById('demote-result');
+      resultDiv.innerHTML = '<p style="color: #ff9800;">Снятие...</p>';
+
+      try {
+        const data = await adminRequest('/api/admin/demote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        }, 'Failed to demote admin');
+
+        resultDiv.innerHTML = `<p style="color: #4CAF50;">✓ ${data.message}</p>`;
+        demoteForm.reset();
+        loadUsers();
+      } catch (error) {
+        console.error('Error demoting admin:', error);
         resultDiv.innerHTML = `<p style="color: #f44336;">✗ Ошибка: ${error.message}</p>`;
       }
     });

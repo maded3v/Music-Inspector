@@ -42,7 +42,7 @@
       <!-- Release Header Block -->
       <div class="release-header-block">
         <div class="release-cover-large">
-          <img id="release-cover" src="svg/album.png" alt="Обложка релиза" onerror="this.onerror=null; this.src='svg/album.png';">
+          <img id="release-cover" src="svg/album.png" alt="Обложка релиза" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='svg/album.png';">
         </div>
         <div class="release-header-info">
           <div class="release-ratings-badge">
@@ -58,7 +58,7 @@
           <h1 id="release-title" class="release-title-large">Загрузка...</h1>
           <div class="release-artist-section">
             <a id="artist-link" href="#" class="artist-link">
-              <img id="artist-avatar" src="svg/person.png" alt="Аватар исполнителя" class="artist-avatar" onerror="this.onerror=null; this.src='svg/person.png';">
+              <img id="artist-avatar" src="svg/person.png" alt="Аватар исполнителя" class="artist-avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='svg/person.png';">
               <span id="artist-name" class="artist-name">Загрузка...</span>
             </a>
           </div>
@@ -142,7 +142,7 @@
 
   <script src="js/nav-mobile.js" defer></script>
   <script type="module">
-    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveMediaUrl } from './js/api.js?v=20260404';
+    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveMediaUrl } from './js/api.js?v=20260406';
     import { initAuth } from './js/auth-refactored.js';
     import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './js/modal.js';
 
