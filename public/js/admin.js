@@ -1,4 +1,4 @@
-import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260412';
+import { getCurrentUser, withApiUrl, getCsrfToken, resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260414';
 import { initGlobalSearch } from './search.js';
 
 let currentUser = null;
@@ -61,16 +61,20 @@ async function adminRequest(path, options = {}, fallbackMessage = 'Request faile
   return payload;
 }
 
-async function uploadImageFile(file) {
+async function uploadImageFile(file, kind = 'cover') {
   const formData = new FormData();
-  formData.append('cover', file);
+  const isAvatar = kind === 'avatar';
+  formData.append(isAvatar ? 'avatar' : 'cover', file);
 
-  const data = await adminRequest('/api/upload/cover', {
+  const data = await adminRequest(isAvatar ? '/api/upload/avatar' : '/api/upload/cover', {
     method: 'POST',
     body: formData
   }, 'Failed to upload image');
 
-  const path = data.imagePath || data.coverPath || data.avatarPath || '';
+  const path = isAvatar
+    ? (data.avatarPath || data.imagePath || data.coverPath || '')
+    : (data.imagePath || data.coverPath || data.avatarPath || '');
+
   if (!path) {
     throw new Error('Upload succeeded but image path is empty');
   }
@@ -324,7 +328,7 @@ function initEditModal() {
           uploadCoverStatus.textContent = 'Загрузка...';
         }
 
-        const uploadedPath = await uploadImageFile(file);
+        const uploadedPath = await uploadImageFile(file, 'cover');
         document.getElementById('edit-cover').value = uploadedPath;
 
         if (uploadCoverStatus) {
@@ -543,7 +547,7 @@ window.uploadUserAvatarFile = async function(userId) {
     }
 
     try {
-      const uploadedPath = await uploadImageFile(file);
+      const uploadedPath = await uploadImageFile(file, 'avatar');
       await adminRequest(`/api/admin/users/${userId}/avatar`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

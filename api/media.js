@@ -1,28 +1,64 @@
 const BLOB_HOST_SUFFIX = '.public.blob.vercel-storage.com';
 const MEDIA_FETCH_TIMEOUT_MS = 10000;
 
-function isAllowedBlobUrl(urlString) {
-  try {
-    const parsed = new URL(urlString);
-    const host = parsed.hostname.toLowerCase();
-
-    if (parsed.protocol !== 'https:') {
-      return false;
-    }
-
-    if (!(host === 'public.blob.vercel-storage.com' || host.endsWith(BLOB_HOST_SUFFIX))) {
-      return false;
-    }
-
-    return parsed.pathname.startsWith('/uploads/');
-  } catch {
+function isBlobStorageHost(parsedUrl) {
+  if (!parsedUrl) {
     return false;
+  }
+
+  const host = parsedUrl.hostname.toLowerCase();
+  if (parsedUrl.protocol !== 'https:') {
+    return false;
+  }
+
+  return host === 'public.blob.vercel-storage.com' || host.endsWith(BLOB_HOST_SUFFIX);
+}
+
+function parseUrlLenient(urlString) {
+  try {
+    return new URL(String(urlString || '').trim());
+  } catch {
+    try {
+      return new URL(String(urlString || '').trim(), 'https://placeholder.local');
+    } catch {
+      return null;
+    }
   }
 }
 
+function extractBlobSourceUrl(rawValue) {
+  let current = typeof rawValue === 'string' ? rawValue.trim() : '';
+
+  for (let depth = 0; depth < 4 && current; depth += 1) {
+    const parsed = parseUrlLenient(current);
+    if (!parsed) {
+      return '';
+    }
+
+    if (isBlobStorageHost(parsed)) {
+      if (!parsed.pathname || parsed.pathname === '/') {
+        return '';
+      }
+
+      return parsed.toString();
+    }
+
+    const nestedUrl = parsed.searchParams.get('url');
+    const isMediaProxyPath = parsed.pathname === '/api/media' || parsed.pathname.endsWith('/api/media');
+    if (isMediaProxyPath && nestedUrl) {
+      current = nestedUrl.trim();
+      continue;
+    }
+
+    return '';
+  }
+
+  return '';
+}
+
 exports.proxyBlobMedia = async (req, res) => {
-  const sourceUrl = typeof req.query.url === 'string' ? req.query.url.trim() : '';
-  if (!sourceUrl || !isAllowedBlobUrl(sourceUrl)) {
+  const sourceUrl = extractBlobSourceUrl(req.query.url);
+  if (!sourceUrl) {
     return res.status(400).json({ error: 'Invalid media URL' });
   }
 
