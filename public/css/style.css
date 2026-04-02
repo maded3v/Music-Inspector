@@ -1096,6 +1096,7 @@ text-decoration: none;
 }
 
 .releases-search-section {
+  display: none;
   margin-bottom: 12px;
 }
 
@@ -1252,6 +1253,16 @@ text-decoration: none;
 @media (max-width: 780px) {
   .releases-page {
     --releases-columns: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .releases-search-section {
+    display: block;
+  }
+
+  .home-page .monthly-releases-grid > *:nth-child(n + 4) {
+    display: none;
   }
 }
 

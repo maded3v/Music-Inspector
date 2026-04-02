@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     releasesContainer.appendChild(releasesSection);
     
     try {
-      const monthlyReleases = window.matchMedia('(max-width: 900px)').matches
+      const monthlyReleases = window.matchMedia('(max-width: 768px)').matches
         ? topReleases.slice(0, 3)
         : topReleases;
 
