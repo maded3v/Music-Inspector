@@ -1,4 +1,4 @@
-import { resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260411';
+import { resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260412';
 
 function trimText(text, maxLength = 220) {
   if (text.length <= maxLength) return text;

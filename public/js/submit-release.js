@@ -1,4 +1,4 @@
-import { getCurrentUser, searchArtists, createArtist, uploadCover, uploadArtistImage, addReview, getTrack, resolveAvatarUrl } from './api.js?v=20260411';
+import { getCurrentUser, searchArtists, createArtist, uploadCover, uploadArtistImage, addReview, getTrack, resolveAvatarUrl } from './api.js?v=20260412';
 import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './modal.js';
 import { initGlobalSearch } from './search.js';
 
@@ -401,7 +401,7 @@ function initForm() {
       };
 
       // Import createTrack function
-      const { createTrack } = await import('./api.js?v=20260411');
+      const { createTrack } = await import('./api.js?v=20260412');
       const result = await createTrack(formData);
 
       // Create review for the track

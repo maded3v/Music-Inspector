@@ -49,6 +49,7 @@ const trackRoutes = require('./tracks');
 const reviewRoutes = require('./reviews');
 const adminRoutes = require('./admin');
 const artistRoutes = require('./artists');
+const mediaRoutes = require('./media');
 const { getCurrentUser } = require('./middleware');
 
 // Auth routes
@@ -90,6 +91,7 @@ const uploadRoutes = require('./upload');
 app.post('/api/upload/cover', uploadRoutes.uploadCover);
 app.post('/api/upload/artist', uploadRoutes.uploadArtistImage);
 app.post('/api/upload/avatar', uploadRoutes.uploadAvatar);
+app.get('/api/media', mediaRoutes.proxyBlobMedia);
 
 // User routes
 const userRoutes = require('./users');

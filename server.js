@@ -53,6 +53,7 @@ const reviewRoutes = require('./api/reviews');
 const adminRoutes = require('./api/admin');
 const artistRoutes = require('./api/artists');
 const uploadRoutes = require('./api/upload');
+const mediaRoutes = require('./api/media');
 const { getCurrentUser } = require('./api/middleware');
 
 // API routes (must be before static files)
@@ -89,6 +90,7 @@ app.put('/api/artists/:id', artistRoutes.updateArtist);
 app.post('/api/upload/cover', uploadRoutes.uploadCover);
 app.post('/api/upload/artist', uploadRoutes.uploadArtistImage);
 app.post('/api/upload/avatar', uploadRoutes.uploadAvatar);
+app.get('/api/media', mediaRoutes.proxyBlobMedia);
 
 // User routes
 const userRoutes = require('./api/users');

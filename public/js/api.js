@@ -1,4 +1,5 @@
 const DEFAULT_RENDER_API_BASE = 'https://music-inspector.onrender.com';
+const BLOB_MEDIA_PROXY_PATH = '/api/media';
 
 function isAllowedApiOverride(urlString) {
   try {
@@ -73,6 +74,33 @@ cleanupLegacyCache();
 
 export function withApiUrl(path) {
   return `${API_BASE}${path}`;
+}
+
+function isVercelBlobUrl(urlString) {
+  try {
+    const parsed = new URL(urlString, window.location.origin);
+    const host = parsed.hostname.toLowerCase();
+    return host === 'public.blob.vercel-storage.com' || host.endsWith('.public.blob.vercel-storage.com');
+  } catch {
+    return false;
+  }
+}
+
+function shouldProxyBlobMedia() {
+  const host = window.location.hostname.toLowerCase();
+  if (host.endsWith('vercel.app') || host.endsWith('vercel.com')) {
+    return true;
+  }
+
+  try {
+    return window.localStorage.getItem('MI_FORCE_MEDIA_PROXY') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function toBlobProxyUrl(urlString) {
+  return withApiUrl(`${BLOB_MEDIA_PROXY_PATH}?url=${encodeURIComponent(urlString)}`);
 }
 
 function isAbsoluteMediaUrl(value) {
@@ -170,24 +198,31 @@ export function resolveMediaUrl(path) {
   }
 
   if (isAbsoluteMediaUrl(value)) {
+    let absoluteUrl = value;
+
     if (value.startsWith('http://') || value.startsWith('https://')) {
       try {
         const parsed = new URL(value);
         const rewrittenPath = rewriteLegacyUploadPrefix(parsed.pathname);
         if (rewrittenPath !== parsed.pathname) {
           parsed.pathname = rewrittenPath;
-          return parsed.toString();
         }
+
+        absoluteUrl = parsed.toString();
       } catch {
         // Ignore URL parsing errors and fallback to original value
       }
     }
 
-    if (value.includes('api.dicebear.com') && value.includes('/svg')) {
-      return value.replace('/svg', '/png');
+    if (isVercelBlobUrl(absoluteUrl) && shouldProxyBlobMedia()) {
+      return toBlobProxyUrl(absoluteUrl);
     }
 
-    return value;
+    if (absoluteUrl.includes('api.dicebear.com') && absoluteUrl.includes('/svg')) {
+      return absoluteUrl.replace('/svg', '/png');
+    }
+
+    return absoluteUrl;
   }
 
   if (
