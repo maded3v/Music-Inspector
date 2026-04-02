@@ -65,7 +65,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     releasesContainer.appendChild(releasesSection);
     
     try {
-      renderMonthlyReleases(topReleases, releasesSection);
+      const monthlyReleases = window.matchMedia('(max-width: 900px)').matches
+        ? topReleases.slice(0, 3)
+        : topReleases;
+
+      renderMonthlyReleases(monthlyReleases, releasesSection);
 
       // Initialize tilt effect after cards are rendered
       requestAnimationFrame(() => {
@@ -98,9 +102,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const trackWrapper = document.querySelector(".last-added-tracks");
   const prevBtn = document.querySelector(".but-prev-last-added-tracks");
   const nextBtn = document.querySelector(".but-next-last-added-tracks");
-  const wrapper = document.querySelector(".last-added-tracks-wrapper");
 
-  if (trackWrapper && prevBtn && nextBtn && wrapper) {
+  if (trackWrapper && prevBtn && nextBtn) {
     const getStep = () => {
       const firstCard = trackWrapper.querySelector('.track-card-link, .track-card');
       if (!firstCard) {
@@ -113,13 +116,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const getMaxOffset = () => {
-      const raw = wrapper.scrollWidth - wrapper.clientWidth;
+      const raw = trackWrapper.scrollWidth - trackWrapper.clientWidth;
       return Math.max(0, Math.ceil(raw));
     };
 
     const updateCarousel = () => {
       const maxOffset = getMaxOffset();
-      const currentOffset = wrapper.scrollLeft;
+      const currentOffset = trackWrapper.scrollLeft;
 
       const atStart = currentOffset <= 0;
       const atEnd = currentOffset >= maxOffset - 1;
@@ -131,8 +134,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const scrollByStep = (direction) => {
-      const target = Math.max(0, Math.min(getMaxOffset(), wrapper.scrollLeft + getStep() * direction));
-      wrapper.scrollTo({ left: target, behavior: 'smooth' });
+      const target = Math.max(0, Math.min(getMaxOffset(), trackWrapper.scrollLeft + getStep() * direction));
+      trackWrapper.scrollTo({ left: target, behavior: 'smooth' });
     };
 
     nextBtn.addEventListener('click', () => {
@@ -145,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateCarousel();
     });
 
-    wrapper.addEventListener('scroll', updateCarousel, { passive: true });
+    trackWrapper.addEventListener('scroll', updateCarousel, { passive: true });
 
     window.addEventListener('resize', updateCarousel, { passive: true });
     window.addEventListener('load', updateCarousel, { passive: true });

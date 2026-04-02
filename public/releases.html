@@ -52,7 +52,7 @@
       >
     </div>
     <div class="sort-section">
-      <button class="sort-btn" data-sort="people-rating" data-label="Рейтинг Пользовательский">Рейтинг Пользовательский</button>
+      <button class="sort-btn" data-sort="people-rating" data-label="Рейтинг Пользовательский" data-mobile-label="Польз. рейтинг">Рейтинг Пользовательский</button>
       <button class="sort-btn" data-sort="mi-rating" data-label="Рейтинг MI">Рейтинг MI</button>
       <button class="sort-btn" data-sort="date" data-label="Дата">Дата</button>
       <button class="sort-btn" data-sort="alphabet" data-label="А-Я">А-Я</button>
@@ -208,10 +208,14 @@ function sortReleases(releases, sortBy, order) {
 }
 
 function updateSortButtonState() {
+  const isCompactMobile = window.innerWidth <= 560;
+
   document.querySelectorAll('.sort-btn').forEach((btn) => {
     const isActive = btn.dataset.sort === currentSort;
     btn.classList.toggle('is-active', isActive);
-    const baseLabel = btn.dataset.label || btn.textContent.replace(/\s[↑↓]$/, '');
+    const fullLabel = btn.dataset.label || btn.textContent.replace(/\s[↑↓]$/, '');
+    const compactLabel = btn.dataset.mobileLabel || fullLabel;
+    const baseLabel = isCompactMobile ? compactLabel : fullLabel;
     const orderLabel = isActive ? (currentOrder === 'asc' ? ' ↑' : ' ↓') : '';
     btn.textContent = baseLabel + orderLabel;
   });
@@ -235,6 +239,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   updateSortButtonState();
   renderReleases(allReleases);
+
+  window.addEventListener('resize', updateSortButtonState, { passive: true });
 
   if (navSearchInput) {
     navSearchInput.addEventListener('input', () => {
