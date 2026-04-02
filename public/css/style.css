@@ -2925,11 +2925,18 @@ text-decoration: none;
 
   .nav-bar.nav-mobile-ready .name-logo {
     font-size: 0;
+    line-height: 1;
+    margin-left: 0;
   }
 
   .nav-bar.nav-mobile-ready .name-logo::after {
-    content: "MI";
-    font-size: 1.35rem;
+    content: "MI Music Inspector";
+    display: block;
+    max-width: calc(100vw - 130px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1rem;
     color: #e6e6e6;
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -3036,8 +3043,6 @@ text-decoration: none;
     padding-right: 0;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    touch-action: pan-x;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -3047,9 +3052,10 @@ text-decoration: none;
   }
 
   .home-page .last-added-tracks {
+    display: inline-flex;
     padding: 0 16px 6px 14px;
-    width: max-content;
-    min-width: 100%;
+    width: auto;
+    min-width: max-content;
     transition: none;
   }
 
@@ -3145,10 +3151,10 @@ text-decoration: none;
   }
 
   .releases-page .main-content {
-    width: calc(100% - 24px);
+    width: calc(100% - 8px);
     max-width: 680px;
     margin: 12px auto 20px;
-    padding: 16px;
+    padding: 14px 12px;
   }
 
   .releases-headline,

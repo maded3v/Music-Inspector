@@ -101,9 +101,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wrapper = document.querySelector(".last-added-tracks-wrapper");
 
   if (trackWrapper && prevBtn && nextBtn && wrapper) {
-    const MOBILE_BREAKPOINT = 900;
-    let currentOffset = 0;
-
     const getStep = () => {
       const firstCard = trackWrapper.querySelector('.track-card-link, .track-card');
       if (!firstCard) {
@@ -115,27 +112,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       return cardWidth + gap;
     };
 
-    const isMobile = () => window.innerWidth <= MOBILE_BREAKPOINT;
-
-    const getDesktopMaxOffset = () => {
-      const raw = trackWrapper.scrollWidth - wrapper.clientWidth;
-      return Math.max(0, Math.ceil(raw));
-    };
-
-    const getMobileMaxOffset = () => {
+    const getMaxOffset = () => {
       const raw = wrapper.scrollWidth - wrapper.clientWidth;
       return Math.max(0, Math.ceil(raw));
     };
 
-    const updateDesktopCarousel = () => {
-      const maxOffset = getDesktopMaxOffset();
-
-      if (wrapper.scrollLeft !== 0) {
-        wrapper.scrollLeft = 0;
-      }
-
-      currentOffset = Math.min(Math.max(0, currentOffset), maxOffset);
-      trackWrapper.style.transform = `translate3d(-${currentOffset}px, 0, 0)`;
+    const updateCarousel = () => {
+      const maxOffset = getMaxOffset();
+      const currentOffset = wrapper.scrollLeft;
 
       const atStart = currentOffset <= 0;
       const atEnd = currentOffset >= maxOffset - 1;
@@ -146,60 +130,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       nextBtn.disabled = atEnd;
     };
 
-    const updateMobileCarousel = () => {
-      trackWrapper.style.transform = 'translate3d(0, 0, 0)';
-      currentOffset = 0;
-
-      const maxOffset = getMobileMaxOffset();
-      const mobileOffset = wrapper.scrollLeft;
-
-      const atStart = mobileOffset <= 0;
-      const atEnd = mobileOffset >= maxOffset - 1;
-
-      prevBtn.classList.toggle('is-disabled', atStart);
-      nextBtn.classList.toggle('is-disabled', atEnd);
-      prevBtn.disabled = atStart;
-      nextBtn.disabled = atEnd;
-    };
-
-    const updateCarousel = () => {
-      if (isMobile()) {
-        updateMobileCarousel();
-        return;
-      }
-
-      updateDesktopCarousel();
+    const scrollByStep = (direction) => {
+      const target = Math.max(0, Math.min(getMaxOffset(), wrapper.scrollLeft + getStep() * direction));
+      wrapper.scrollTo({ left: target, behavior: 'smooth' });
     };
 
     nextBtn.addEventListener('click', () => {
-      if (isMobile()) {
-        const nextOffset = Math.min(getMobileMaxOffset(), wrapper.scrollLeft + getStep());
-        wrapper.scrollTo({ left: nextOffset, behavior: 'smooth' });
-        updateMobileCarousel();
-        return;
-      }
-
-      currentOffset += getStep();
+      scrollByStep(1);
       updateCarousel();
     });
 
     prevBtn.addEventListener('click', () => {
-      if (isMobile()) {
-        const prevOffset = Math.max(0, wrapper.scrollLeft - getStep());
-        wrapper.scrollTo({ left: prevOffset, behavior: 'smooth' });
-        updateMobileCarousel();
-        return;
-      }
-
-      currentOffset -= getStep();
+      scrollByStep(-1);
       updateCarousel();
     });
 
-    wrapper.addEventListener('scroll', () => {
-      if (isMobile()) {
-        updateMobileCarousel();
-      }
-    }, { passive: true });
+    wrapper.addEventListener('scroll', updateCarousel, { passive: true });
 
     window.addEventListener('resize', updateCarousel, { passive: true });
     window.addEventListener('load', updateCarousel, { passive: true });
