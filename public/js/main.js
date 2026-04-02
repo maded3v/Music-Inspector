@@ -101,8 +101,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const wrapper = document.querySelector(".last-added-tracks-wrapper");
 
   if (trackWrapper && prevBtn && nextBtn && wrapper) {
-    let currentOffset = 0;
-
     const getStep = () => {
       const firstCard = trackWrapper.querySelector('.track-card-link, .track-card');
       if (!firstCard) {
@@ -114,15 +112,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       return cardWidth + gap;
     };
 
-    const getMaxOffset = () => {
-      const raw = trackWrapper.scrollWidth - wrapper.clientWidth;
+    const getMaxScrollLeft = () => {
+      const raw = wrapper.scrollWidth - wrapper.clientWidth;
       return Math.max(0, Math.ceil(raw));
     };
 
     const updateCarousel = () => {
-      const maxOffset = getMaxOffset();
-      currentOffset = Math.min(Math.max(0, currentOffset), maxOffset);
-      trackWrapper.style.transform = `translate3d(-${currentOffset}px, 0, 0)`;
+      const maxOffset = getMaxScrollLeft();
+      const currentOffset = wrapper.scrollLeft;
 
       const atStart = currentOffset <= 0;
       const atEnd = currentOffset >= maxOffset - 1;
@@ -134,15 +131,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     nextBtn.addEventListener('click', () => {
-      currentOffset += getStep();
+      const nextOffset = Math.min(getMaxScrollLeft(), wrapper.scrollLeft + getStep());
+      wrapper.scrollTo({ left: nextOffset, behavior: 'smooth' });
       updateCarousel();
     });
 
     prevBtn.addEventListener('click', () => {
-      currentOffset -= getStep();
+      const prevOffset = Math.max(0, wrapper.scrollLeft - getStep());
+      wrapper.scrollTo({ left: prevOffset, behavior: 'smooth' });
       updateCarousel();
     });
 
+    wrapper.addEventListener('scroll', updateCarousel, { passive: true });
     window.addEventListener('resize', updateCarousel, { passive: true });
     window.addEventListener('load', updateCarousel, { passive: true });
     updateCarousel();
