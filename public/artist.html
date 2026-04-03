@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Inspector - Исполнитель</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260418">
 </head>
 <body>
   <div class="nav-bar">
@@ -67,11 +67,22 @@
         </div>
       </div>
 
+      <div class="artist-highlights">
+        <div class="artist-block">
+          <h3>Лучший релиз</h3>
+          <div id="artist-best-release-content"></div>
+        </div>
+        <div class="artist-block">
+          <h3>Рецензии</h3>
+          <div id="artist-reviews-summary" class="artist-reviews-summary"></div>
+        </div>
+      </div>
+
       <!-- Releases Section -->
       <div class="artist-releases-section">
-        <h2>Релизы</h2>
-        <div id="releases-grid" class="releases-grid">
-          <!-- Releases will be loaded here -->
+        <h2>Релизы по годам</h2>
+        <div id="artist-releases-timeline" class="artist-releases-timeline">
+          <!-- Timeline will be loaded here -->
         </div>
         <div id="no-releases" class="no-releases" style="display: none;">
           У этого исполнителя пока нет релизов
@@ -82,9 +93,9 @@
 
   <script src="js/nav-mobile.js?v=20260408" defer></script>
   <script type="module">
-    import { getArtistWithStats, resolveArtistUrl } from './js/api.js?v=20260412';
-    import { renderReleaseCardAll } from './js/releases.js?v=20260412';
-    import { initAuthStatus } from './js/auth-status.js?v=20260412';
+    import { getArtistWithStats, resolveArtistUrl } from './js/api.js?v=20260418';
+    import { renderReleaseCardAll } from './js/releases.js?v=20260418';
+    import { initAuthStatus } from './js/auth-status.js?v=20260418';
 
     const urlParams = new URLSearchParams(window.location.search);
     const artistId = urlParams.get('id');
@@ -95,6 +106,199 @@
 
     // Initialize auth status
     await initAuthStatus();
+
+    function toSafeNumber(value) {
+      const num = Number(value);
+      return Number.isFinite(num) ? num : null;
+    }
+
+    function getReleaseTimestamp(release) {
+      const source = release?.release_date || release?.releaseDate || release?.created_at || release?.createdAt;
+      const date = new Date(source);
+      return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+    }
+
+    function getReleaseYearLabel(release) {
+      const timestamp = getReleaseTimestamp(release);
+      if (!timestamp) {
+        return 'Без даты';
+      }
+      return String(new Date(timestamp).getFullYear());
+    }
+
+    function pluralizeReleases(count) {
+      const n = Math.abs(Number(count) || 0);
+      const mod10 = n % 10;
+      const mod100 = n % 100;
+      if (mod10 === 1 && mod100 !== 11) return 'релиз';
+      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'релиза';
+      return 'релизов';
+    }
+
+    function applyArtistAccent(seedValue) {
+      const page = document.querySelector('.artist-page');
+      if (!page) return;
+
+      const seed = String(seedValue || 'artist');
+      let hash = 0;
+      for (let i = 0; i < seed.length; i += 1) {
+        hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+      }
+
+      const base = Math.abs(hash);
+      const r = 74 + (base % 68);
+      const g = 82 + ((base >> 3) % 64);
+      const b = 98 + ((base >> 5) % 72);
+      page.style.setProperty('--artist-accent-rgb', `${r}, ${g}, ${b}`);
+    }
+
+    function pickBestRelease(tracks) {
+      if (!Array.isArray(tracks) || tracks.length === 0) {
+        return null;
+      }
+
+      const scored = tracks
+        .map((track) => {
+          const people = toSafeNumber(track.peopleScore);
+          const mi = toSafeNumber(track.miScore);
+
+          let total = null;
+          if (people !== null && mi !== null) {
+            total = (people + mi) / 2;
+          } else if (people !== null) {
+            total = people;
+          } else if (mi !== null) {
+            total = mi;
+          }
+
+          return {
+            ...track,
+            __score: total,
+            __reviews: Number(track.reviewCount || 0)
+          };
+        })
+        .filter((track) => track.__score !== null);
+
+      if (scored.length === 0) {
+        return tracks[0] || null;
+      }
+
+      scored.sort((a, b) => {
+        if (b.__score !== a.__score) return b.__score - a.__score;
+        if (b.__reviews !== a.__reviews) return b.__reviews - a.__reviews;
+        return getReleaseTimestamp(b) - getReleaseTimestamp(a);
+      });
+
+      return scored[0];
+    }
+
+    function renderBestReleaseBlock(tracks) {
+      const container = document.getElementById('artist-best-release-content');
+      if (!container) return;
+
+      if (!Array.isArray(tracks) || tracks.length === 0) {
+        container.innerHTML = '<div class="no-releases" style="padding: 12px 0;">Нет релизов для оценки</div>';
+        return;
+      }
+
+      const best = pickBestRelease(tracks);
+      if (!best) {
+        container.innerHTML = '<div class="no-releases" style="padding: 12px 0;">Нет релизов для оценки</div>';
+        return;
+      }
+
+      const people = toSafeNumber(best.peopleScore);
+      const mi = toSafeNumber(best.miScore);
+      const total = toSafeNumber(best.__score);
+      const reviewsCount = Number(best.reviewCount || 0);
+
+      const chips = [
+        total !== null ? `<span class="artist-chip"><strong>${total.toFixed(1)}</strong> общий</span>` : '',
+        people !== null ? `<span class="artist-chip"><strong>${people.toFixed(1)}</strong> польз.</span>` : '',
+        mi !== null ? `<span class="artist-chip"><strong>${mi.toFixed(1)}</strong> MI</span>` : '',
+        `<span class="artist-chip"><strong>${reviewsCount}</strong> рецензий</span>`
+      ].filter(Boolean).join('');
+
+      container.innerHTML = `
+        <div class="artist-best-release-meta">${chips}</div>
+        <div class="artist-best-release-card">${renderReleaseCardAll(best)}</div>
+      `;
+    }
+
+    function renderReviewsSummary(stats) {
+      const container = document.getElementById('artist-reviews-summary');
+      if (!container) return;
+
+      const totalReviews = Number(stats?.reviewCount || 0);
+      const peopleReviews = Number(stats?.peopleReviewCount || 0);
+      const miReviews = Number(stats?.miReviewCount || 0);
+      const overall = toSafeNumber(stats?.overallRating);
+
+      container.innerHTML = `
+        <div class="artist-summary-item">
+          <div class="artist-summary-value">${totalReviews}</div>
+          <div class="artist-summary-label">Всего рецензий</div>
+        </div>
+        <div class="artist-summary-item">
+          <div class="artist-summary-value">${overall !== null ? overall.toFixed(1) : '—'}</div>
+          <div class="artist-summary-label">Средний балл</div>
+        </div>
+        <div class="artist-summary-item">
+          <div class="artist-summary-value">${peopleReviews}</div>
+          <div class="artist-summary-label">Пользовательские</div>
+        </div>
+        <div class="artist-summary-item">
+          <div class="artist-summary-value">${miReviews}</div>
+          <div class="artist-summary-label">MI рецензии</div>
+        </div>
+      `;
+    }
+
+    function renderReleaseTimeline(tracks) {
+      const timeline = document.getElementById('artist-releases-timeline');
+      if (!timeline) return;
+
+      if (!Array.isArray(tracks) || tracks.length === 0) {
+        timeline.innerHTML = '';
+        return;
+      }
+
+      const groups = new Map();
+      for (const track of tracks) {
+        const year = getReleaseYearLabel(track);
+        if (!groups.has(year)) {
+          groups.set(year, []);
+        }
+        groups.get(year).push(track);
+      }
+
+      const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
+        const aYear = Number(a[0]);
+        const bYear = Number(b[0]);
+        const aIsNumber = Number.isFinite(aYear);
+        const bIsNumber = Number.isFinite(bYear);
+
+        if (aIsNumber && bIsNumber) return bYear - aYear;
+        if (aIsNumber) return -1;
+        if (bIsNumber) return 1;
+        return 0;
+      });
+
+      timeline.innerHTML = sortedGroups.map(([year, releases]) => {
+        const sortedReleases = releases.slice().sort((a, b) => getReleaseTimestamp(b) - getReleaseTimestamp(a));
+        return `
+          <section class="artist-year-block">
+            <div class="artist-year-header">
+              <div class="artist-year-title">${year}</div>
+              <div class="artist-year-count">${sortedReleases.length} ${pluralizeReleases(sortedReleases.length)}</div>
+            </div>
+            <div class="releases-grid">
+              ${sortedReleases.map(renderReleaseCardAll).join('')}
+            </div>
+          </section>
+        `;
+      }).join('');
+    }
 
     // Load artist data
     async function loadArtist() {
@@ -109,6 +313,7 @@
         // Set artist name
         document.getElementById('artist-name').textContent = artist.name || 'Неизвестный исполнитель';
         document.title = `${artist.name} | Music Inspector`;
+        applyArtistAccent(`${artist.name || ''}|${artist.image_path || ''}|${artist.id || ''}`);
 
         // Set artist image
         let artistImage = artist.image_path || '';
@@ -137,16 +342,20 @@
         document.getElementById('mi-rating').textContent = formatScore(stats.miRating);
         document.getElementById('releases-count').textContent = stats.trackCount || 0;
         document.getElementById('reviews-count').textContent = stats.reviewCount || 0;
+        renderReviewsSummary(stats);
+        renderBestReleaseBlock(tracks || []);
 
         // Render releases
-        const releasesGrid = document.getElementById('releases-grid');
+        const releasesTimeline = document.getElementById('artist-releases-timeline');
         const noReleases = document.getElementById('no-releases');
         
         if (tracks && tracks.length > 0) {
-          releasesGrid.innerHTML = tracks.map(renderReleaseCardAll).join('');
+          renderReleaseTimeline(tracks);
+          releasesTimeline.style.display = 'flex';
           noReleases.style.display = 'none';
         } else {
-          releasesGrid.innerHTML = '';
+          releasesTimeline.innerHTML = '';
+          releasesTimeline.style.display = 'none';
           noReleases.style.display = 'block';
         }
       } catch (error) {
@@ -160,7 +369,11 @@
         
         document.getElementById('artist-name').textContent = 'Ошибка';
         document.getElementById('artist-bio').textContent = errorMessage;
-        document.getElementById('releases-grid').innerHTML = '';
+        const timeline = document.getElementById('artist-releases-timeline');
+        timeline.innerHTML = '';
+        timeline.style.display = 'none';
+        document.getElementById('artist-best-release-content').innerHTML = '<div class="no-releases" style="padding: 12px 0;">Не удалось загрузить</div>';
+        document.getElementById('artist-reviews-summary').innerHTML = '<div class="no-reviews" style="padding: 10px 0; grid-column: 1 / -1;">Не удалось загрузить</div>';
         document.getElementById('no-releases').style.display = 'block';
         document.getElementById('no-releases').textContent = errorMessage;
       }

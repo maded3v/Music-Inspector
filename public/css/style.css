@@ -484,7 +484,7 @@ text-decoration: none;
 .last-added-tracks-wrapper {
   width: 100%;
   overflow: hidden;
-  padding-right: 26px;
+  padding-right: 10px;
   box-sizing: border-box;
 }
 
@@ -492,7 +492,7 @@ text-decoration: none;
   display: flex;
   gap: 16px;
   padding-top: 12px;
-  padding-right: 36px;
+  padding-right: 18px;
   padding-bottom: 2px;
   overflow-x: hidden;
   overflow-y: hidden;
@@ -2738,6 +2738,26 @@ text-decoration: none;
   display: flex;
   flex-direction: column;
   gap: 40px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  --artist-accent-rgb: 138, 138, 138;
+}
+
+.artist-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(920px circle at 8% -8%, rgba(var(--artist-accent-rgb), 0.15), transparent 56%),
+    radial-gradient(720px circle at 100% 12%, rgba(var(--artist-accent-rgb), 0.09), transparent 60%);
+  z-index: 0;
+}
+
+.artist-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .artist-header {
@@ -2785,6 +2805,84 @@ text-decoration: none;
   margin-top: 10px;
 }
 
+.artist-highlights {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.1fr) minmax(250px, 0.9fr);
+  gap: 18px;
+}
+
+.artist-block {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow-s);
+}
+
+.artist-block h3 {
+  margin: 0 0 12px;
+  font-size: 1.12rem;
+  color: #e6e6e6;
+}
+
+.artist-best-release-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.artist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #3a3a3a;
+  background: #232323;
+  color: #d6d6d6;
+  font-size: 0.82rem;
+}
+
+.artist-chip strong {
+  color: #f0f0f0;
+}
+
+.artist-best-release-card {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.artist-best-release-card .track-card-link {
+  display: inline-flex;
+  width: auto;
+}
+
+.artist-reviews-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.artist-summary-item {
+  border: 1px solid #343434;
+  border-radius: 10px;
+  background: #232323;
+  padding: 10px 12px;
+}
+
+.artist-summary-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f0f0f0;
+}
+
+.artist-summary-label {
+  font-size: 0.78rem;
+  margin-top: 2px;
+  color: #9f9f9f;
+}
+
 .artist-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(140px, 1fr));
@@ -2818,23 +2916,23 @@ text-decoration: none;
 }
 
 .artist-stats .stat-item.stat-people {
-  border-color: #35558a;
-  background: linear-gradient(180deg, #1b2436 0%, #181f2b 100%);
+  border-color: #353535;
+  background: #1f1f1f;
 }
 
 .artist-stats .stat-item.stat-mi {
-  border-color: #b39a37;
-  background: linear-gradient(180deg, #2e2a19 0%, #242113 100%);
+  border-color: #353535;
+  background: #1f1f1f;
 }
 
 .artist-stats .stat-item.stat-releases {
-  border-color: #3e6f4d;
-  background: linear-gradient(180deg, #1a2a21 0%, #15211b 100%);
+  border-color: #353535;
+  background: #1f1f1f;
 }
 
 .artist-stats .stat-item.stat-reviews {
-  border-color: #6b476f;
-  background: linear-gradient(180deg, #2a1f30 0%, #201726 100%);
+  border-color: #353535;
+  background: #1f1f1f;
 }
 
 .artist-releases-section {
@@ -2864,6 +2962,48 @@ text-decoration: none;
   width: 100%;
 }
 
+.artist-releases-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.artist-year-block {
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: #1a1a1a;
+  padding: 14px;
+}
+
+.artist-year-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.artist-year-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e6e6e6;
+}
+
+.artist-year-count {
+  font-size: 0.82rem;
+  color: #a9a9a9;
+}
+
+.artist-year-block .releases-grid {
+  gap: 14px;
+}
+
+.artist-releases-section .track-card-link {
+  display: inline-flex;
+  width: auto;
+  justify-self: start;
+}
+
 .no-releases {
   text-align: center;
   color: #969696;
@@ -2872,10 +3012,17 @@ text-decoration: none;
 }
 
 @media (max-width: 768px) {
+  .artist-page {
+    gap: 24px;
+    padding: 22px 12px;
+    border-radius: 14px;
+  }
+
   .artist-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    gap: 18px;
   }
 
   .artist-image-large {
@@ -2890,6 +3037,25 @@ text-decoration: none;
   .artist-stats {
     grid-template-columns: repeat(2, minmax(120px, 1fr));
     width: 100%;
+  }
+
+  .artist-highlights {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .artist-reviews-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .artist-year-header {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .artist-reviews-summary {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3059,7 +3225,7 @@ text-decoration: none;
 
   .home-page .last-added-tracks-wrapper {
     overflow: hidden;
-    padding-right: 0;
+    padding-right: 8px;
   }
 
   .home-page .last-added-tracks {
@@ -3071,7 +3237,8 @@ text-decoration: none;
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-snap-type: x proximity;
-    padding: 8px 14px 6px;
+    padding: 8px 14px 6px 14px;
+    padding-right: 22px;
     width: 100%;
     min-width: 0;
     transition: none;

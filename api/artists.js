@@ -263,7 +263,7 @@ exports.getArtistWithStats = [
        ORDER BY t.created_at DESC`,
       [id, artist.name]
     );
-    const tracks = tracksResult.rows;
+    let tracks = tracksResult.rows;
 
     // Calculate overall rating from all reviews of artist's tracks
     let overallRating = null;
@@ -271,6 +271,8 @@ exports.getArtistWithStats = [
     let peopleRating = null;
     let miRating = null;
     let reviewCount = 0;
+    let peopleReviewCount = 0;
+    let miReviewCount = 0;
 
     if (tracks.length > 0) {
       const trackIds = tracks.map(t => t.id);
@@ -282,14 +284,14 @@ exports.getArtistWithStats = [
       
       let reviewsQuery;
       if (statusColumnExists) {
-        reviewsQuery = `SELECT r.avg_score, r.user_id, COALESCE(r.is_mi_review, FALSE) AS is_mi_review
+        reviewsQuery = `SELECT r.track_id, r.avg_score, r.user_id, COALESCE(r.is_mi_review, FALSE) AS is_mi_review
                         FROM reviews r 
                         JOIN tracks t ON r.track_id = t.id
                         WHERE r.track_id IN (${placeholders}) 
                         AND t.status = 'approved'
                         AND (r.status = 'approved' OR r.status IS NULL)`;
       } else {
-        reviewsQuery = `SELECT r.avg_score, r.user_id, COALESCE(r.is_mi_review, FALSE) AS is_mi_review
+        reviewsQuery = `SELECT r.track_id, r.avg_score, r.user_id, COALESCE(r.is_mi_review, FALSE) AS is_mi_review
                         FROM reviews r 
                         JOIN tracks t ON r.track_id = t.id
                         WHERE r.track_id IN (${placeholders}) 
@@ -307,6 +309,8 @@ exports.getArtistWithStats = [
 
         const userReviews = reviews.filter(r => !r.is_mi_review);
         const miReviews = reviews.filter(r => r.is_mi_review);
+        peopleReviewCount = userReviews.length;
+        miReviewCount = miReviews.length;
 
         if (userReviews.length > 0) {
           const userTotal = userReviews.reduce((sum, r) => sum + parseFloat(r.avg_score), 0);
@@ -329,6 +333,64 @@ exports.getArtistWithStats = [
           }
         }
       }
+
+      const trackReviewBuckets = new Map();
+      for (const review of reviews) {
+        const trackId = Number(review.track_id);
+        if (!Number.isInteger(trackId)) {
+          continue;
+        }
+
+        if (!trackReviewBuckets.has(trackId)) {
+          trackReviewBuckets.set(trackId, {
+            peopleScores: [],
+            miScores: [],
+            count: 0
+          });
+        }
+
+        const bucket = trackReviewBuckets.get(trackId);
+        const score = Number.parseFloat(review.avg_score);
+        if (!Number.isFinite(score)) {
+          continue;
+        }
+
+        bucket.count += 1;
+        if (review.is_mi_review) {
+          bucket.miScores.push(score);
+        } else {
+          bucket.peopleScores.push(score);
+        }
+      }
+
+      tracks = tracks.map((track) => {
+        const bucket = trackReviewBuckets.get(Number(track.id)) || { peopleScores: [], miScores: [], count: 0 };
+
+        const peopleScore = bucket.peopleScores.length > 0
+          ? Math.round((bucket.peopleScores.reduce((sum, value) => sum + value, 0) / bucket.peopleScores.length) * 10) / 10
+          : null;
+
+        const miScore = bucket.miScores.length > 0
+          ? Math.round((bucket.miScores.reduce((sum, value) => sum + value, 0) / bucket.miScores.length) * 10) / 10
+          : null;
+
+        let totalRating = null;
+        if (peopleScore !== null && miScore !== null) {
+          totalRating = Math.round(((peopleScore + miScore) / 2) * 10) / 10;
+        } else if (peopleScore !== null) {
+          totalRating = peopleScore;
+        } else if (miScore !== null) {
+          totalRating = miScore;
+        }
+
+        return {
+          ...track,
+          peopleScore,
+          miScore,
+          totalRating,
+          reviewCount: bucket.count
+        };
+      });
     }
 
     res.json({
@@ -339,6 +401,8 @@ exports.getArtistWithStats = [
         myRating: myRating !== null ? Math.round(myRating * 10) / 10 : null,
         peopleRating: peopleRating !== null ? Math.round(peopleRating * 10) / 10 : null,
         miRating: miRating !== null ? Math.round(miRating * 10) / 10 : null,
+        peopleReviewCount,
+        miReviewCount,
         reviewCount,
         trackCount: tracks.length
       }

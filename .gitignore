@@ -13,3 +13,5 @@ db.env
 
 # Local assistant/project notes
 .agent/
+.agents/
+.skills/
