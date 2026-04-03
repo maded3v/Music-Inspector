@@ -104,6 +104,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const nextBtn = document.querySelector(".but-next-last-added-tracks");
 
   if (trackWrapper && prevBtn && nextBtn) {
+    const isMobileViewport = () => window.matchMedia('(max-width: 900px)').matches;
+    const MAX_PULL_OFFSET = 36;
+    const PULL_RESISTANCE = 0.35;
+
+    let touchStartX = 0;
+    let pullOffset = 0;
+
     const getStep = () => {
       const firstCard = trackWrapper.querySelector('.track-card-link, .track-card');
       if (!firstCard) {
@@ -133,6 +140,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       nextBtn.disabled = atEnd;
     };
 
+    const applyPullOffset = (offset) => {
+      pullOffset = offset;
+      if (offset === 0) {
+        trackWrapper.style.transform = '';
+        return;
+      }
+      trackWrapper.style.transform = `translateX(${offset}px)`;
+    };
+
+    const releasePullOffset = () => {
+      if (!pullOffset) return;
+      trackWrapper.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+      applyPullOffset(0);
+      window.setTimeout(() => {
+        trackWrapper.style.transition = '';
+      }, 240);
+    };
+
     const scrollByStep = (direction) => {
       const target = Math.max(0, Math.min(getMaxOffset(), trackWrapper.scrollLeft + getStep() * direction));
       trackWrapper.scrollTo({ left: target, behavior: 'smooth' });
@@ -149,6 +174,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     trackWrapper.addEventListener('scroll', updateCarousel, { passive: true });
+
+    trackWrapper.addEventListener('touchstart', (event) => {
+      if (!isMobileViewport() || !event.touches || event.touches.length !== 1) {
+        return;
+      }
+      touchStartX = event.touches[0].clientX;
+      trackWrapper.style.transition = '';
+    }, { passive: true });
+
+    trackWrapper.addEventListener('touchmove', (event) => {
+      if (!isMobileViewport() || !event.touches || event.touches.length !== 1) {
+        return;
+      }
+
+      const currentX = event.touches[0].clientX;
+      const deltaX = currentX - touchStartX;
+      const atStart = trackWrapper.scrollLeft <= 0;
+      const atEnd = trackWrapper.scrollLeft >= getMaxOffset() - 1;
+
+      const canPullRight = atStart && deltaX > 0;
+      const canPullLeft = atEnd && deltaX < 0;
+
+      if (canPullRight || canPullLeft) {
+        event.preventDefault();
+        const direction = canPullRight ? 1 : -1;
+        const offset = Math.min(MAX_PULL_OFFSET, Math.abs(deltaX) * PULL_RESISTANCE) * direction;
+        applyPullOffset(offset);
+      }
+    }, { passive: false });
+
+    trackWrapper.addEventListener('touchend', releasePullOffset, { passive: true });
+    trackWrapper.addEventListener('touchcancel', releasePullOffset, { passive: true });
 
     window.addEventListener('resize', updateCarousel, { passive: true });
     window.addEventListener('load', updateCarousel, { passive: true });
