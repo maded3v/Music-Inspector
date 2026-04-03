@@ -433,7 +433,7 @@ textarea {
   justify-content: space-between; /* название слева, кнопки справа */
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 0.75rem;
+  margin-bottom: 8px;
   margin-top: -0.75rem;
 }
 
@@ -491,7 +491,7 @@ text-decoration: none;
 .last-added-tracks {
   display: flex;
   gap: 16px;
-  padding-top: 12px;
+  padding-top: 4px;
   padding-right: 18px;
   padding-bottom: 2px;
   overflow-x: hidden;
@@ -3237,7 +3237,7 @@ text-decoration: none;
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-snap-type: x proximity;
-    padding: 8px 14px 6px 14px;
+    padding: 4px 14px 6px 14px;
     padding-right: 22px;
     width: 100%;
     min-width: 0;
