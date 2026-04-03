@@ -24,6 +24,36 @@
         gap: 10px;
         margin-bottom: 22px;
       }
+      .admin-back-link {
+        margin-left: 16px;
+        padding: 8px 14px;
+        border-radius: 12px;
+        border: 1px solid #3a3a3a;
+        background: linear-gradient(180deg, #2f2f2f 0%, #252525 100%);
+        color: #f0f0f0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+        transition: transform 0.2s ease, color 0.25s ease, background-color 0.25s ease, border-color 0.25s ease;
+      }
+      .admin-back-link:hover {
+        background: #e1e1e1;
+        color: #4f4f4f;
+        border-color: #969696;
+        transform: translateY(-1px);
+      }
+      .admin-back-link:active {
+        transform: translateY(0);
+      }
+      .admin-back-link svg {
+        width: 15px;
+        height: 15px;
+        fill: currentColor;
+      }
       .admin-nav a {
         padding: 8px 12px;
         text-decoration: none;
@@ -228,6 +258,11 @@
           width: 100%;
           justify-content: flex-start;
         }
+        .nav-bar.nav-mobile-ready .nav-mobile-panel .admin-back-link {
+          width: 100%;
+          justify-content: flex-start;
+          margin-left: 0;
+        }
       }
     </style>
 </head>
@@ -239,8 +274,11 @@
       </svg></div>
       <div class="name-logo">Music Inspector</div>
     </a>
-    <a href="index.html">
-      <div class="but-back">Назад</div>
+    <a href="index.html" class="admin-back-link" aria-label="Вернуться на главную">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M10.828 4.828a1 1 0 0 0-1.414-1.414l-8 8a1 1 0 0 0 0 1.414l8 8a1 1 0 1 0 1.414-1.414L4.414 13H22a1 1 0 1 0 0-2H4.414z"/>
+      </svg>
+      <span>Назад</span>
     </a>
   </div>
 
