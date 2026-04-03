@@ -433,8 +433,7 @@ textarea {
   justify-content: space-between; /* название слева, кнопки справа */
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 8px;
-  margin-top: -0.75rem;
+  margin: 0;
 }
 
 .nav-controls {
@@ -2738,26 +2737,7 @@ text-decoration: none;
   display: flex;
   flex-direction: column;
   gap: 40px;
-  position: relative;
-  overflow: hidden;
   border-radius: 18px;
-  --artist-accent-rgb: 138, 138, 138;
-}
-
-.artist-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(920px circle at 8% -8%, rgba(var(--artist-accent-rgb), 0.15), transparent 56%),
-    radial-gradient(720px circle at 100% 12%, rgba(var(--artist-accent-rgb), 0.09), transparent 60%);
-  z-index: 0;
-}
-
-.artist-page > * {
-  position: relative;
-  z-index: 1;
 }
 
 .artist-header {
@@ -2832,6 +2812,14 @@ text-decoration: none;
   margin-bottom: 12px;
 }
 
+.artist-best-block {
+  text-align: center;
+}
+
+.artist-best-block .artist-best-release-meta {
+  justify-content: center;
+}
+
 .artist-chip {
   display: inline-flex;
   align-items: center;
@@ -2850,7 +2838,7 @@ text-decoration: none;
 
 .artist-best-release-card {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .artist-best-release-card .track-card-link {
@@ -2963,39 +2951,33 @@ text-decoration: none;
 }
 
 .artist-releases-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.artist-year-block {
   border: 1px solid #333;
   border-radius: 12px;
   background: #1a1a1a;
   padding: 14px;
 }
 
-.artist-year-header {
+.artist-releases-stream {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.artist-year-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #e6e6e6;
-}
-
-.artist-year-count {
-  font-size: 0.82rem;
-  color: #a9a9a9;
-}
-
-.artist-year-block .releases-grid {
+  flex-wrap: wrap;
   gap: 14px;
+  align-items: flex-start;
+}
+
+.artist-stream-item {
+  position: relative;
+  flex: 0 0 auto;
+  padding-top: 20px;
+}
+
+.artist-stream-year {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #bcbcbc;
+  letter-spacing: 0.4px;
 }
 
 .artist-releases-section .track-card-link {
@@ -3048,8 +3030,12 @@ text-decoration: none;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .artist-year-header {
-    flex-wrap: wrap;
+  .artist-releases-stream {
+    gap: 12px;
+  }
+
+  .artist-stream-item {
+    padding-top: 18px;
   }
 }
 
@@ -3209,8 +3195,7 @@ text-decoration: none;
     background: transparent;
     border-bottom: none;
     padding-bottom: 10px;
-    margin-bottom: 8px;
-    margin-top: 0;
+    margin: 0;
   }
 
   .home-page .last-added-tracks-main .nav-controls {

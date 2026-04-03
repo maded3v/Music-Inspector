@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Inspector - Исполнитель</title>
-    <link rel="stylesheet" href="css/style.css?v=20260418">
+    <link rel="stylesheet" href="css/style.css?v=20260420">
 </head>
 <body>
   <div class="nav-bar">
@@ -68,7 +68,7 @@
       </div>
 
       <div class="artist-highlights">
-        <div class="artist-block">
+        <div class="artist-block artist-best-block">
           <h3>Лучший релиз</h3>
           <div id="artist-best-release-content"></div>
         </div>
@@ -93,9 +93,9 @@
 
   <script src="js/nav-mobile.js?v=20260408" defer></script>
   <script type="module">
-    import { getArtistWithStats, resolveArtistUrl } from './js/api.js?v=20260418';
-    import { renderReleaseCardAll } from './js/releases.js?v=20260418';
-    import { initAuthStatus } from './js/auth-status.js?v=20260418';
+    import { getArtistWithStats, resolveArtistUrl } from './js/api.js?v=20260420';
+    import { renderReleaseCardAll } from './js/releases.js?v=20260420';
+    import { initAuthStatus } from './js/auth-status.js?v=20260420';
 
     const urlParams = new URLSearchParams(window.location.search);
     const artistId = urlParams.get('id');
@@ -124,32 +124,6 @@
         return 'Без даты';
       }
       return String(new Date(timestamp).getFullYear());
-    }
-
-    function pluralizeReleases(count) {
-      const n = Math.abs(Number(count) || 0);
-      const mod10 = n % 10;
-      const mod100 = n % 100;
-      if (mod10 === 1 && mod100 !== 11) return 'релиз';
-      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'релиза';
-      return 'релизов';
-    }
-
-    function applyArtistAccent(seedValue) {
-      const page = document.querySelector('.artist-page');
-      if (!page) return;
-
-      const seed = String(seedValue || 'artist');
-      let hash = 0;
-      for (let i = 0; i < seed.length; i += 1) {
-        hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-      }
-
-      const base = Math.abs(hash);
-      const r = 74 + (base % 68);
-      const g = 82 + ((base >> 3) % 64);
-      const b = 98 + ((base >> 5) % 72);
-      page.style.setProperty('--artist-accent-rgb', `${r}, ${g}, ${b}`);
     }
 
     function pickBestRelease(tracks) {
@@ -263,41 +237,25 @@
         return;
       }
 
-      const groups = new Map();
-      for (const track of tracks) {
+      const sortedReleases = tracks
+        .slice()
+        .sort((a, b) => getReleaseTimestamp(b) - getReleaseTimestamp(a));
+
+      let previousYear = '';
+      const items = sortedReleases.map((track) => {
         const year = getReleaseYearLabel(track);
-        if (!groups.has(year)) {
-          groups.set(year, []);
-        }
-        groups.get(year).push(track);
-      }
+        const showYear = year !== previousYear;
+        previousYear = year;
 
-      const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
-        const aYear = Number(a[0]);
-        const bYear = Number(b[0]);
-        const aIsNumber = Number.isFinite(aYear);
-        const bIsNumber = Number.isFinite(bYear);
-
-        if (aIsNumber && bIsNumber) return bYear - aYear;
-        if (aIsNumber) return -1;
-        if (bIsNumber) return 1;
-        return 0;
-      });
-
-      timeline.innerHTML = sortedGroups.map(([year, releases]) => {
-        const sortedReleases = releases.slice().sort((a, b) => getReleaseTimestamp(b) - getReleaseTimestamp(a));
         return `
-          <section class="artist-year-block">
-            <div class="artist-year-header">
-              <div class="artist-year-title">${year}</div>
-              <div class="artist-year-count">${sortedReleases.length} ${pluralizeReleases(sortedReleases.length)}</div>
-            </div>
-            <div class="releases-grid">
-              ${sortedReleases.map(renderReleaseCardAll).join('')}
-            </div>
-          </section>
+          <div class="artist-stream-item">
+            ${showYear ? `<div class="artist-stream-year">${year}</div>` : ''}
+            ${renderReleaseCardAll(track)}
+          </div>
         `;
       }).join('');
+
+      timeline.innerHTML = `<div class="artist-releases-stream">${items}</div>`;
     }
 
     // Load artist data
@@ -313,7 +271,6 @@
         // Set artist name
         document.getElementById('artist-name').textContent = artist.name || 'Неизвестный исполнитель';
         document.title = `${artist.name} | Music Inspector`;
-        applyArtistAccent(`${artist.name || ''}|${artist.image_path || ''}|${artist.id || ''}`);
 
         // Set artist image
         let artistImage = artist.image_path || '';
