@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://music-inspector.onrender.com" crossorigin>
     <link rel="dns-prefetch" href="//music-inspector.onrender.com">
     <title>Music Inspector</title>
-    <link rel="stylesheet" href="css/style.css?v=20260420">
+    <link rel="stylesheet" href="css/style.css?v=20260421">
 </head>
 <body class="home-page">
   <div class="nav-bar">
@@ -60,10 +60,10 @@
 
     <!-- правильный блок последних добавленных -->
     <div class="last-added-tracks-wrapper">
-    <div class="last-added-tracks-main">
-      <div class="nav-last-added-text">
-        <div class="nav-last-added-text-text">Последние добавленные релизы</div>
-          <div class="nav-controls">
+    <div class="last-added-tracks-main mi-shell">
+      <div class="nav-last-added-text mi-shell-header">
+        <div class="nav-last-added-text-text mi-shell-title">Последние добавленные релизы</div>
+          <div class="nav-controls mi-shell-actions">
             <a href="releases.html" class="but-last-added-all">Открыть все</a>
             <a href="submit-release.html" id="add-release-btn" class="add-release-btn is-hidden">+ Добавить релиз</a>
             <div class="but-prev-last-added-tracks">&lt;</div>
@@ -77,17 +77,17 @@
     </div>
     </div>
    
-    <div class="reviews-wrapper">
-  <div class="reviews-header">
-    <div class="reviews-title">Последние добавленные рецензии</div>
+    <div class="reviews-wrapper mi-shell">
+  <div class="reviews-header mi-shell-header">
+    <div class="reviews-title mi-shell-title">Последние добавленные рецензии</div>
   </div>
-  <div class="reviews-grid">    <!-- Reviews will be loaded dynamically -->  </div>
+  <div class="reviews-grid mi-shell-body">    <!-- Reviews will be loaded dynamically -->  </div>
 </div>
 
   </div>
 </div>
   
-  <script type="module" src="js/main.js?v=20260417"></script>
+  <script type="module" src="js/main.js?v=20260421"></script>
 <script src="js/nav-mobile.js?v=20260408" defer></script>
 
 </body>

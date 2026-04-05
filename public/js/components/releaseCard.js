@@ -1,4 +1,4 @@
-import { resolveCoverUrl } from '../api.js?v=20260412';
+import { resolveCoverUrl } from '../api.js?v=20260421';
 
 function normalizeCoverPath(cover) {
   if (!cover) return 'svg/album.png';
@@ -82,7 +82,7 @@ export function renderReleaseCard(release, variant = 'default', rankIndex = -1) 
   }
 
   if (variant === 'home') {
-    return `<div class="track-card track-card-home" data-type="${releaseType}" data-id="${releaseId}"><a href="track.html?id=${releaseId}" class="track-main-link"><div class="track-cover-wrapper"><img src="${cover}" alt="Обложка" class="track-cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="track-badge">${badgeIcon}</div></div><div class="track-info"><div class="track-title">${escapeHtml(title)}</div>${artistSection}</div></a>${badgesSection}</div>`;
+    return `<a href="track.html?id=${releaseId}" class="track-card track-card-home track-card-link" data-type="${releaseType}" data-id="${releaseId}"><div class="track-cover-wrapper"><img src="${cover}" alt="Обложка" class="track-cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="track-badge">${badgeIcon}</div></div><div class="track-info"><div class="track-title">${escapeHtml(title)}</div>${artistSection}</div>${badgesSection}</a>`;
   }
 
   return `<a href="track.html?id=${releaseId}" class="${variant === 'monthly' ? 'release-card-link' : 'track-card-link'}"><div class="${cardClass}" data-type="${releaseType}" data-id="${releaseId}"${tierAttr}><div class="${variant === 'monthly' ? 'release-cover-wrapper' : 'track-cover-wrapper'}"><img src="${cover}" alt="Обложка" class="${variant === 'monthly' ? 'release-cover' : 'track-cover'}" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="161" height="161" onerror="this.onerror=null; this.src='svg/album.png';"><div class="${variant === 'monthly' ? 'release-badge' : 'track-badge'}">${badgeIcon}</div></div><div class="${variant === 'monthly' ? 'release-info' : 'track-info'}"><div class="${variant === 'monthly' ? 'release-title album-title' : 'track-title'}">${escapeHtml(title)}</div>${artistSection}</div>${scoreSection}${badgesSection}</div></a>`;

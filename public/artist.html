@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Inspector - Исполнитель</title>
-    <link rel="stylesheet" href="css/style.css?v=20260420">
+    <link rel="stylesheet" href="css/style.css?v=20260421">
 </head>
 <body>
   <div class="nav-bar">
@@ -39,7 +39,7 @@
   <div class="container">
     <div class="artist-page">
       <!-- Artist Header -->
-      <div class="artist-header">
+      <div class="artist-header mi-shell">
         <div class="artist-image-large">
           <img id="artist-image" src="svg/person.png" alt="Исполнитель" onerror="this.onerror=null; this.src='svg/person.png';">
         </div>
@@ -68,19 +68,19 @@
       </div>
 
       <div class="artist-highlights">
-        <div class="artist-block artist-best-block">
+        <div class="artist-block artist-best-block mi-shell">
           <h3>Лучший релиз</h3>
           <div id="artist-best-release-content"></div>
         </div>
-        <div class="artist-block">
+        <div class="artist-block mi-shell">
           <h3>Рецензии</h3>
           <div id="artist-reviews-summary" class="artist-reviews-summary"></div>
         </div>
       </div>
 
       <!-- Releases Section -->
-      <div class="artist-releases-section">
-        <h2>Релизы по годам</h2>
+      <div class="artist-releases-section mi-shell">
+        <h2 class="mi-shell-title">Релизы по годам</h2>
         <div id="artist-releases-timeline" class="artist-releases-timeline">
           <!-- Timeline will be loaded here -->
         </div>
@@ -93,9 +93,9 @@
 
   <script src="js/nav-mobile.js?v=20260408" defer></script>
   <script type="module">
-    import { getArtistWithStats, resolveArtistUrl } from './js/api.js?v=20260420';
-    import { renderReleaseCardAll } from './js/releases.js?v=20260420';
-    import { initAuthStatus } from './js/auth-status.js?v=20260420';
+    import { getArtistWithStats, resolveArtistUrl } from './js/api.js?v=20260421';
+    import { renderReleaseCardAll } from './js/releases.js?v=20260421';
+    import { initAuthStatus } from './js/auth-status.js?v=20260421';
 
     const urlParams = new URLSearchParams(window.location.search);
     const artistId = urlParams.get('id');
@@ -258,8 +258,45 @@
       timeline.innerHTML = `<div class="artist-releases-stream">${items}</div>`;
     }
 
+    function renderArtistLoadingState() {
+      const bestRelease = document.getElementById('artist-best-release-content');
+      const reviewSummary = document.getElementById('artist-reviews-summary');
+      const timeline = document.getElementById('artist-releases-timeline');
+      const noReleases = document.getElementById('no-releases');
+
+      if (noReleases) {
+        noReleases.style.display = 'none';
+      }
+
+      if (bestRelease) {
+        bestRelease.innerHTML = `
+          <div class="artist-best-release-meta mi-skeleton">
+            <span class="artist-chip"><strong>—</strong> общий</span>
+            <span class="artist-chip"><strong>—</strong> польз.</span>
+            <span class="artist-chip"><strong>—</strong> MI</span>
+          </div>
+          <div class="mi-state mi-skeleton">Загружаем лучший релиз...</div>
+        `;
+      }
+
+      if (reviewSummary) {
+        reviewSummary.innerHTML = Array.from({ length: 4 }).map(() => `
+          <div class="artist-summary-item mi-skeleton">
+            <div class="mi-skeleton-block is-short"></div>
+            <div class="mi-skeleton-block is-mid" style="margin-top: 6px;"></div>
+          </div>
+        `).join('');
+      }
+
+      if (timeline) {
+        timeline.innerHTML = '<div class="mi-state mi-skeleton">Загружаем релизы...</div>';
+      }
+    }
+
     // Load artist data
     async function loadArtist() {
+      renderArtistLoadingState();
+
       try {
         const response = await getArtistWithStats(artistId);
         const { artist, tracks, stats } = response;
@@ -327,10 +364,10 @@
         document.getElementById('artist-name').textContent = 'Ошибка';
         document.getElementById('artist-bio').textContent = errorMessage;
         const timeline = document.getElementById('artist-releases-timeline');
-        timeline.innerHTML = '';
+        timeline.innerHTML = `<div class="mi-state mi-state--error">${errorMessage}</div>`;
         timeline.style.display = 'none';
-        document.getElementById('artist-best-release-content').innerHTML = '<div class="no-releases" style="padding: 12px 0;">Не удалось загрузить</div>';
-        document.getElementById('artist-reviews-summary').innerHTML = '<div class="no-reviews" style="padding: 10px 0; grid-column: 1 / -1;">Не удалось загрузить</div>';
+        document.getElementById('artist-best-release-content').innerHTML = '<div class="mi-state mi-state--error">Не удалось загрузить</div>';
+        document.getElementById('artist-reviews-summary').innerHTML = '<div class="mi-state mi-state--error" style="grid-column: 1 / -1;">Не удалось загрузить</div>';
         document.getElementById('no-releases').style.display = 'block';
         document.getElementById('no-releases').textContent = errorMessage;
       }

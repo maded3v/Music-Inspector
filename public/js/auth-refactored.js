@@ -5,9 +5,9 @@
  * Maintains auth state across all pages
  */
 
-import { login as apiLogin, register as apiRegister, getCurrentUser, logout as apiLogout } from './api.js?v=20260412';
+import { login as apiLogin, register as apiRegister, getCurrentUser, logout as apiLogout } from './api.js?v=20260421';
 import { showLoadingModal, showSuccessModal, showErrorModal, closeModal } from './modal.js';
-import { initAuthStatus, updateAuthStatus } from './auth-status.js?v=20260412';
+import { initAuthStatus, updateAuthStatus } from './auth-status.js?v=20260421';
 
 /**
  * Handle user registration with automatic login

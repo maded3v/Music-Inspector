@@ -1,5 +1,5 @@
 // Import unified release card component
-import { renderReleaseCard, renderReleaseCards } from './components/releaseCard.js?v=20260412';
+import { renderReleaseCard, renderReleaseCards } from './components/releaseCard.js?v=20260421';
 
 // Re-export for backward compatibility
 export { renderReleaseCard, renderReleaseCards };
@@ -14,8 +14,8 @@ export function renderReleaseCardAll(release) {
 export function renderMonthlyReleases(albums, container) {
   if (!albums || albums.length === 0) {
     container.innerHTML = `
-      <div class="monthly-releases">
-        <div class="monthly-releases-title">Лучшие релизы</div>
+      <div class="monthly-releases mi-shell">
+        <div class="monthly-releases-title mi-shell-title">Лучшие релизы</div>
         <div class="no-releases" style="text-align: center; padding: 40px; color: #969696;">
           Пока нет релизов
         </div>
@@ -26,8 +26,8 @@ export function renderMonthlyReleases(albums, container) {
 
   // Render using unified component with 'monthly' variant style
   const html = `
-    <div class="monthly-releases">
-      <div class="monthly-releases-title">Лучшие релизы</div>
+    <div class="monthly-releases mi-shell">
+      <div class="monthly-releases-title mi-shell-title">Лучшие релизы</div>
       <div class="monthly-releases-grid">
         ${renderReleaseCards(albums, 'monthly')}
       </div>

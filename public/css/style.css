@@ -17,12 +17,113 @@ textarea {
 }
 
 :root {
-    --shadow-s: inset 0 1px 2px #ffffff30, /* top highlight */ 0 1px 2px #00000030,
+  --shadow-s: inset 0 1px 2px #ffffff30, /* top highlight */ 0 1px 2px #00000030,
     /* dark shadow */ 0 2px 4px #00000015; /* soft shadow */
   --shadow-m: inset 0 1px 2px #ffffff50, /* top highlight */ 0 2px 4px #00000030,
     /* dark shadow */ 0 4px 8px #00000015; /* soft shadow */
   --shadow-l: inset 0 1px 2px #ffffff70, /* top highlight */ 0 4px 6px #00000030,
     /* dark shadow */ 0 6px 10px #00000015; /* soft shadow */
+
+  --mi-surface-1: #252525;
+  --mi-surface-2: #1a1a1a;
+  --mi-border: #3a3a3a;
+  --mi-border-strong: #434343;
+  --mi-text-primary: #f0f0f0;
+  --mi-text-secondary: #b8b8b8;
+  --mi-title-size: 1.25rem;
+  --mi-shell-radius: 14px;
+  --mi-shell-padding: 18px;
+  --mi-shell-gap: 12px;
+  --mi-shell-bg: linear-gradient(180deg, #2b2b2b, #252525);
+}
+
+.mi-shell {
+  background: var(--mi-shell-bg);
+  border: 1px solid var(--mi-border);
+  border-radius: var(--mi-shell-radius);
+  padding: var(--mi-shell-padding);
+  box-sizing: border-box;
+}
+
+.mi-shell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mi-shell-gap);
+  flex-wrap: wrap;
+  margin: 0 0 var(--mi-shell-gap);
+}
+
+.mi-shell-title {
+  margin: 0;
+  font-size: var(--mi-title-size);
+  font-weight: 600;
+  color: var(--mi-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.mi-shell-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mi-state {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  border: 1px dashed #4a4a4a;
+  border-radius: 10px;
+  color: #adadad;
+  background: rgba(16, 16, 16, 0.45);
+  padding: 16px 14px;
+  font-size: 0.95rem;
+}
+
+.mi-state--error {
+  border-color: #a66060;
+  color: #e4b7b7;
+  background: rgba(64, 23, 23, 0.35);
+}
+
+.mi-skeleton {
+  position: relative;
+  overflow: hidden;
+}
+
+.mi-skeleton::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: mi-skeleton-sweep 1.15s ease-in-out infinite;
+}
+
+@keyframes mi-skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.mi-skeleton-block {
+  height: 12px;
+  border-radius: 8px;
+  background: #323232;
+}
+
+.mi-skeleton-block.is-short {
+  width: 54%;
+}
+
+.mi-skeleton-block.is-mid {
+  width: 72%;
+}
+
+.mi-skeleton-block.is-full {
+  width: 100%;
 }
 .nav-bar{
   justify-content: center;
@@ -304,9 +405,9 @@ textarea {
 
 .home-page .last-added-tracks-main,
 .home-page .reviews-wrapper {
-  background: linear-gradient(180deg, #2b2b2b, #252525);
-  border: 1px solid #3a3a3a;
-  border-radius: 14px;
+  background: var(--mi-shell-bg);
+  border: 1px solid var(--mi-border);
+  border-radius: var(--mi-shell-radius);
 }
 
 .home-page .last-added-tracks-main {
@@ -326,7 +427,7 @@ textarea {
 
 .home-page .reviews-wrapper {
   width: 1082px;
-  padding: 18px;
+  padding: var(--mi-shell-padding);
   box-sizing: border-box;
 }
 
@@ -417,9 +518,9 @@ textarea {
   display: flex;
   flex-direction: column;
   margin: 20px auto;
-  padding: 20px;
+  padding: var(--mi-shell-padding);
   background-color: #333333;
-  border-radius: 12px;
+  border-radius: var(--mi-shell-radius);
   width: 100%;
   max-width: 1082px;
   box-sizing: border-box;
@@ -538,9 +639,9 @@ text-decoration: none;
 }
 
 .nav-last-added-text-text{
-  font-size: 1.25rem;
-  font-weight: medium;
-  color: #fff;
+  font-size: var(--mi-title-size);
+  font-weight: 600;
+  color: var(--mi-text-primary);
 }
 
 .nav-last-added-text-text a {
@@ -561,6 +662,7 @@ text-decoration: none;
   cursor: pointer;
   flex: 0 0 auto;
   box-sizing: border-box;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
 }
 
 .track-main-link {
@@ -578,8 +680,7 @@ text-decoration: none;
 }
 
 .track-card:hover {
-  transform: translateY(-8px);
-  transition: transform 0.3s, box-shadow 0.3s;
+  transform: translateY(-6px);
 }
 
 .track-card-home {
@@ -700,23 +801,22 @@ text-decoration: none;
 
 .reviews-wrapper {
   width: 1112px;
- 
   background: transparent;
-  color: #fff;
-  font-family: "Inter", sans-serif;
+  color: var(--mi-text-primary);
+  font-family: inherit;
 }
 
 .reviews-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--mi-shell-gap);
 }
 
 .reviews-title {
-  font-size: 1.25rem;
-  font-weight: medium;
-  color: #fff;
+  font-size: var(--mi-title-size);
+  font-weight: 600;
+  color: var(--mi-text-primary);
 }
 
 .reviews-open-all {
@@ -1353,16 +1453,18 @@ text-decoration: none;
   display: flex;
   flex-direction: column;
   margin: 20px auto;
-  padding: 0;
-  background: transparent;
+  padding: var(--mi-shell-padding);
+  background: var(--mi-shell-bg);
+  border: 1px solid var(--mi-border);
+  border-radius: var(--mi-shell-radius);
   width: 1082px;
 }
 
 .monthly-releases-title {
-  font-size: 1.25rem;
-  font-weight: medium;
-  color: #fff;
-  margin-bottom: 1rem;
+  font-size: var(--mi-title-size);
+  font-weight: 600;
+  color: var(--mi-text-primary);
+  margin-bottom: 12px;
 }
 
 .monthly-releases-grid {
@@ -1499,8 +1601,21 @@ text-decoration: none;
 .track-card-link {
   text-decoration: none;
   color: inherit;
-  display: block;
+  display: inline-flex;
   flex: 0 0 auto;
+}
+
+.track-card-link.track-card {
+  text-decoration: none;
+  color: inherit;
+}
+
+.track-card-link.track-card:focus-visible,
+.release-card-link:focus-visible,
+.artist-releases-section .track-card-link:focus-visible {
+  outline: 2px solid #7d9cff;
+  outline-offset: 2px;
+  border-radius: 12px;
 }
 
 .track-card-link > .track-card {
@@ -2184,10 +2299,10 @@ text-decoration: none;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  background: linear-gradient(180deg, #252525, #1d1d1d);
-  border: 1px solid #393939;
-  border-radius: 14px;
-  padding: 18px;
+  background: var(--mi-shell-bg);
+  border: 1px solid var(--mi-border);
+  border-radius: var(--mi-shell-radius);
+  padding: var(--mi-shell-padding);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
@@ -2203,7 +2318,7 @@ text-decoration: none;
 .release-reviews-section .reviews-header h2 {
   font-size: 1.75rem;
   font-weight: bold;
-  color: #E6E6E6;
+  color: var(--mi-text-primary);
   margin: 0;
 }
 
@@ -2744,7 +2859,7 @@ text-decoration: none;
   display: flex;
   gap: 40px;
   align-items: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .artist-image-large {
@@ -2792,10 +2907,6 @@ text-decoration: none;
 }
 
 .artist-block {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 12px;
-  padding: 16px;
   box-shadow: var(--shadow-s);
 }
 
@@ -2926,7 +3037,7 @@ text-decoration: none;
 .artist-releases-section {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 6px;
   position: relative;
   width: 100%;
 }
@@ -2935,8 +3046,7 @@ text-decoration: none;
   font-size: 1.75rem;
   font-weight: bold;
   color: #E6E6E6;
-  margin: 0;
-  margin-bottom: 20px;
+  margin: 0 0 6px;
   padding: 0;
 }
 
@@ -2951,23 +3061,40 @@ text-decoration: none;
 }
 
 .artist-releases-timeline {
-  border: 1px solid #333;
-  border-radius: 12px;
-  background: #1a1a1a;
-  padding: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #4c4c4c transparent;
+}
+
+.artist-releases-timeline::-webkit-scrollbar {
+  height: 8px;
+}
+
+.artist-releases-timeline::-webkit-scrollbar-thumb {
+  background: #4c4c4c;
+  border-radius: 999px;
 }
 
 .artist-releases-stream {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
+  flex-wrap: nowrap;
   gap: 14px;
   align-items: flex-start;
+  min-width: max-content;
 }
 
 .artist-stream-item {
   position: relative;
   flex: 0 0 auto;
   padding-top: 20px;
+  width: 166px;
+}
+
+.artist-stream-item .track-card-link,
+.artist-stream-item .track-card {
+  width: 100%;
 }
 
 .artist-stream-year {
@@ -3036,6 +3163,7 @@ text-decoration: none;
 
   .artist-stream-item {
     padding-top: 18px;
+    width: 154px;
   }
 }
 
@@ -3168,6 +3296,10 @@ text-decoration: none;
   .last-added-tracks-main,
   .reviews-wrapper,
   .monthly-releases {
+    padding: 14px;
+  }
+
+  .mi-shell {
     padding: 14px;
   }
 
@@ -3446,6 +3578,33 @@ text-decoration: none;
 
   .review-card-track {
     padding: 12px;
+  }
+
+  .release-reviews-section {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .reviews-header-controls {
+    justify-content: stretch;
+  }
+
+  .review-sort-controls {
+    width: 100%;
+  }
+
+  .review-sort-btn,
+  .add-review-button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .artist-releases-stream {
+    gap: 10px;
+  }
+
+  .artist-stream-item {
+    width: 146px;
   }
 
   .submit-release-content {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Inspector - Профиль</title>
-    <link rel="stylesheet" href="css/style.css?v=20260416">
+    <link rel="stylesheet" href="css/style.css?v=20260421">
     <style>
       .profile-container {
         max-width: 1122px;
@@ -28,9 +28,9 @@
         align-self: flex-start;
         height: fit-content;
         text-align: center;
-        background: #1a1a1a;
-        border: 1px solid #333;
-        border-radius: 12px;
+        background: var(--mi-surface-2);
+        border: 1px solid var(--mi-border);
+        border-radius: var(--mi-shell-radius);
         padding: 20px;
         box-sizing: border-box;
       }
@@ -100,10 +100,10 @@
         border: #969696 1px solid;
       }
       .stats-section {
-        background: #1a1a1a;
+        background: var(--mi-surface-2);
         padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #333;
+        border-radius: var(--mi-shell-radius);
+        border: 1px solid var(--mi-border);
         margin-bottom: 30px;
       }
       .stats-section h3 {
@@ -129,10 +129,10 @@
         margin-top: 5px;
       }
       .last-review-section {
-        background: #1a1a1a;
+        background: var(--mi-surface-2);
         padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #333;
+        border-radius: var(--mi-shell-radius);
+        border: 1px solid var(--mi-border);
         margin-bottom: 20px;
       }
       .last-review-section h3 {
@@ -294,6 +294,10 @@
           font-size: 1.4em;
         }
 
+        .profile-email {
+          word-break: break-word;
+        }
+
         .stats-section,
         .last-review-section {
           padding: 14px;
@@ -388,6 +392,10 @@
       }
 
       @media (max-width: 420px) {
+        .profile-btn {
+          min-height: 42px;
+        }
+
         .review-card-profile {
           grid-template-columns: 56px minmax(0, 1fr);
         }
@@ -438,7 +446,7 @@
 
   <div class="profile-container">
     <div id="profile-content">
-      <p style="text-align: center;">Загрузка...</p>
+      <div class="mi-state mi-skeleton">Загружаем профиль...</div>
     </div>
   </div>
 
@@ -453,8 +461,8 @@
       resolveCoverUrl,
       updateMyName,
       getPublicUserProfile
-    } from './js/api.js?v=20260412';
-    import { handleLogout } from './js/auth-refactored.js?v=20260412';
+    } from './js/api.js?v=20260421';
+    import { handleLogout } from './js/auth-refactored.js?v=20260421';
     import { initGlobalSearch } from './js/search.js';
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -638,7 +646,7 @@
       profileContent.innerHTML = `
         <div class="profile-layout">
           <div class="profile-left">
-            <div class="stats-section">
+            <div class="stats-section mi-shell">
               <h3>Статистика</h3>
               <div class="stats-grid">
                 <div class="stat-item">
@@ -657,19 +665,19 @@
             </div>
 
             ${ownProfile ? `
-              <div class="last-review-section">
+              <div class="last-review-section mi-shell">
                 <h3>Рецензии на проверке</h3>
                 ${pendingReviewsMarkup}
               </div>
             ` : ''}
 
-            <div class="last-review-section">
+            <div class="last-review-section mi-shell">
               <h3>Все рецензии пользователя</h3>
               ${allReviewsMarkup}
             </div>
           </div>
 
-          <div class="profile-right">
+          <div class="profile-right mi-shell">
             <div class="profile-avatar-large" style="background-color: ${bgColor};">
               ${avatarPath ? `<img src="${avatarPath}" alt="Avatar" onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${firstLetter}';">` : firstLetter}
             </div>

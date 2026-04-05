@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Inspector - Трек</title>
-    <link rel="stylesheet" href="css/style.css?v=20260413">
+    <link rel="stylesheet" href="css/style.css?v=20260421">
 </head>
 <body>
   <div class="nav-bar">
@@ -67,10 +67,10 @@
       </div>
 
       <!-- Reviews Section -->
-      <div class="release-reviews-section">
-        <div class="reviews-header">
-          <h2>Рецензии</h2>
-          <div class="reviews-header-controls">
+      <div class="release-reviews-section mi-shell">
+        <div class="reviews-header mi-shell-header">
+          <h2 class="mi-shell-title">Рецензии</h2>
+          <div class="reviews-header-controls mi-shell-actions">
             <div id="review-sort-controls" class="review-sort-controls">
               <button type="button" class="review-sort-btn" data-sort="date">По дате</button>
               <button type="button" class="review-sort-btn" data-sort="score">По оценке</button>
@@ -134,7 +134,7 @@
 
         <!-- Reviews List -->
         <div id="reviews-list" class="reviews-list">
-          <!-- Reviews will be loaded here -->
+          <div class="mi-state mi-skeleton">Загружаем рецензии...</div>
         </div>
       </div>
     </div>
@@ -142,8 +142,8 @@
 
   <script src="js/nav-mobile.js?v=20260408" defer></script>
   <script type="module">
-    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveArtistUrl, resolveAvatarUrl, resolveCoverUrl } from './js/api.js?v=20260412';
-    import { initAuth } from './js/auth-refactored.js?v=20260412';
+    import { getTrack, getReviewsByTrack, addReview, generateMIReview, voteReview, resolveArtistUrl, resolveAvatarUrl, resolveCoverUrl } from './js/api.js?v=20260421';
+    import { initAuth } from './js/auth-refactored.js?v=20260421';
     import { showErrorModal, showLoadingModal, showSuccessModal, closeModal } from './js/modal.js';
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -469,7 +469,7 @@
       }
 
       if (!loadedTrackReviews.length) {
-        reviewsList.innerHTML = '<div class="no-reviews">Пока нет рецензий</div>';
+        reviewsList.innerHTML = '<div class="mi-state">Пока нет рецензий</div>';
         return;
       }
 
@@ -483,6 +483,11 @@
 
     // Load reviews (only approved)
     async function loadReviews() {
+      const reviewsList = document.getElementById('reviews-list');
+      if (reviewsList) {
+        reviewsList.innerHTML = '<div class="mi-state mi-skeleton">Загружаем рецензии...</div>';
+      }
+
       try {
         const response = await getReviewsByTrack(trackId);
         const reviews = response.reviews || [];
@@ -506,7 +511,7 @@
           errorMessage = error.message;
         }
 
-        document.getElementById('reviews-list').innerHTML = `<div class="no-reviews">${errorMessage}</div>`;
+        document.getElementById('reviews-list').innerHTML = `<div class="mi-state mi-state--error">${errorMessage}</div>`;
       }
     }
     const reviewSortControls = document.getElementById('review-sort-controls');

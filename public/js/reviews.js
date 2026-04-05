@@ -1,4 +1,4 @@
-import { resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260412';
+import { resolveAvatarUrl, resolveCoverUrl } from './api.js?v=20260421';
 
 function trimText(text, maxLength = 220) {
   if (text.length <= maxLength) return text;
@@ -124,6 +124,11 @@ function syncReviewExpandButtons(container) {
 }
 
 export function renderReviews(reviews, container) {
+  if (!Array.isArray(reviews) || reviews.length === 0) {
+    container.innerHTML = '<div class="mi-state">Пока нет рецензий</div>';
+    return;
+  }
+
   container.innerHTML = reviews.map(renderReviewCard).join('');
 
   requestAnimationFrame(() => {
