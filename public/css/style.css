@@ -410,6 +410,15 @@ textarea {
   border-radius: var(--mi-shell-radius);
 }
 
+.home-page .last-added-tracks-main,
+.home-page .reviews-wrapper,
+.home-page .monthly-releases {
+  width: min(100%, 1082px);
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .home-page .last-added-tracks-main {
   margin-top: 18px;
 }
@@ -426,13 +435,32 @@ textarea {
 }
 
 .home-page .reviews-wrapper {
-  width: 1082px;
   padding: var(--mi-shell-padding);
   box-sizing: border-box;
 }
 
-.home-page .monthly-releases {
-  width: 1082px;
+.home-page .monthly-releases-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.home-page .monthly-releases-grid .release-card-link,
+.home-page .monthly-releases-grid .release-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.home-page .monthly-releases-grid .release-card {
+  max-width: none;
+}
+
+.home-page .monthly-releases-grid .release-cover-wrapper {
+  width: 100%;
+  max-width: 150px;
+  height: auto;
+  aspect-ratio: 1 / 1;
 }
 
 @media (max-width: 1120px) {
@@ -584,7 +612,7 @@ text-decoration: none;
 .last-added-tracks-wrapper {
   width: 100%;
   overflow: hidden;
-  padding-right: 10px;
+  padding-right: 0;
   box-sizing: border-box;
 }
 
@@ -800,10 +828,12 @@ text-decoration: none;
 }
 
 .reviews-wrapper {
-  width: 1112px;
+  width: 100%;
+  max-width: 1082px;
   background: transparent;
   color: var(--mi-text-primary);
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .reviews-header {
@@ -1457,7 +1487,9 @@ text-decoration: none;
   background: var(--mi-shell-bg);
   border: 1px solid var(--mi-border);
   border-radius: var(--mi-shell-radius);
-  width: 1082px;
+  width: 100%;
+  max-width: 1082px;
+  box-sizing: border-box;
 }
 
 .monthly-releases-title {
@@ -3342,7 +3374,7 @@ text-decoration: none;
 
   .home-page .last-added-tracks-wrapper {
     overflow: hidden;
-    padding-right: 8px;
+    padding-right: 0;
   }
 
   .home-page .last-added-tracks {
